@@ -18,7 +18,8 @@ export function buildReport({ config, adapter, world, metrics, teardown, started
   const coverage = coverageOf(adapter);
   const totals = world.totals();
 
-  const verdict = decideVerdict({ api, world, teardown });
+  const engineErrors = world.engineErrors ? world.engineErrors() : [];
+  const verdict = decideVerdict({ api, world, teardown, engineErrors });
 
   return {
     populace: { version: "0.1.0", generatedAt: new Date().toISOString() },
@@ -36,6 +37,7 @@ export function buildReport({ config, adapter, world, metrics, teardown, started
       signedIn: world.agents.length,
       signupFailures: world.signupFailures,
     },
+    engineErrors: world.engineErrors ? world.engineErrors() : [],
     activity: {
       distanceKm: Number(totals.km.toFixed(1)),
       posts: totals.posts,
@@ -58,8 +60,16 @@ export function buildReport({ config, adapter, world, metrics, teardown, started
  * Deliberately conservative. Anything unproven is called unproven, never
  * "passed" — including a run where nothing failed because nothing ran.
  */
-function decideVerdict({ api, world, teardown }) {
+function decideVerdict({ api, world, teardown, engineErrors = [] }) {
   const problems = [];
+
+  // Populace's own failures come first. If the tool is broken, nothing it says
+  // about the customer's API can be trusted, and a clean verdict would be a lie.
+  if (engineErrors.length) {
+    problems.push(
+      `${engineErrors.length} failure(s) inside Populace itself — this run did not test what it claims to have tested.`,
+    );
+  }
 
   if (!world.agents.length) {
     problems.push("No agent could sign in — nothing was tested.");

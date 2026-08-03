@@ -34,6 +34,8 @@ export class Agent {
     this.onBreak = false;
     this.log = [];
     this.stats = { posts: 0, likes: 0, comments: 0, messages: 0, groups: 0, reauths: 0, errors: 0 };
+    // Failures that did not come from the adapter — i.e. bugs in this engine.
+    this.engineErrors = [];
 
     // Access tokens expire. A run longer than the token lifetime would see
     // every agent start failing at once — and a customer would reasonably read
@@ -136,10 +138,19 @@ export class Agent {
       if (chance(this.persona.chattiness)) await this.chat(world);
       if (chance(0.02)) await this.joinAGroup();
     } catch (error) {
-      // Swallowed on purpose: one person's app breaking should not end everyone
-      // else's shift. The failure is already recorded by the instrumentation
-      // wrapper, and surfaces in the report.
+      // An adapter failure is expected material: the instrumentation wrapper has
+      // already recorded it, and one person's app breaking should not end
+      // everyone else's shift.
+      //
+      // An UNTAGGED failure never reached the adapter, so it is a bug in this
+      // engine. Swallowing it silently would let Populace break and still print
+      // a clean report — the same defect as the failure-rate tolerance band that
+      // was removed from the verdict, and worse here, because the tool would be
+      // vouching for an app it never actually exercised.
       this.stats.errors += 1;
+      if (!error?.fromAdapter) {
+        this.engineErrors.push(String(error?.stack || error?.message || error).slice(0, 300));
+      }
       this.note(`error: ${String(error.message || error).slice(0, 60)}`);
     }
   }

@@ -371,6 +371,47 @@ check("the report renders without throwing", () => {
   assert.ok(text.includes("✖"), "problems should be visible at a glance");
 });
 
+// --- 8. a bug in Populace is never reported as the customer's --------------
+{
+  const adapter = inMemoryAdapter();
+  const world = new World({
+    adapter: instrument(adapter, createMetrics()),
+    personas: buildPersonas(2, ["manila"]),
+    options: {},
+    on: {},
+  });
+  await world.populate({ staggerMs: 0 });
+
+  // Break the engine, not the adapter: this failure never reaches a wrapped
+  // call, so nothing in the metrics will ever know about it.
+  world.agents[0].post = () => {
+    throw new TypeError("engine bug: cannot read properties of undefined");
+  };
+  world.agents[0].persona.postiness = 1;
+  world.agents[0].persona.breakiness = 0;
+  await world.agents[0].tick(5, world);
+
+  check("a bug inside Populace is kept, not swallowed", () => {
+    const engineErrors = world.engineErrors();
+    assert.equal(engineErrors.length, 1);
+    assert.ok(engineErrors[0].includes("engine bug"));
+  });
+
+  const report = buildReport({
+    config: { app: "x", adapter: "y", environment: "test", population: {} },
+    adapter,
+    world,
+    metrics: createMetrics(),
+    teardown: { failed: [] },
+    startedAt: Date.now() - 1000,
+  });
+
+  check("a run that broke internally is never reported clean", () => {
+    assert.equal(report.verdict.status, "problems-found");
+    assert.ok(report.verdict.problems.some((p) => p.includes("inside Populace")));
+  });
+}
+
 console.log(
   failed
     ? `\n  ${failed} check(s) failed.\n`
