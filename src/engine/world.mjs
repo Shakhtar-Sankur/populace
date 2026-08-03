@@ -65,6 +65,11 @@ export class World {
     return this.totals();
   }
 
+  /** Failures that never reached the adapter: bugs in this engine. */
+  engineErrors() {
+    return this.agents.flatMap((a) => a.engineErrors ?? []);
+  }
+
   totals() {
     return this.agents.reduce(
       (acc, a) => {

@@ -62,6 +62,10 @@ export function instrument(adapter, metrics) {
         entry.durations.push(performance.now() - started);
         return result;
       } catch (error) {
+        // Mark it as the adapter's, so the engine can tell a customer's API
+        // failing apart from a bug of our own. Untagged failures reaching the
+        // agent loop are Populace's fault and must not be reported as theirs.
+        if (error && typeof error === "object") error.fromAdapter = true;
         entry.durations.push(performance.now() - started);
         entry.failures += 1;
         if (entry.firstErrorAt === null) entry.firstErrorAt = Date.now();
