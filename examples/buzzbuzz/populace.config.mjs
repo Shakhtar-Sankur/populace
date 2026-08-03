@@ -1,0 +1,43 @@
+// Populace's first customer: Buzz Buzz, a gig-driver tracking app.
+//
+// Run it — PowerShell (Windows):
+//   $env:BUZZBUZZ_TEST_URL="https://<your-TEST-project>.supabase.co"
+//   $env:BUZZBUZZ_TEST_KEY="<test project publishable key>"
+//   node src/cli.mjs run --config examples/buzzbuzz/populace.config.mjs
+//
+// Run it — bash/zsh (macOS, Linux):
+//   BUZZBUZZ_TEST_URL=... BUZZBUZZ_TEST_KEY=... \
+//     node src/cli.mjs run --config examples/buzzbuzz/populace.config.mjs
+//
+// The test project needs the same schema as production. Run these against it:
+//   schema.sql · social_features.sql · groups.sql · direct_messages.sql
+//   realtime.sql · fix_chat_rls.sql · user_content_control.sql
+//   work_apps_global.sql · privacy_lockdown.sql
+// …and turn OFF Authentication → Providers → Email → "Confirm email",
+// otherwise nobody can sign in after signing up.
+
+export default {
+  app: "Buzz Buzz",
+  adapter: "../../adapters/buzzbuzz.mjs",
+  environment: "test",
+
+  target: {
+    url: process.env.BUZZBUZZ_TEST_URL,
+    key: process.env.BUZZBUZZ_TEST_KEY,
+  },
+
+  // Buzz Buzz's LIVE project. If BUZZBUZZ_TEST_URL is ever set to this by
+  // accident, Populace refuses to start. Real drivers must never see invented
+  // people on their map.
+  neverRunAgainst: ["https://rqzuuvlougzhynckvqzd.supabase.co"],
+
+  population: {
+    agents: 8,
+    cities: ["manila", "mumbai"],
+    minutes: 10,
+    tickSeconds: 5,
+  },
+
+  identity: { phonePrefix: "0900" },
+  report: { path: "populace-report.json" },
+};

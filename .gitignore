@@ -1,0 +1,11 @@
+node_modules/
+
+# Run output — regenerated every run, and it can contain error messages from a
+# customer's environment.
+populace-report.json
+**/populace-report.json
+
+# Secrets belong in the environment, never in the config file.
+.env
+.env.*
+!.env.example
