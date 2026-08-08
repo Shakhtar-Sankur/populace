@@ -9,6 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { summarise } from "./instrument.mjs";
 import { coverageOf } from "./contract.mjs";
+import { renderHtmlReport } from "./html-report.mjs";
 
 const pct = (n) => `${(n * 100).toFixed(1)}%`;
 const ms = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}s` : `${Math.round(n)}ms`);
@@ -107,7 +108,13 @@ function decideVerdict({ api, world, teardown, engineErrors = [] }) {
 export function writeReport(report, config) {
   const file = path.resolve(config._dir || process.cwd(), config.report?.path || "populace-report.json");
   fs.writeFileSync(file, JSON.stringify(report, null, 2));
-  return file;
+
+  // The HTML twin is what actually gets shared — emailed to a colleague,
+  // attached to a ticket, sent to whoever paid for the run. The JSON is for
+  // machines; this is for people who weren't watching the terminal.
+  const html = file.replace(/\.json$/, "") + ".html";
+  fs.writeFileSync(html, renderHtmlReport(report));
+  return { json: file, html };
 }
 
 export function renderReport(report) {

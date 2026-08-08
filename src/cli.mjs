@@ -162,9 +162,10 @@ async function run() {
 
   metrics.endedAt = Date.now();
   const report = buildReport({ config, adapter: raw, world, metrics, teardown, startedAt });
-  const file = writeReport(report, config);
+  const files = writeReport(report, config);
   console.log(renderReport(report));
-  console.log(`  Full report: ${path.relative(process.cwd(), file)}\n`);
+  console.log(`  Report:  ${path.relative(process.cwd(), files.json)}`);
+  console.log(`  Shareable page:  ${path.relative(process.cwd(), files.html)}\n`);
 
   if (report.verdict.status !== "clean") process.exitCode = 1;
 }
