@@ -1,9 +1,13 @@
 node_modules/
 
 # Run output — regenerated every run, and it can contain error messages from a
-# customer's environment.
+# customer's environment. The HTML twin carries exactly the same data, so it is
+# ignored for exactly the same reason: nobody should commit a customer's
+# failures by running `git add .` after a run.
 populace-report.json
 **/populace-report.json
+populace-report.html
+**/populace-report.html
 
 # Secrets belong in the environment, never in the config file.
 .env

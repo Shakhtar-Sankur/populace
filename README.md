@@ -102,6 +102,8 @@ multi-user simulation is best at finding.
 - **Failures grouped by shape**, not exact text, so one bug is one line rather than fifty
 - **Account deletion actually tested** — the path almost nobody exercises and the one regulators ask about
 - **`populace-report.json`** for CI; the run exits non-zero when problems are found
+- **`populace-report.html`** beside it — one self-contained file, no scripts and nothing
+  fetched from the network, for the people who were not watching the terminal
 
 ---
 
