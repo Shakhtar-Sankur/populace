@@ -27,12 +27,25 @@ function flag(name, fallback) {
 }
 const has = (name) => argv.includes(`--${name}`);
 
+/**
+ * A path a human can read.
+ *
+ * Relative is right when the file sits under the current directory and absurd
+ * when it does not — running the bundled demo from elsewhere printed eight
+ * levels of "../" before the real path, which reads like a bug.
+ */
+function displayPath(file) {
+  const rel = path.relative(process.cwd(), file);
+  return rel.startsWith("..") ? file : rel;
+}
+
 function overridesFromFlags() {
   const o = {};
   if (flag("agents")) o.agents = Number(flag("agents"));
   if (flag("minutes")) o.minutes = Number(flag("minutes"));
   if (flag("tick")) o.tickSeconds = Number(flag("tick"));
   if (flag("cities")) o.cities = String(flag("cities")).split(",").map((s) => s.trim()).filter(Boolean);
+  if (flag("report")) o.reportPath = flag("report");
   return o;
 }
 
@@ -164,8 +177,8 @@ async function run() {
   const report = buildReport({ config, adapter: raw, world, metrics, teardown, startedAt });
   const files = writeReport(report, config);
   console.log(renderReport(report));
-  console.log(`  Report:  ${path.relative(process.cwd(), files.json)}`);
-  console.log(`  Shareable page:  ${path.relative(process.cwd(), files.html)}\n`);
+  console.log(`  Report:  ${displayPath(files.json)}`);
+  console.log(`  Shareable page:  ${displayPath(files.html)}\n`);
 
   if (report.verdict.status !== "clean") process.exitCode = 1;
 }
@@ -241,14 +254,46 @@ async function clean() {
   console.log(`\n  ${removed} removed, ${missing} not found (already gone).\n`);
 }
 
+// ---------------------------------------------------------------- demo
+
+/**
+ * Run against the bundled demo app.
+ *
+ * Everything else here needs a config, an adapter and a test backend before it
+ * shows you anything — which is a lot of trust to ask for from someone who has
+ * not yet seen the tool work. This runs the whole product end to end against a
+ * fake app that lives in this repo: no setup, no account, nothing of yours
+ * touched, and a real report at the end.
+ *
+ * The demo app has a deliberate bug in it. Finding that bug is the point.
+ */
+async function demo() {
+  const configPath = path.join(here, "..", "examples", "demo", "populace.config.mjs");
+  if (!fs.existsSync(configPath)) {
+    throw new ConfigError(
+      "The bundled demo is missing. It ships in the repository — if you installed from npm, clone the repo to run it.",
+    );
+  }
+  console.log(`
+  Running the bundled demo. No setup, no backend of yours, nothing to clean up.
+  The demo app has a real bug in it — see whether the report finds it.
+`);
+  argv.push("--config", configPath);
+  // Write the report where the person is standing, not inside the package —
+  // which for an npm install would bury it in node_modules.
+  argv.push("--report", path.join(process.cwd(), "populace-report.json"));
+  await run();
+}
+
 // ---------------------------------------------------------------- main
 
-const commands = { init, doctor, run, clean };
+const commands = { init, doctor, run, clean, demo };
 
 if (!commands[command]) {
   console.log(`
   populace — a simulated population for testing your app
 
+    populace demo                     see it work, against a fake app, right now
     populace init                     scaffold a config and adapter here
     populace doctor                   check everything WITHOUT running
     populace run                      bring the population to life
@@ -259,6 +304,7 @@ if (!commands[command]) {
     --agents <n>  --minutes <n>       override the config
     --tick <seconds>                  simulated seconds per step
     --cities <a,b>                    ${Object.keys(CITIES).join(", ")}
+    --report <path>                   where to write the report
     --keep                            leave accounts in place after a run
 `);
 } else {

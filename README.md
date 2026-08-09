@@ -36,11 +36,21 @@ other endpoint.
 
 ## Try it in ten seconds
 
-No backend, no signup — the demo adapter fakes a small app in memory.
+No backend, no signup, nothing of yours touched — the demo adapter fakes a small
+app in memory.
 
 ```bash
-node src/cli.mjs run --config examples/demo/populace.config.mjs --minutes 1
+populace demo
 ```
+
+The demo app has a real bug in it: a row-level-security policy that rejects
+likes. Watch the report find it, name the policy, and exit non-zero. That exit
+code is the whole point — the run fails your build rather than telling you it
+went fine.
+
+Two files land in whatever directory you ran it from: `populace-report.json` for
+CI, and `populace-report.html`, which is one self-contained page you can email
+to someone who was not watching your terminal.
 
 ---
 
