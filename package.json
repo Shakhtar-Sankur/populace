@@ -15,9 +15,12 @@
     "src",
     "adapters/contract.md",
     "adapters/template.mjs",
-    "README.md"
+    "README.md",
+    "examples",
+    "LICENSE"
   ],
   "scripts": {
+    "demo": "node src/cli.mjs demo",
     "doctor": "node src/cli.mjs doctor",
     "test": "node src/selftest.mjs"
   },
@@ -32,10 +35,18 @@
     "synthetic-users",
     "qa"
   ],
-  "license": "UNLICENSED",
-  "private": true,
+  "license": "AGPL-3.0-only",
   "dependencies": {},
   "devDependencies": {
     "@supabase/supabase-js": "^2.45.0"
+  },
+  "author": "Sankur Kundu <sankur.kundu.tw@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shakhtar-Sankur/populace.git"
+  },
+  "homepage": "https://github.com/Shakhtar-Sankur/populace#readme",
+  "bugs": {
+    "url": "https://github.com/Shakhtar-Sankur/populace/issues"
   }
 }

@@ -33,6 +33,8 @@ const DEFAULTS = {
 };
 
 export async function loadConfig({ configPath, cwd = process.cwd(), overrides = {} } = {}) {
+  // reportPath is not a population setting; keep it out of that spread.
+  const { reportPath: _reportPath, ...populationOverrides } = overrides;
   const file = path.resolve(cwd, configPath || "populace.config.mjs");
 
   if (!fs.existsSync(file)) {
@@ -51,9 +53,19 @@ export async function loadConfig({ configPath, cwd = process.cwd(), overrides = 
   const config = {
     ...DEFAULTS,
     ...loaded,
-    population: { ...DEFAULTS.population, ...(loaded.population || {}), ...overrides },
+    population: {
+      ...DEFAULTS.population,
+      ...(loaded.population || {}),
+      ...populationOverrides,
+    },
     session: { ...DEFAULTS.session, ...(loaded.session || {}) },
-    report: { ...DEFAULTS.report, ...(loaded.report || {}) },
+    report: {
+      ...DEFAULTS.report,
+      ...(loaded.report || {}),
+      // --report wins over the config file, so a run can put its output
+      // somewhere else without editing anything.
+      ...(overrides.reportPath ? { path: overrides.reportPath } : {}),
+    },
     _dir: path.dirname(file),
     _file: file,
   };

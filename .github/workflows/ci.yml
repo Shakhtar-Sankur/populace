@@ -1,0 +1,68 @@
+# Populace has 20 self-tests and, until now, nothing that ran them. A test suite
+# nobody runs is documentation.
+#
+# The demo is part of CI on purpose: it exercises the whole product end to end —
+# config, adapter loading, the world, instrumentation, teardown and both report
+# formats — against a fake app with a known bug in it. If Populace ever stops
+# finding that bug, this build fails, which is the one regression that would
+# matter most.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 18 is the floor declared in package.json engines; 22 is what most
+        # people are actually on. Both must work.
+        node: ["18", "22"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # No install step, and that is the point: the engine has zero runtime
+      # dependencies. If this ever needs `npm ci` to pass, that claim is broken.
+      - name: Self-tests
+        run: node src/selftest.mjs
+
+      - name: Demo run against the bundled fake app
+        # The demo app has a deliberate RLS bug, so a clean exit code is the
+        # failure case here: it would mean Populace stopped reporting failures.
+        run: |
+          if node src/cli.mjs demo; then
+            echo "::error::The demo exited 0. The demo app has a known bug, so Populace should have found it and exited non-zero."
+            exit 1
+          fi
+          echo "Populace correctly found the demo app's bug and exited non-zero."
+
+      - name: The report is written, and is self-contained
+        run: |
+          test -f populace-report.json || { echo "::error::No JSON report"; exit 1; }
+          test -f populace-report.html || { echo "::error::No HTML report"; exit 1; }
+          if grep -qiE '<script|https?://[^"]*\.(js|css)' populace-report.html; then
+            echo "::error::The HTML report pulled in a script or a remote asset. It must stay self-contained."
+            exit 1
+          fi
+          echo "Both reports written; the HTML has no scripts and fetches nothing."
+
+      - name: A fresh scaffold refuses to run
+        # The whole honesty argument rests on this: a new adapter reports 2/13
+        # and stops, rather than passing while testing nothing.
+        run: |
+          mkdir -p /tmp/scaffold && cd /tmp/scaffold
+          node "$GITHUB_WORKSPACE/src/cli.mjs" init
+          if node "$GITHUB_WORKSPACE/src/cli.mjs" doctor; then
+            echo "::error::doctor exited 0 on an unimplemented scaffold. It must refuse."
+            exit 1
+          fi
+          echo "A fresh scaffold correctly refuses to run."
