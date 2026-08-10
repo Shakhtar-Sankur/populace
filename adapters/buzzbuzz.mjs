@@ -62,13 +62,17 @@ export function createAdapter(target) {
       // died on a foreign key instead — the report blamed `post` for a fault
       // that happened during signup. An unchecked error is the exact thing this
       // tool exists to catch, and it was in our own reference adapter.
-      const { error: profileError } = await client.from("profiles").upsert({
+      // INSERT, not upsert — mirroring the app. An upsert touches `phone`, and
+      // ON CONFLICT DO UPDATE needs SELECT on the columns it touches, which
+      // privacy_lockdown deliberately removes for that column. A duplicate just
+      // means this persona signed up on an earlier run.
+      const { error: profileError } = await client.from("profiles").insert({
         id: data.user.id,
         full_name: name,
         phone,
         updated_at: new Date().toISOString(),
       });
-      if (profileError) {
+      if (profileError && profileError.code !== "23505") {
         throw new Error(`profile row not created: ${profileError.message}`);
       }
 
@@ -139,10 +143,12 @@ export function createAdapter(target) {
     },
 
     async like(user, postId) {
+      // Mirrors the app: insert, and treat a duplicate as success. post_likes
+      // has no UPDATE policy, so an upsert on a repeat like is refused by RLS.
       const { error } = await user.client
         .from("post_likes")
-        .upsert({ post_id: postId, user_id: user.id });
-      if (error) throw error;
+        .insert({ post_id: postId, user_id: user.id });
+      if (error && error.code !== "23505") throw error;
     },
 
     async comment(user, postId, text) {
@@ -164,7 +170,10 @@ export function createAdapter(target) {
     },
 
     async sendMessage(user, conversationId, text) {
+      // chat_messages.id is a text primary key the client supplies — the app
+      // generates one per message, and the adapter was sending none at all.
       const { error } = await user.client.from("chat_messages").insert({
+        id: `msg_${crypto.randomUUID()}`,
         thread_id: conversationId,
         sender_id: user.id,
         body: text,
