@@ -29,7 +29,15 @@ export default {
   // Buzz Buzz's LIVE project. If BUZZBUZZ_TEST_URL is ever set to this by
   // accident, Populace refuses to start. Real drivers must never see invented
   // people on their map.
-  neverRunAgainst: ["https://rqzuuvlougzhynckvqzd.supabase.co"],
+  // Both of these are real. rqzuuvlougzhynckvqzd is the original project, which
+  // is still running; ypdaetbeexyepswyhbui became production on 2026-08-09.
+  // The clean run recorded against the latter happened while it was empty and
+  // had no real drivers on it — that window has closed, and it must not be
+  // simulated against again.
+  neverRunAgainst: [
+    "https://rqzuuvlougzhynckvqzd.supabase.co",
+    "https://ypdaetbeexyepswyhbui.supabase.co",
+  ],
 
   population: {
     agents: 8,
