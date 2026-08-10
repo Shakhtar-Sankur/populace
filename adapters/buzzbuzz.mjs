@@ -57,12 +57,20 @@ export function createAdapter(target) {
       }
       if (!data.user) throw new Error("no user returned");
 
-      await client.from("profiles").upsert({
+      // Check this. It used to be fire-and-forget, so when the profile row
+      // failed to insert the run carried on and every later post and group-join
+      // died on a foreign key instead — the report blamed `post` for a fault
+      // that happened during signup. An unchecked error is the exact thing this
+      // tool exists to catch, and it was in our own reference adapter.
+      const { error: profileError } = await client.from("profiles").upsert({
         id: data.user.id,
         full_name: name,
         phone,
         updated_at: new Date().toISOString(),
       });
+      if (profileError) {
+        throw new Error(`profile row not created: ${profileError.message}`);
+      }
 
       return { id: data.user.id, client, persona };
     },
@@ -145,8 +153,11 @@ export function createAdapter(target) {
     },
 
     async openConversation(user, otherUserId) {
+      // The function signature is start_direct_thread(p_other uuid). PostgREST
+      // resolves RPCs by argument NAME, so passing other_user_id looked like a
+      // missing function rather than a wrong argument.
       const { data, error } = await user.client.rpc("start_direct_thread", {
-        other_user_id: otherUserId,
+        p_other: otherUserId,
       });
       if (error) throw error;
       return data;
