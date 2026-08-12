@@ -1,87 +1,107 @@
 # Populace
 
-**A simulated population that uses your app through its real API — so you can test what needs more than one person.**
+**A simulated population that uses your app through its real API — so you can
+test what needs more than one person.**
 
-You cannot test presence, live sync, read receipts, notification fan-out, or
-"does deleting this remove it for everyone" while being only one human. And a
-social app with nobody in it tells you nothing about how it feels to use.
+Some bugs only exist when two people are using your app at the same time.
+Presence, live sync, read receipts, notification fan-out, "does deleting this
+remove it for everyone", and every permission rule you wrote — none of them can
+be tested by one developer with one account, however carefully they tap through
+every screen.
 
-Populace gives you a few dozen believable people who sign up, move around, post,
-like, comment, message each other and join groups — as **real authenticated
-users**, through **your own API**, with **your own permission rules applying**.
-Then it hands you a report on what broke.
-
-```
-  POPULACE REPORT — Demo App
-  test · 6 people · 80.6s
-────────────────────────────────────────────────────────────────────────
-  ✖ Problems found:
-      · 3.8% of API calls failed.
-────────────────────────────────────────────────────────────────────────
-  YOUR API UNDER 6 CONCURRENT USERS
-    method                  calls  fails      p50      p95
-    ✖like                      55     13     47ms     63ms
-        ↳ 13× new row violates row-level security policy "post_likes_insert"
-     reportLocation           132      0     31ms     47ms
-     recentPostsByOthers       57      0    374ms    467ms
-     ...
-  ✔ Cleanup complete — 6 accounts removed.
-```
-
-Two things that report found without being told where to look: a permission rule
-that rejects one in four writes, and a feed query running 8× slower than every
-other endpoint.
+Populace gives you a few dozen believable people who sign up, move around a real
+city, post, like, comment, message each other and join groups — as **real
+authenticated users**, through **your own API**, with **your own permission rules
+applying**. Then it hands you a report on what broke.
 
 ---
 
-## What it found the first time it was pointed at a real app
+## It has done this to a real, finished app
 
-**9 August 2026. Buzz Buzz, a gig-worker platform, against its live Supabase
-backend. Six simulated drivers across Manila and Mumbai, three and a half
-minutes. It found five bugs.**
+![Populace report for Buzz Buzz, 9 August 2026 — no failures across 400 API calls](docs/buzzbuzz-run-2026-08-09.svg)
 
-The app's author believed it was finished. It had been through a full manual
-test of every screen. Every one of these had survived that.
+That is the *second* run. The first one is the interesting one.
 
-| What broke | Why nobody had seen it |
-|---|---|
-| **Signup created no profile row** | The privacy work had restricted `insert` on `profiles` to a column list. `INSERT … ON CONFLICT DO UPDATE` needs `SELECT` on the columns it touches, and one of them was deliberately unreadable. Every account created after that had no profile — and every post and group-join then died on a foreign key pointing back at it. |
-| **Likes silently bounced** | `post_likes` has insert and delete policies and no `UPDATE` policy. The app upserted, so a repeat like became `ON CONFLICT DO UPDATE` and RLS refused it. The feed polls every 2.5 s, so a stale "already liked" made this ordinary. |
-| **Editing a profile failed the same way** | Same upsert, same unreadable column. |
-| **Two faults in this repo's own reference adapter** | One passed an RPC argument by the wrong name; the other ignored the error from a write, so the report blamed a later call for a failure that happened during signup. An unchecked error is the exact thing this tool exists to catch, and it was in our own code. |
+### What happened, in plain English
 
-The last one is the one worth dwelling on. The failure was reported honestly and
-still pointed at the wrong method, because a single unchecked error upstream
-turned a clear cause into three confusing symptoms. Fixing that one line changed
-the report from *"post failed 14 times"* to *"profile row not created: permission
-denied for table profiles"*.
+On **9 August 2026** we pointed Populace at **Buzz Buzz** — a gig-worker platform
+on Android with a live Postgres backend, 17 tables and 48 row-level-security
+policies. It was finished. It was signed. It had been through a full manual test
+of every screen by the person who wrote it, and it had passed.
 
-After all five were fixed:
+We started six simulated drivers: three in **Manila**, three in **Mumbai**. Each
+one signed up for a real account, set a profile, started driving a plausible
+route through real streets, and behaved like a person — posting about traffic,
+reading the feed, liking and commenting on what other drivers posted, opening
+conversations, sending messages, joining a group. Nobody told Populace where the
+bugs were. Nobody told it what to look for. It just used the app.
 
-```
-✔ No failures across 400 API calls.
+**Three and a half minutes later it had found five bugs.** The app that had
+passed a full manual test could not create a working account.
 
-  method                  calls  fails      p50      p95
-   reportLocation           172      0    414ms    571ms
-   recentPostsByOthers       61      0    112ms    129ms
-   like                      59      0    108ms    133ms
-   post                      22      0    109ms    128ms
-   comment                   22      0    114ms    141ms
-   openConversation          21      0    115ms    142ms
-   sendMessage               21      0    113ms    142ms
-   createUser                 6      0    436ms      1.6s
-   setProfile                 6      0    121ms    305ms
-   deleteUser                 6      0    130ms    293ms
+### The five, one at a time
 
-✔ Cleanup complete — 6 accounts removed.
-```
+**1. Signing up created no profile — every new user was broken.**
+A privacy fix earlier that day had restricted write access on the `profiles`
+table to a named list of columns, so that phone numbers could never be read by
+other users. The signup code used an *upsert*. In Postgres, `INSERT … ON CONFLICT
+DO UPDATE` needs `SELECT` permission on every column it touches — and one of
+those columns was, deliberately, unreadable. So the write was refused. Silently.
 
-6.2 km driven · 22 posts · 59 likes · 22 comments · 21 messages · 2 group joins.
-All thirteen contract methods exercised. Six accounts created, six removed.
+Every account created after that point existed in the auth system with no
+profile row behind it. Then every post, every comment and every group join died
+on a foreign key pointing back at the row that was never written.
 
-**What this does not claim.** Six users for three minutes is a correctness run,
-not a load test, and it ran against that project while it was still empty. The
-numbers above are latency under six concurrent users and nothing more.
+*Why one person never sees this:* their own account already exists. You only hit
+it on a **fresh signup**, and you only notice the damage when that new user tries
+to do something. Populace creates six brand-new accounts every run, which is why
+it hit the bug in the first fifteen seconds.
+
+**2. Likes bounced back, at random.**
+The `post_likes` table has an insert policy and a delete policy, and no `UPDATE`
+policy — by design. The app used an upsert here too, so the second time anyone
+liked a post, it became `ON CONFLICT DO UPDATE` and row-level security refused
+it. The feed refreshes every 2.5 seconds, so a slightly stale "already liked"
+state was completely ordinary, and one tap in four failed.
+
+*Why one person never sees this:* with one account and one slow thumb, you rarely
+double-like anything. Six people liking each other's posts on a 2.5-second poll
+do it constantly.
+
+**3. Editing your profile failed the same way.** Same upsert, same unreadable
+column, same silent refusal.
+
+**4 and 5. Two faults in Populace's own reference adapter.**
+One passed an RPC argument under the wrong name. The other is the one worth
+dwelling on: it **ignored the error returned by a write**. Because that failure
+was swallowed at signup, the report blamed a *later* method for it — so the run
+said "post failed 14 times" when the truth was "the profile row was never
+created."
+
+An unchecked error is the precise fault this tool exists to catch, and it was
+sitting in our own code. Making that one line throw changed the report from three
+confusing symptoms into one sentence naming the real cause: *profile row not
+created: permission denied for table profiles.*
+
+### The rule worth taking away
+
+> **You cannot upsert a column you cannot select.**
+
+Three of the five bugs were the same mistake wearing different clothes. It is
+invisible in code review, invisible in a single-user walkthrough, and obvious
+within seconds to six users signing up at once.
+
+### After the fixes
+
+All five were fixed and the run repeated: the report at the top of this page.
+**No failures across 400 API calls.** Six accounts created, six accounts deleted,
+nothing left behind.
+
+**What this does not claim.** Six users for three minutes is a **correctness run,
+not a load test**, and it ran against that project while it was still empty. The
+latencies above are what six concurrent users saw and nothing more. Populace has
+been pointed at exactly one real backend so far, and that backend was ours — the
+next one should be someone else's.
 
 ---
 
