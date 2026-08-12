@@ -50,6 +50,16 @@ const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue
 
 const ms = (v) => (v === null ? "—" : v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${v}ms`);
 
+// The Gigzen mark, same single path as the app (src/components/GigzenMark.tsx)
+// and the company site, so the three cannot drift apart. Native viewBox is
+// 0 0 64 64; 30/64 renders it at 30px.
+const MARK_D =
+  "M33.19 2 L60.1 14.82 L48.54 20.68 L33.66 13.4 L16.25 23.06 L15.14 23.85 L15.14 40.15 " +
+  "L33.19 47.91 L49.02 39.84 L49.34 38.73 L48.54 38.25 L30.34 33.66 L30.5 30.97 L44.43 24.01 " +
+  "L61.05 29.86 L61.05 46.64 L33.5 62 L2.95 46.64 L2.95 17.51 L33.03 2.16 Z";
+const GIGZEN_MARK =
+  `<g transform="translate(48,32) scale(${(30 / 64).toFixed(5)})" fill="${"#D3FF00"}"><path d="${MARK_D}"/></g>`;
+
 const W = 1200;
 const PAD = 48;
 const ROW_H = 34;
@@ -87,8 +97,9 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
   <rect width="${W}" height="${H}" rx="16" fill="${C.bg}"/>
   <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="15" fill="none" stroke="${C.rule}"/>
 
-  <text x="${PAD}" y="70" fill="${C.muted}" font-family="${MONO}" font-size="15" letter-spacing="0.22em">POPULACE REPORT</text>
-  <text x="${W - PAD}" y="70" fill="${C.muted}" font-family="${MONO}" font-size="15" text-anchor="end">${RUN.date}</text>
+  ${GIGZEN_MARK}
+  <text x="${PAD + 42}" y="63" fill="${C.ink}" font-family="${SANS}" font-size="21" font-weight="800" letter-spacing="0.14em">GIGZEN</text>
+  <text x="${W - PAD}" y="63" fill="${C.muted}" font-family="${MONO}" font-size="15" letter-spacing="0.18em" text-anchor="end">POPULACE REPORT · ${RUN.date.toUpperCase()}</text>
   <line x1="${PAD}" y1="92" x2="${W - PAD}" y2="92" stroke="${C.rule}"/>
 
   <text x="${PAD}" y="150" fill="${C.ink}" font-family="${SANS}" font-size="40" font-weight="700" letter-spacing="-0.02em">${RUN.app}</text>
@@ -113,9 +124,42 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
 
   <line x1="${PAD}" y1="${H - 108}" x2="${W - PAD}" y2="${H - 108}" stroke="${C.rule}"/>
   <text x="${PAD}" y="${H - 74}" fill="${C.body}" font-family="${SANS}" font-size="17">${RUN.activity}</text>
-  <text x="${PAD}" y="${H - 40}" fill="${C.muted}" font-family="${SANS}" font-size="15">Six users for three minutes is a correctness run, not a load test. These are latencies under six concurrent users and nothing more.</text>
+  <text x="${W - PAD}" y="${H - 74}" fill="${C.muted}" font-family="${MONO}" font-size="13" text-anchor="end">Gigzen Private Limited · Bhubaneswar, India</text>
+  <text x="${PAD}" y="${H - 42}" fill="${C.muted}" font-family="${SANS}" font-size="15">Six users for three minutes is a correctness run, not a load test. These are latencies under six concurrent users and nothing more.</text>
 </svg>
 `;
 
+// SVG has no layout engine, so nothing stops two <text> elements sharing a
+// line and printing on top of each other — which is exactly what the company
+// footer did on its first draft. Estimate widths and refuse to write an image
+// where a left- and a right-anchored label on the same baseline collide.
+const CHAR_W = { mono: 0.60, sans: 0.52 }; // em ratio, deliberately generous
+const baselines = new Map();
+for (const m of svg.matchAll(
+  /<text x="(\d+)" y="(\d+)"[^>]*?font-family="([^"]+)"[^>]*?font-size="(\d+)"([^>]*)>([^<]*)<\/text>/g,
+)) {
+  const [, x, y, family, size, rest, text] = m;
+  const w = text.length * Number(size) * (family.includes("mono") ? CHAR_W.mono : CHAR_W.sans);
+  const end = rest.includes('text-anchor="end"');
+  const span = end ? [Number(x) - w, Number(x)] : [Number(x), Number(x) + w];
+  const list = baselines.get(y) ?? [];
+  list.push({ span, text });
+  baselines.set(y, list);
+}
+for (const [y, items] of baselines) {
+  items.sort((a, b) => a.span[0] - b.span[0]);
+  for (let i = 0; i < items.length - 1; i++) {
+    if (items[i].span[1] > items[i + 1].span[0]) {
+      throw new Error(
+        `text collision on baseline y=${y}: "${items[i].text.slice(0, 40)}" ` +
+          `runs into "${items[i + 1].text.slice(0, 40)}"`,
+      );
+    }
+  }
+}
+
 writeFileSync(new URL("./buzzbuzz-run-2026-08-09.svg", import.meta.url), svg);
-console.log(`wrote docs/buzzbuzz-run-2026-08-09.svg — ${METHODS.length} methods, ${sum} calls`);
+console.log(
+  `wrote docs/buzzbuzz-run-2026-08-09.svg — ${METHODS.length} methods, ${sum} calls, ` +
+    `${baselines.size} baselines checked for collisions`,
+);
