@@ -34,6 +34,57 @@ other endpoint.
 
 ---
 
+## What it found the first time it was pointed at a real app
+
+**9 August 2026. Buzz Buzz, a gig-worker platform, against its live Supabase
+backend. Six simulated drivers across Manila and Mumbai, three and a half
+minutes. It found five bugs.**
+
+The app's author believed it was finished. It had been through a full manual
+test of every screen. Every one of these had survived that.
+
+| What broke | Why nobody had seen it |
+|---|---|
+| **Signup created no profile row** | The privacy work had restricted `insert` on `profiles` to a column list. `INSERT … ON CONFLICT DO UPDATE` needs `SELECT` on the columns it touches, and one of them was deliberately unreadable. Every account created after that had no profile — and every post and group-join then died on a foreign key pointing back at it. |
+| **Likes silently bounced** | `post_likes` has insert and delete policies and no `UPDATE` policy. The app upserted, so a repeat like became `ON CONFLICT DO UPDATE` and RLS refused it. The feed polls every 2.5 s, so a stale "already liked" made this ordinary. |
+| **Editing a profile failed the same way** | Same upsert, same unreadable column. |
+| **Two faults in this repo's own reference adapter** | One passed an RPC argument by the wrong name; the other ignored the error from a write, so the report blamed a later call for a failure that happened during signup. An unchecked error is the exact thing this tool exists to catch, and it was in our own code. |
+
+The last one is the one worth dwelling on. The failure was reported honestly and
+still pointed at the wrong method, because a single unchecked error upstream
+turned a clear cause into three confusing symptoms. Fixing that one line changed
+the report from *"post failed 14 times"* to *"profile row not created: permission
+denied for table profiles"*.
+
+After all five were fixed:
+
+```
+✔ No failures across 400 API calls.
+
+  method                  calls  fails      p50      p95
+   reportLocation           172      0    414ms    571ms
+   recentPostsByOthers       61      0    112ms    129ms
+   like                      59      0    108ms    133ms
+   post                      22      0    109ms    128ms
+   comment                   22      0    114ms    141ms
+   openConversation          21      0    115ms    142ms
+   sendMessage               21      0    113ms    142ms
+   createUser                 6      0    436ms      1.6s
+   setProfile                 6      0    121ms    305ms
+   deleteUser                 6      0    130ms    293ms
+
+✔ Cleanup complete — 6 accounts removed.
+```
+
+6.2 km driven · 22 posts · 59 likes · 22 comments · 21 messages · 2 group joins.
+All thirteen contract methods exercised. Six accounts created, six removed.
+
+**What this does not claim.** Six users for three minutes is a correctness run,
+not a load test, and it ran against that project while it was still empty. The
+numbers above are latency under six concurrent users and nothing more.
+
+---
+
 ## Try it in ten seconds
 
 No backend, no signup, nothing of yours touched — the demo adapter fakes a small
