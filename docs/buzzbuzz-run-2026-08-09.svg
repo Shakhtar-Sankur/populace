@@ -3,7 +3,7 @@
   <rect width="1200" height="986" rx="16" fill="#0B1014"/>
   <rect x="1" y="1" width="1198" height="984" rx="15" fill="none" stroke="#233039"/>
 
-  <g transform="translate(48,32) scale(0.46875)" fill="#D3FF00"><path d="M33.19 2 L60.1 14.82 L48.54 20.68 L33.66 13.4 L16.25 23.06 L15.14 23.85 L15.14 40.15 L33.19 47.91 L49.02 39.84 L49.34 38.73 L48.54 38.25 L30.34 33.66 L30.5 30.97 L44.43 24.01 L61.05 29.86 L61.05 46.64 L33.5 62 L2.95 46.64 L2.95 17.51 L33.03 2.16 Z"/></g>
+  <g transform="translate(48,40.5) scale(0.46875)" fill="#D3FF00"><path d="M33.19 2 L60.1 14.82 L48.54 20.68 L33.66 13.4 L16.25 23.06 L15.14 23.85 L15.14 40.15 L33.19 47.91 L49.02 39.84 L49.34 38.73 L48.54 38.25 L30.34 33.66 L30.5 30.97 L44.43 24.01 L61.05 29.86 L61.05 46.64 L33.5 62 L2.95 46.64 L2.95 17.51 L33.03 2.16 Z"/></g>
   <text x="90" y="63" fill="#EAF1F6" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="21" font-weight="800" letter-spacing="0.14em">GIGZEN</text>
   <text x="1152" y="63" fill="#6B7C89" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="15" letter-spacing="0.18em" text-anchor="end">POPULACE REPORT · 9 AUGUST 2026</text>
   <line x1="48" y1="92" x2="1152" y2="92" stroke="#233039"/>
