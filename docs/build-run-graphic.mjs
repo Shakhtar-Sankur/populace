@@ -57,8 +57,15 @@ const MARK_D =
   "M33.19 2 L60.1 14.82 L48.54 20.68 L33.66 13.4 L16.25 23.06 L15.14 23.85 L15.14 40.15 " +
   "L33.19 47.91 L49.02 39.84 L49.34 38.73 L48.54 38.25 L30.34 33.66 L30.5 30.97 L44.43 24.01 " +
   "L61.05 29.86 L61.05 46.64 L33.5 62 L2.95 46.64 L2.95 17.51 L33.03 2.16 Z";
+// Optically centred on the wordmark rather than hung from the same y. GIGZEN is
+// all caps at 21px on a 63 baseline, so its caps run roughly 48–63 and centre on
+// 55.5; a 30px mark centred there starts at 55.5 - 15.
+const MARK_SIZE = 30;
+const WORDMARK_BASELINE = 63;
+const WORDMARK_CAP_TOP = WORDMARK_BASELINE - 15;
+const MARK_TOP = (WORDMARK_CAP_TOP + WORDMARK_BASELINE) / 2 - MARK_SIZE / 2;
 const GIGZEN_MARK =
-  `<g transform="translate(48,32) scale(${(30 / 64).toFixed(5)})" fill="${"#D3FF00"}"><path d="${MARK_D}"/></g>`;
+  `<g transform="translate(48,${MARK_TOP}) scale(${(MARK_SIZE / 64).toFixed(5)})" fill="#D3FF00"><path d="${MARK_D}"/></g>`;
 
 const W = 1200;
 const PAD = 48;
