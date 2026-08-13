@@ -237,7 +237,18 @@ async function clean() {
   // accounts an earlier run created — including one that was killed mid-flight.
   const personas = buildPersonas(count, config.population.cities);
   let removed = 0;
-  let missing = 0;
+  let gone = 0;
+  const unverified = [];
+
+  // A failure to reach the API is NOT evidence that an account is gone. This
+  // used to be a bare catch that counted every error as "already gone", so a
+  // network blip made clean report all-clear while simulated people were still
+  // sitting in the customer's database — the exact false all-clear this product
+  // exists to prevent.
+  const isTransport = (e) => {
+    const s = String((e && (e.cause?.code || e.code || e.message)) || e);
+    return /fetch failed|ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|UND_ERR|network|socket hang up/i.test(s);
+  };
 
   console.log(`\n  Removing up to ${count} simulated accounts…\n`);
   for (const [i, persona] of personas.entries()) {
@@ -247,11 +258,25 @@ async function clean() {
       await agent.selfDestruct();
       removed += 1;
       console.log(`   ✓ ${persona.name}`);
-    } catch {
-      missing += 1;
+    } catch (err) {
+      if (isTransport(err)) {
+        unverified.push({ name: persona.name, why: String(err?.cause?.code || err?.message || err) });
+        console.log(`   ? ${persona.name} — could not reach the API`);
+      } else {
+        gone += 1;
+      }
     }
   }
-  console.log(`\n  ${removed} removed, ${missing} not found (already gone).\n`);
+
+  console.log(`\n  ${removed} removed, ${gone} already gone.`);
+  if (unverified.length) {
+    console.log(`\n  ✖ ${unverified.length} could NOT be verified:\n`);
+    for (const u of unverified) console.log(`      · ${u.name} — ${u.why}`);
+    console.log(`\n  These accounts may still exist. Re-run clean once the API is reachable.\n`);
+    process.exitCode = 1;
+  } else {
+    console.log("");
+  }
 }
 
 // ---------------------------------------------------------------- demo
