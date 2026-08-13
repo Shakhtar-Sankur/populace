@@ -173,6 +173,14 @@ export function renderReport(report) {
   } else if (report.cleanup?.failed?.length) {
     L.push(`  ⚠ CLEANUP INCOMPLETE — ${report.cleanup.failed.length} accounts could not be deleted:`);
     for (const f of report.cleanup.failed.slice(0, 5)) L.push(`      · ${f.name}: ${f.error}`);
+  } else if (report.cleanup?.notDeleted?.length) {
+    // Not a failure, and not a success either. Saying "complete" here would be
+    // claiming to have removed accounts that were never touched.
+    L.push(
+      `  ⚠ Cleanup partial — ${report.cleanup.removed} removed, ` +
+        `${report.cleanup.notDeleted.length} had nothing to delete:`,
+    );
+    for (const n of report.cleanup.notDeleted.slice(0, 5)) L.push(`      · ${n.name}: ${n.why}`);
   } else {
     L.push(`  ✔ Cleanup complete — ${report.cleanup.removed} accounts removed.`);
   }

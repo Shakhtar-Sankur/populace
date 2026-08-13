@@ -226,8 +226,19 @@ export class Agent {
     this.note(`joined ${group.id}`);
   }
 
+  /**
+   * Delete this person's account, and say whether that actually happened.
+   *
+   * It used to return undefined on the two paths where it does nothing — no
+   * deleteUser on the adapter, or no account to delete — which teardown counted
+   * as a successful removal. A run could therefore report "Cleanup complete —
+   * 6 accounts removed" having deleted none of them. The caller has to be able
+   * to tell "done" from "there was nothing to do".
+   */
   async selfDestruct() {
-    if (!this.can("deleteUser") || !this.user) return;
+    if (!this.can("deleteUser")) return { deleted: false, why: "adapter has no deleteUser" };
+    if (!this.user) return { deleted: false, why: "no account to delete" };
     await this.adapter.deleteUser(this.user);
+    return { deleted: true };
   }
 }

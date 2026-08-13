@@ -12,7 +12,8 @@ import { fileURLToPath } from "node:url";
 import { ConfigError, loadAdapter, loadConfig } from "./config.mjs";
 import { createMetrics, instrument } from "./instrument.mjs";
 import { buildReport, renderReport, writeReport } from "./report.mjs";
-import { canSignInOnly, CLEANUP_CAPABILITY, coverageOf } from "./contract.mjs";
+import { canSignInOnly } from "./contract.mjs";
+import { diagnose } from "./diagnose.mjs";
 import { World } from "./engine/world.mjs";
 import { buildPersonas, CITIES } from "./engine/personas.mjs";
 import { Agent } from "./engine/agent.mjs";
@@ -90,50 +91,55 @@ async function init() {
 
 async function doctor() {
   const { config, raw } = await open();
-  const coverage = coverageOf(raw);
 
-  console.log(`\n  Config    ${path.basename(config._file)}`);
+  // Reachability is the only part that needs the network, so it happens here
+  // and the judgement itself is made by diagnose(), which is pure and tested.
+  let reachable = null;
+  let reachError = "";
+  if (typeof raw.healthCheck === "function") {
+    try {
+      await raw.healthCheck();
+      reachable = true;
+    } catch (error) {
+      reachable = false;
+      reachError = error.message;
+    }
+  }
+
+  const d = diagnose({ config, adapter: raw, reachable });
+
+  console.log(`
+  Config    ${path.basename(config._file)}`);
   console.log(`  App       ${config.app || raw.name || "(unnamed)"}`);
-  console.log(`  Adapter   ${config.adapter}  →  ${coverage.label} contract methods`);
+  console.log(`  Adapter   ${config.adapter}  →  ${d.coverage.label} contract methods`);
   console.log(`  Env       ${config.environment}`);
-  console.log(`  Guarded   ${(config.neverRunAgainst || []).length} production host(s) denied`);
+  console.log(`  Guarded   ${d.guarded} production host(s) denied`);
   console.log(
-    `  Cleanup   ${canSignInOnly(raw)
+    `  Cleanup   ${d.cleanup === "read-only"
       ? "read-only — signIn lets clean check without creating"
       : "create-then-delete — no signIn, so clean writes to your auth table"}`,
   );
-
-  const blockers = [];
-
-  if (typeof raw.healthCheck === "function") {
-    process.stdout.write(`  Reaching  `);
-    try {
-      await raw.healthCheck();
-      console.log(`✔ target responded`);
-    } catch (error) {
-      console.log(`✖ ${error.message}`);
-      blockers.push(`the target is unreachable`);
-    }
+  if (reachable !== null) {
+    console.log(`  Reaching  ${reachable ? "✔ target responded" : `✖ ${reachError}`}`);
   }
 
-  if (coverage.missing.length) {
-    console.log(`\n  Not implemented — these will be SKIPPED, not tested:`);
-    for (const c of coverage.missing) {
+  if (d.coverage.missing.length) {
+    console.log(`
+  Not implemented — these will be SKIPPED, not tested:`);
+    for (const c of d.coverage.missing) {
       console.log(`    · ${c.method.padEnd(21)} ${c.required ? "(REQUIRED) " : ""}${c.exercises}`);
     }
   }
-  const missingRequired = coverage.missing.filter((c) => c.required);
-  if (missingRequired.length) {
-    blockers.push(
-      `${missingRequired.map((c) => c.method).join(" and ")} ${missingRequired.length > 1 ? "are" : "is"} required`,
-    );
-  }
 
-  if (blockers.length) {
-    console.log(`\n  ✖ Not ready — ${blockers.join("; ")}.\n`);
+  if (!d.ready) {
+    console.log(`
+  ✖ Not ready — ${d.blockers.join("; ")}.
+`);
     process.exitCode = 1;
   } else {
-    console.log(`\n  ✔ Ready. Start with:  populace run --agents 5 --minutes 3\n`);
+    console.log(`
+  ✔ Ready. Start with:  populace run --agents 5 --minutes 3
+`);
   }
 }
 
