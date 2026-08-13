@@ -268,7 +268,14 @@ async function clean() {
     }
   }
 
-  console.log(`\n  ${removed} removed, ${gone} already gone.`);
+  // Deliberately not "N removed". clean reaches an account through
+  // ensureAccount(), and the contract's createUser signs UP when the identity
+  // does not exist — so on an already-clean environment this creates each
+  // account and immediately deletes it again. The tick means "this identity is
+  // now absent", which is the guarantee worth making; it does NOT mean an
+  // abandoned account was found. Reporting it as "removed" invited exactly the
+  // wrong conclusion, including from me.
+  console.log(`\n  ${removed} identities confirmed absent, ${gone} unreachable-but-not-present.`);
   if (unverified.length) {
     console.log(`\n  ✖ ${unverified.length} could NOT be verified:\n`);
     for (const u of unverified) console.log(`      · ${u.name} — ${u.why}`);
