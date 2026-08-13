@@ -39,6 +39,35 @@ export function createAdapter(target) {
       if (res.status >= 500) throw new Error(`server returned ${res.status}`);
     },
 
+    /**
+     * Cleanup capability: does this identity exist, without creating it?
+     *
+     * `clean` used to reach accounts through createUser, which signs UP when
+     * the identity is absent — so tidying an already-clean project wrote a row
+     * to the customer's auth table for every agent, purely to prove the table
+     * was empty. This is the read-only path.
+     *
+     * Returns the user when present, null when definitively absent. A transport
+     * failure throws, because "I could not look" must never be recorded as
+     * "there was nothing there".
+     */
+    async signIn({ phone }) {
+      const client = createClient(url, key, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data, error } = await client.auth.signInWithPassword({
+        email: phoneToEmail(phone),
+        password: PASSWORD,
+      });
+      if (!error) return data.user ? { ...data.user, client } : null;
+
+      // Supabase answers a non-existent account and a wrong password with the
+      // same message. Both mean "no simulated account we can act on"; anything
+      // else is a real fault and must surface.
+      if (/invalid login credentials|email not confirmed/i.test(error.message)) return null;
+      throw new Error(error.message);
+    },
+
     async createUser({ name, phone, persona }) {
       const client = createClient(url, key, {
         auth: { persistSession: false, autoRefreshToken: false },

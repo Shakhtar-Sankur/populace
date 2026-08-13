@@ -56,6 +56,28 @@ export class Agent {
     return typeof this.adapter[method] === "function";
   }
 
+  /**
+   * Ask whether this person's account exists, WITHOUT creating it.
+   *
+   *   user      — it exists, and we are now signed in as them
+   *   null      — it definitively does not exist
+   *   undefined — the adapter cannot tell us (no signIn capability)
+   *
+   * The three-way answer matters: cleanup must never turn "I could not look"
+   * into "there was nothing there".
+   */
+  async findAccount() {
+    if (!this.can("signIn")) return undefined;
+    const user = await this.adapter.signIn({
+      name: this.persona.name,
+      phone: this.phone,
+      persona: this.persona,
+      index: this.index,
+    });
+    this.user = user || null;
+    return user || null;
+  }
+
   async ensureAccount() {
     this.user = await this.adapter.createUser({
       name: this.persona.name,

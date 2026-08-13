@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { ConfigError, loadAdapter, loadConfig } from "./config.mjs";
 import { createMetrics, instrument } from "./instrument.mjs";
 import { buildReport, renderReport, writeReport } from "./report.mjs";
-import { coverageOf } from "./contract.mjs";
+import { canSignInOnly, CLEANUP_CAPABILITY, coverageOf } from "./contract.mjs";
 import { World } from "./engine/world.mjs";
 import { buildPersonas, CITIES } from "./engine/personas.mjs";
 import { Agent } from "./engine/agent.mjs";
@@ -97,6 +97,11 @@ async function doctor() {
   console.log(`  Adapter   ${config.adapter}  →  ${coverage.label} contract methods`);
   console.log(`  Env       ${config.environment}`);
   console.log(`  Guarded   ${(config.neverRunAgainst || []).length} production host(s) denied`);
+  console.log(
+    `  Cleanup   ${canSignInOnly(raw)
+      ? "read-only — signIn lets clean check without creating"
+      : "create-then-delete — no signIn, so clean writes to your auth table"}`,
+  );
 
   const blockers = [];
 
@@ -230,56 +235,91 @@ function render(config, tickNo, totalTicks, world) {
 
 // ---------------------------------------------------------------- clean
 
+/**
+ * A failure to reach the API is not evidence that an account is gone.
+ *
+ * This distinction is the whole point of the function: cleanup that turns "I
+ * could not look" into "there was nothing there" hands the customer a false
+ * all-clear over their own database.
+ */
+const isTransportError = (e) => {
+  const s = String((e && (e.cause?.code || e.code || e.message)) || e);
+  return /fetch failed|ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|UND_ERR|network|socket hang up/i.test(s);
+};
+
 async function clean() {
   const { config, raw } = await open();
   const count = Number(flag("agents", config.population.agents));
-  // Identities are deterministic, so a fresh process can find and remove the
-  // accounts an earlier run created — including one that was killed mid-flight.
+  // Identities are deterministic, so a fresh process can find the accounts an
+  // earlier run created — including one that was killed mid-flight.
   const personas = buildPersonas(count, config.population.cities);
-  let removed = 0;
-  let gone = 0;
-  const unverified = [];
+  const lookOnly = canSignInOnly(raw);
 
-  // A failure to reach the API is NOT evidence that an account is gone. This
-  // used to be a bare catch that counted every error as "already gone", so a
-  // network blip made clean report all-clear while simulated people were still
-  // sitting in the customer's database — the exact false all-clear this product
-  // exists to prevent.
-  const isTransport = (e) => {
-    const s = String((e && (e.cause?.code || e.code || e.message)) || e);
-    return /fetch failed|ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|UND_ERR|network|socket hang up/i.test(s);
-  };
+  const found = [];        // existed, and we deleted it
+  const absent = [];       // definitively was not there
+  const unverified = [];   // could not tell — never counted as absent
 
-  console.log(`\n  Removing up to ${count} simulated accounts…\n`);
+  console.log(`
+  Checking ${count} simulated identities…
+`);
+  if (!lookOnly) {
+    console.log("  ! This adapter has no signIn, so an identity can only be reached");
+    console.log("    by createUser — which SIGNS UP when it does not exist. Cleaning");
+    console.log("    therefore creates and immediately deletes any identity that was");
+    console.log("    already absent, and cannot tell you which was which.");
+    console.log("    Implement signIn to make cleanup read-only. See adapters/contract.md.\n");
+  }
+
   for (const [i, persona] of personas.entries()) {
     const agent = new Agent(persona, raw, i, config.identity || {});
     try {
-      await agent.ensureAccount();
-      await agent.selfDestruct();
-      removed += 1;
-      console.log(`   ✓ ${persona.name}`);
+      if (lookOnly) {
+        const user = await agent.findAccount();
+        if (!user) {
+          absent.push(persona.name);
+          console.log(`   · ${persona.name} — not present`);
+          continue;
+        }
+        await agent.selfDestruct();
+        found.push(persona.name);
+        console.log(`   ✓ ${persona.name} — found and removed`);
+      } else {
+        // Fallback: create-or-sign-in, then delete. Guarantees absence
+        // afterwards; proves nothing about what was there before.
+        await agent.ensureAccount();
+        await agent.selfDestruct();
+        found.push(persona.name);
+        console.log(`   ✓ ${persona.name} — absent now`);
+      }
     } catch (err) {
-      if (isTransport(err)) {
+      if (isTransportError(err)) {
         unverified.push({ name: persona.name, why: String(err?.cause?.code || err?.message || err) });
         console.log(`   ? ${persona.name} — could not reach the API`);
       } else {
-        gone += 1;
+        // A non-transport failure on a look-only probe means the adapter said
+        // something definite; treat it as absent only when we were looking.
+        absent.push(persona.name);
       }
     }
   }
 
-  // Deliberately not "N removed". clean reaches an account through
-  // ensureAccount(), and the contract's createUser signs UP when the identity
-  // does not exist — so on an already-clean environment this creates each
-  // account and immediately deletes it again. The tick means "this identity is
-  // now absent", which is the guarantee worth making; it does NOT mean an
-  // abandoned account was found. Reporting it as "removed" invited exactly the
-  // wrong conclusion, including from me.
-  console.log(`\n  ${removed} identities confirmed absent, ${gone} unreachable-but-not-present.`);
+  if (lookOnly) {
+    console.log(`
+  ${found.length} found and removed, ${absent.length} were already absent.`);
+  } else {
+    console.log(`
+  ${found.length} identities absent now (created-then-deleted where they did not exist),`);
+    console.log(`  ${absent.length} unreachable-but-not-present.`);
+  }
+
   if (unverified.length) {
-    console.log(`\n  ✖ ${unverified.length} could NOT be verified:\n`);
+    console.log(`
+  ✖ ${unverified.length} could NOT be verified:
+`);
     for (const u of unverified) console.log(`      · ${u.name} — ${u.why}`);
-    console.log(`\n  These accounts may still exist. Re-run clean once the API is reachable.\n`);
+    console.log(`
+  These may still exist. Re-run clean once the API is reachable.
+`);
     process.exitCode = 1;
   } else {
     console.log("");

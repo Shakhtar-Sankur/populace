@@ -93,6 +93,47 @@ Reproduce it yourself: `node examples/token-expiry/expiry-demo.mjs`
 
 ---
 
+## Cleanup without writing to your database — `signIn`
+
+`signIn` is **not** a fourteenth contract method. It plays no part in a run, and
+it is not counted in your coverage score. It exists for one job: letting
+`populace clean` ask *"does this identity exist?"* without creating it.
+
+Without it, cleanup reaches an account through `createUser` — which signs **up**
+when the identity is absent. So cleaning an already-clean environment creates
+every simulated identity and immediately deletes it again, writing to your auth
+table purely to prove the table was empty. It also makes the per-account result
+meaningless: you cannot tell "found an abandoned account and removed it" from
+"there was nothing there".
+
+```js
+/**
+ *  user  — the account exists (attach whatever deleteUser will need)
+ *  null  — it definitively does not exist
+ *  throw — you could not find out
+ */
+async signIn({ name, phone, persona, index }) {
+  const { data, error } = await client.auth.signInWithPassword({
+    email: emailFor(phone),
+    password: PASSWORD,
+  });
+  if (!error) return data.user ? { ...data.user, client } : null;
+  if (/invalid login credentials/i.test(error.message)) return null;
+  throw new Error(error.message);   // never swallow — see below
+}
+```
+
+**Throw rather than return null when you could not look.** A network failure is
+not evidence of absence. `clean` separates the two and exits non-zero when any
+identity could not be verified, so nobody is handed a false all-clear over their
+own database.
+
+Implement it and `populace doctor` reports `Cleanup  read-only`. Leave it out and
+Populace still cleans up — it just says plainly that it is creating rows to do
+so, and that it cannot tell you what was already there.
+
+---
+
 ## Re-runs
 
 Identities are deterministic — agent *n* always gets the same phone number.
