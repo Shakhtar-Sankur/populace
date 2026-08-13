@@ -1,5 +1,5 @@
 {
-  "name": "populace",
+  "name": "@gigzen/populace",
   "version": "0.1.0",
   "description": "A simulated population that uses your app through its real API, so you can test what needs more than one person.",
   "type": "module",
@@ -13,16 +13,17 @@
   },
   "files": [
     "src",
-    "adapters/contract.md",
-    "adapters/template.mjs",
-    "README.md",
+    "adapters",
     "examples",
+    "populace.config.example.mjs",
+    "README.md",
     "LICENSE"
   ],
   "scripts": {
     "demo": "node src/cli.mjs demo",
     "doctor": "node src/cli.mjs doctor",
-    "test": "node src/selftest.mjs"
+    "test": "node src/selftest.mjs",
+    "prepublishOnly": "node src/selftest.mjs"
   },
   "engines": {
     "node": ">=18"
@@ -48,5 +49,8 @@
   "homepage": "https://github.com/Shakhtar-Sankur/populace#readme",
   "bugs": {
     "url": "https://github.com/Shakhtar-Sankur/populace/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
