@@ -14,12 +14,27 @@ import { Agent } from "./engine/agent.mjs";
 import { buildPersonas } from "./engine/personas.mjs";
 import { createMetrics, instrument, normaliseError, summarise } from "./instrument.mjs";
 import { buildReport, renderReport } from "./report.mjs";
-import { coverageOf, isStub } from "./contract.mjs";
+import { canSignInOnly, CONTRACT_METHODS, coverageOf, isStub } from "./contract.mjs";
 
 let failed = 0;
+const pending = [];
 const check = (name, fn) => {
   try {
-    fn();
+    const out = fn();
+    // Some checks are async. Keep the sync path exactly as it was and let an
+    // async one settle before the process reports a total.
+    if (out && typeof out.then === "function") {
+      pending.push(
+        out.then(
+          () => console.log(`  ✔ ${name}`),
+          (error) => {
+            failed += 1;
+            console.log(`  ✖ ${name}\n      ${error.message}`);
+          },
+        ),
+      );
+      return;
+    }
     console.log(`  ✔ ${name}`);
   } catch (error) {
     failed += 1;
@@ -227,6 +242,106 @@ check("skipped methods are listed with what they would have tested", () => {
   assert.ok(skipped?.wouldHaveTested.length > 10, "a gap should say what it costs you");
 });
 
+// --- 4b. cleanup that does not write to the customer's database -----------
+// clean reaches an account through createUser, which SIGNS UP when the identity
+// is absent. On an already-clean environment that creates every simulated
+// identity just to delete it again — writing to someone else's auth table to
+// prove the table is empty — and makes the per-account result useless as
+// evidence of what was actually stranded. `signIn` is the read-only path.
+
+function appWithSignIn({ existing = [] } = {}) {
+  const db = { users: [...existing], signUps: 0, signIns: 0, deleted: [] };
+  return {
+    db,
+    name: "with-signin",
+    async createUser({ name, phone }) {
+      db.signUps += 1;
+      const found = db.users.find((u) => u.phone === phone);
+      if (found) return found;
+      const u = { id: `u${db.users.length}`, name, phone };
+      db.users.push(u);
+      return u;
+    },
+    async signIn({ phone }) {
+      db.signIns += 1;
+      return db.users.find((u) => u.phone === phone) || null;
+    },
+    async deleteUser(user) {
+      db.deleted.push(user.phone);
+      db.users = db.users.filter((u) => u.phone !== user.phone);
+    },
+  };
+}
+
+function appWithoutSignIn() {
+  const db = { users: [], signUps: 0, deleted: [] };
+  return {
+    db,
+    name: "no-signin",
+    async createUser({ name, phone }) {
+      db.signUps += 1;
+      const found = db.users.find((u) => u.phone === phone);
+      if (found) return found;
+      const u = { id: `u${db.users.length}`, name, phone };
+      db.users.push(u);
+      return u;
+    },
+    async deleteUser(user) {
+      db.deleted.push(user.phone);
+      db.users = db.users.filter((u) => u.phone !== user.phone);
+    },
+  };
+}
+
+const cleanupPersona = buildPersonas(1, ["manila"])[0];
+const phoneOfAgent0 = new Agent(cleanupPersona, appWithoutSignIn(), 0, {}).phone;
+
+check("signIn is a capability, not a fourteenth contract method", () => {
+  const withIt = coverageOf(appWithSignIn());
+  const withoutIt = coverageOf(appWithoutSignIn());
+  assert.equal(
+    withIt.label,
+    withoutIt.label,
+    "implementing signIn must not change the coverage denominator",
+  );
+  assert.ok(
+    !CONTRACT_METHODS.includes("signIn"),
+    "signIn must stay out of the simulation contract",
+  );
+  assert.ok(canSignInOnly(appWithSignIn()), "should be detected when present");
+  assert.ok(!canSignInOnly(appWithoutSignIn()), "should be absent when not implemented");
+  assert.ok(!canSignInOnly({ signIn: () => {} }), "an empty stub is not a capability");
+});
+
+check("with signIn, checking an absent identity creates nothing", async () => {
+  const app = appWithSignIn();
+  const agent = new Agent(cleanupPersona, app, 0, {});
+  const found = await agent.findAccount();
+  assert.equal(found, null, "should report definitively absent");
+  assert.equal(app.db.signUps, 0, "must not sign anybody up while looking");
+  assert.equal(app.db.users.length, 0, "must not leave a row behind");
+});
+
+check("with signIn, a stranded identity is found and removed", async () => {
+  const app = appWithSignIn({
+    existing: [{ id: "u0", name: "left over", phone: phoneOfAgent0 }],
+  });
+  const agent = new Agent(cleanupPersona, app, 0, {});
+  const found = await agent.findAccount();
+  assert.ok(found, "should find the account that is really there");
+  await agent.selfDestruct();
+  assert.deepEqual(app.db.deleted, [phoneOfAgent0], "should delete exactly that account");
+  assert.equal(app.db.signUps, 0, "still no sign-ups");
+});
+
+check("without signIn, the answer is 'cannot tell' rather than 'absent'", async () => {
+  const app = appWithoutSignIn();
+  const agent = new Agent(cleanupPersona, app, 0, {});
+  const answer = await agent.findAccount();
+  assert.equal(answer, undefined, "undefined means unknown — never conflate it with null");
+  assert.equal(app.db.signUps, 0, "asking must not create anything either");
+});
+
 // --- 5. session expiry ----------------------------------------------------
 // Tokens expire. Without a refresh, every agent starts failing at once and the
 // run reports a catastrophe that belongs to us, not to the customer's app —
@@ -411,6 +526,12 @@ check("the report renders without throwing", () => {
     assert.ok(report.verdict.problems.some((p) => p.includes("inside Populace")));
   });
 }
+
+// Async checks must settle before the total is printed. Exiting synchronously
+// would report "all passed" while an async assertion was still in flight — a
+// test suite lying about its own result, in a product whose entire argument is
+// that a report must never claim more than it has earned.
+await Promise.all(pending);
 
 console.log(
   failed

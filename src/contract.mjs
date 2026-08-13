@@ -57,6 +57,42 @@ export const CONTRACT = [
 export const CONTRACT_METHODS = CONTRACT.map((c) => c.method);
 
 /**
+ * `signIn` is a CLEANUP CAPABILITY, deliberately not a fourteenth contract
+ * method.
+ *
+ * It takes no part in a run. It exists only so `clean` can ask "does this
+ * identity exist?" without creating it. Without it, clean reaches an account
+ * through createUser — which signs UP when the identity is absent — so
+ * cleaning an already-clean environment writes a row to the customer's auth
+ * table for every agent purely to prove the table is empty, and the per-account
+ * result cannot distinguish "found and removed" from "was never there".
+ *
+ * Kept out of CONTRACT on purpose: coverage is a statement about how much of
+ * the customer's app a RUN exercises, and folding a cleanup-only capability
+ * into that denominator would drop every existing adapter to 13/14 and make the
+ * published "13-method contract" wrong without anything having got worse.
+ * It is reported separately instead.
+ *
+ * Shape:
+ *   async signIn({ name, phone, persona, index })
+ *     -> user   when the account exists
+ *     -> null   when it definitively does not
+ *     throws    on transport or unexpected failure (never swallow — a failure
+ *               to look is not evidence of absence)
+ */
+export const CLEANUP_CAPABILITY = {
+  method: "signIn",
+  exercises:
+    "checking whether a simulated identity exists without creating it, so cleanup never writes to your auth table",
+};
+
+/** True when the adapter can be asked about an account without creating one. */
+export function canSignInOnly(adapter) {
+  const fn = adapter?.[CLEANUP_CAPABILITY.method];
+  return typeof fn === "function" && !isStub(fn);
+}
+
+/**
  * A method that exists but does nothing is NOT coverage.
  *
  * Without this, a freshly scaffolded adapter reports 12/12 and produces a
