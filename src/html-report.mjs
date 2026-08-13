@@ -67,7 +67,9 @@ export function renderHtmlReport(report) {
     ? `<div class="chip warn">Cleanup skipped — ${r.population.signedIn} accounts still live</div>`
     : r.cleanup?.failed?.length
       ? `<div class="chip bad">Cleanup incomplete — ${r.cleanup.failed.length} accounts could not be deleted</div>`
-      : `<div class="chip ok">Cleanup complete — ${r.cleanup?.removed ?? 0} accounts removed</div>`;
+      : r.cleanup?.notDeleted?.length
+        ? `<div class="chip warn">Cleanup partial — ${r.cleanup.removed} removed, ${r.cleanup.notDeleted.length} had nothing to delete</div>`
+        : `<div class="chip ok">Cleanup complete — ${r.cleanup?.removed ?? 0} accounts removed</div>`;
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">

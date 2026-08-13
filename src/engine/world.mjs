@@ -86,12 +86,29 @@ export class World {
   }
 
   /** Remove every account this run created, through the app's own delete path. */
+  /**
+   * Three outcomes, never two. An account that was deleted, one there was
+   * nothing to delete for, and one whose deletion failed are different facts,
+   * and a cleanup line that merges the first two tells the customer their
+   * environment is clear when it may not be.
+   *
+   * `notDeleted` rather than `skipped`: the report already uses `skipped` as a
+   * boolean for --keep, and an empty array is truthy, so reusing the name would
+   * have made every clean run claim it had left its agents in place.
+   */
   async teardown() {
-    const results = { removed: 0, failed: [] };
+    const results = { removed: 0, notDeleted: [], failed: [] };
     for (const agent of this.agents) {
       try {
-        await agent.selfDestruct();
-        results.removed += 1;
+        const outcome = await agent.selfDestruct();
+        if (outcome && outcome.deleted) {
+          results.removed += 1;
+        } else {
+          results.notDeleted.push({
+            name: agent.persona.name,
+            why: (outcome && outcome.why) || "nothing to delete",
+          });
+        }
       } catch (error) {
         results.failed.push({ name: agent.persona.name, error: String(error.message || error) });
       }

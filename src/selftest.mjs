@@ -15,6 +15,7 @@ import { buildPersonas } from "./engine/personas.mjs";
 import { createMetrics, instrument, normaliseError, summarise } from "./instrument.mjs";
 import { buildReport, renderReport } from "./report.mjs";
 import { canSignInOnly, CONTRACT_METHODS, coverageOf, isStub } from "./contract.mjs";
+import { diagnose } from "./diagnose.mjs";
 
 let failed = 0;
 const pending = [];
@@ -340,6 +341,117 @@ check("without signIn, the answer is 'cannot tell' rather than 'absent'", async 
   const answer = await agent.findAccount();
   assert.equal(answer, undefined, "undefined means unknown — never conflate it with null");
   assert.equal(app.db.signUps, 0, "asking must not create anything either");
+});
+
+// --- 4c. what `doctor` decides -------------------------------------------
+// doctor is the one thing standing between a customer and a run that proves
+// nothing. Its judgement now lives in diagnose(), so it can be tested without
+// spawning a process and matching strings.
+
+// Every method here needs a real body: an empty one is deliberately not
+// counted as coverage, so `async deleteUser() {}` would read as missing and
+// this fixture would block on its own required method rather than on the
+// condition under test.
+const fullApp = () => ({
+  name: "full",
+  async createUser() { return { id: "u" }; },
+  async deleteUser(u) { return u?.id ?? null; },
+  async signIn() { return null; },
+});
+const noDelete = () => ({ name: "partial", async createUser() { return { id: "u" }; } });
+const cfg = { neverRunAgainst: ["https://prod.example"], _file: "x", environment: "test" };
+
+check("doctor is ready only when nothing blocks it", () => {
+  const d = diagnose({ config: cfg, adapter: fullApp(), reachable: true });
+  assert.equal(d.ready, true);
+  assert.deepEqual(d.blockers, []);
+  assert.equal(d.guarded, 1, "should count the denied production hosts");
+});
+
+check("doctor blocks when a REQUIRED method is missing", () => {
+  const d = diagnose({ config: cfg, adapter: noDelete(), reachable: true });
+  assert.equal(d.ready, false);
+  assert.ok(
+    d.blockers.some((b) => b.includes("deleteUser")),
+    "must name the missing requirement, not just refuse",
+  );
+});
+
+check("doctor blocks when the target cannot be reached", () => {
+  const d = diagnose({ config: cfg, adapter: fullApp(), reachable: false });
+  assert.equal(d.ready, false);
+  assert.ok(d.blockers.some((b) => b.includes("unreachable")));
+});
+
+check("doctor reports both blockers when both apply", () => {
+  const d = diagnose({ config: cfg, adapter: noDelete(), reachable: false });
+  assert.equal(d.blockers.length, 2, "fixing one must not hide the other");
+});
+
+check("doctor does not invent a reachability verdict it never checked", () => {
+  const d = diagnose({ config: cfg, adapter: fullApp(), reachable: null });
+  assert.equal(d.ready, true, "no healthCheck is not the same as unreachable");
+  assert.deepEqual(d.blockers, []);
+});
+
+check("doctor names the cleanup mode", () => {
+  assert.equal(diagnose({ config: cfg, adapter: fullApp(), reachable: true }).cleanup, "read-only");
+  assert.equal(
+    diagnose({ config: cfg, adapter: noDelete(), reachable: true }).cleanup,
+    "create-then-delete",
+  );
+});
+
+// --- 4d. teardown must not claim removals it did not make ------------------
+// selfDestruct() does nothing when there is no account and no deleteUser, and
+// teardown counted both as successes — so a run could print "Cleanup complete
+// — 6 accounts removed" having deleted none of them.
+
+async function tornDown({ deletable, withUser }) {
+  const deleted = [];
+  const app = {
+    name: "t",
+    async createUser() { return { id: "u" }; },
+    ...(deletable ? { async deleteUser(u) { deleted.push(u.id); } } : {}),
+  };
+  const personas = buildPersonas(2, ["manila"]);
+  const world = new World({ adapter: app, personas, identity: {}, hooks: {} });
+  world.agents = personas.map((p, i) => {
+    const a = new Agent(p, app, i, {});
+    a.user = withUser ? { id: `u${i}` } : null;
+    return a;
+  });
+  return { result: await world.teardown(), deleted };
+}
+
+check("teardown counts only the accounts it actually deleted", async () => {
+  const { result, deleted } = await tornDown({ deletable: true, withUser: true });
+  assert.equal(result.removed, 2);
+  assert.equal(deleted.length, 2, "and really called deleteUser for each");
+  assert.equal(result.notDeleted.length, 0);
+  assert.equal(result.failed.length, 0);
+});
+
+check("teardown does not report a removal when there was no account", async () => {
+  const { result, deleted } = await tornDown({ deletable: true, withUser: false });
+  assert.equal(result.removed, 0, "claiming these were removed is the bug this covers");
+  assert.equal(deleted.length, 0, "nothing was deleted");
+  assert.equal(result.notDeleted.length, 2);
+  assert.ok(result.notDeleted[0].why.length > 0, "and says why for each");
+});
+
+check("teardown does not report a removal when the adapter cannot delete", async () => {
+  const { result } = await tornDown({ deletable: false, withUser: true });
+  assert.equal(result.removed, 0);
+  assert.equal(result.notDeleted.length, 2);
+  assert.ok(result.notDeleted[0].why.includes("deleteUser"));
+});
+
+check("a cleanup that removed nothing is never rendered as complete", async () => {
+  const { result } = await tornDown({ deletable: true, withUser: false });
+  const text = renderReport({ ...cleanReport, cleanup: result });
+  assert.ok(!/Cleanup complete/.test(text), "must not say complete");
+  assert.ok(/Cleanup partial/.test(text), "must say what actually happened");
 });
 
 // --- 5. session expiry ----------------------------------------------------
