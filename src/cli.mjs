@@ -15,6 +15,7 @@ import { buildReport, renderReport, writeReport } from "./report.mjs";
 import { canSignInOnly } from "./contract.mjs";
 import { isTransportError } from "./net.mjs";
 import { diagnose } from "./diagnose.mjs";
+import { PACKAGE_NAME, VERSION } from "./version.mjs";
 import { World } from "./engine/world.mjs";
 import { buildPersonas, CITIES } from "./engine/personas.mjs";
 import { Agent } from "./engine/agent.mjs";
@@ -387,17 +388,86 @@ async function demo() {
 
 // ---------------------------------------------------------------- main
 
-const commands = { init, doctor, run, clean, demo };
+// ---------------------------------------------------------------- report
+
+/**
+ * Re-open a report from an earlier run.
+ *
+ * Runs are expensive and their output scrolls away. Without this the only way
+ * to see a past verdict again is to read raw JSON, which is not what the
+ * terminal renderer exists for.
+ */
+async function report() {
+  const file = path.resolve(process.cwd(), flag("file", "populace-report.json"));
+  if (!fs.existsSync(file)) {
+    console.error(`
+  ✖ No report at ${displayPath(file)}
+
+    Point at one with:  populace report --file path/to/populace-report.json
+    Or make one with:   populace run
+`);
+    process.exitCode = 1;
+    return;
+  }
+
+  let saved;
+  try {
+    saved = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (error) {
+    console.error(`
+  ✖ ${displayPath(file)} is not readable JSON: ${error.message}
+`);
+    process.exitCode = 1;
+    return;
+  }
+  if (!saved?.api || !saved?.verdict) {
+    console.error(`
+  ✖ ${displayPath(file)} is JSON but not a Populace report.
+`);
+    process.exitCode = 1;
+    return;
+  }
+
+  // A report written by a different version may lack fields this renderer
+  // expects. Say so rather than crashing on a missing property.
+  if (saved.populace?.version && saved.populace.version !== VERSION) {
+    console.log(`
+  ⚠ Written by Populace ${saved.populace.version}; you are running ${VERSION}.`);
+  }
+  console.log(renderReport(saved));
+  const html = file.replace(/\.json$/, "") + ".html";
+  if (fs.existsSync(html)) console.log(`  Shareable page:  ${displayPath(html)}
+`);
+
+  // Same exit code the original run used, so this is usable in a CI gate.
+  if (saved.verdict.status !== "clean") process.exitCode = 1;
+}
+
+// ---------------------------------------------------------------- version
+
+async function version() {
+  console.log(`${PACKAGE_NAME} ${VERSION}  ·  node ${process.version}  ·  ${process.platform}`);
+}
+
+const commands = { init, doctor, run, clean, demo, report, version };
+
+// `--version` and `-v` are what people actually type.
+if (has("version") || argv[0] === "-v") {
+  await version();
+  process.exit(0);
+}
 
 if (!commands[command]) {
   console.log(`
-  populace — a simulated population for testing your app
+  populace ${VERSION} — a simulated population for testing your app
 
     populace demo                     see it work, against a fake app, right now
     populace init                     scaffold a config and adapter here
     populace doctor                   check everything WITHOUT running
     populace run                      bring the population to life
     populace clean                    delete accounts a run created
+    populace report                   re-open the report from an earlier run
+    populace version                  print version and environment
 
   Options
     --config <path>                   default ./populace.config.mjs
@@ -406,6 +476,16 @@ if (!commands[command]) {
     --cities <a,b>                    ${Object.keys(CITIES).join(", ")}
     --report <path>                   where to write the report
     --keep                            leave accounts in place after a run
+    --file <path>                     which report to re-open (report)
+
+  Resilience — see populace.config.mjs to change these
+    timeoutMs     20000               give up waiting on one call
+    retries       3                   extra tries for calls that never landed
+    giveUpAfter   12                  unreachable calls before stopping the run
+
+  Exit codes
+    0                                 clean — nothing failed
+    1                                 problems found, inconclusive, or refused
 `);
 } else {
   commands[command]().catch((error) => {
