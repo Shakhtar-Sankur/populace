@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Populace — a simulated population that tests your app for real</title>
+<meta name="description" content="Populace brings a population of simulated people to life inside your app and drives it through its real API. It found five real bugs in a finished, shipped application. Built by Gigzen.">
+<meta name="author" content="Gigzen">
+<meta property="og:title" content="Populace — a simulated population that tests your app for real">
+<meta property="og:description" content="Multi-user testing that uses your app the way people do. Five real bugs found in a shipped app. Zero runtime dependencies.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#070C0E">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0}
+img,svg,canvas{max-width:100%}
+
+:root{
+  /* Night dispatch — sodium-vapour amber and signal cyan on blue-black.
+     Shared with the Gigzen product page so the two read as one family. */
+  --night:#070C0E; --night-2:#0C1316; --night-3:#131C20; --night-4:#18242A;
+  --edge:#1E2A2F; --edge-2:#27363C;
+  --amber:#FF9A3C; --amber-dk:#C26A18;
+  --cyan:#4ED8D0; --cyan-dk:#2AA79F;
+  --red:#FF6B6B; --green:#5BD98A;
+  --dim:#7B8C94; --chalk:#E8EFF1; --white:#FFFFFF;
+
+  --bg:var(--night); --bg-2:var(--night-2); --bg-3:var(--night-3);
+  --rule:var(--edge); --ink:var(--chalk); --body:#9FB0B8; --muted:var(--dim);
+
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --wrap:1140px;
+}
+/* The page is dark by design — it is a terminal product. Light mode softens
+   the ground rather than inverting it, so the identity survives. */
+:root[data-theme="light"]{
+  --bg:#F7F9F9; --bg-2:#FFFFFF; --bg-3:#EEF3F4;
+  --rule:#DCE5E7; --ink:#0B1416; --body:#3C4C52;
+  /* Measured, not guessed. The first pass used #66787F and #B85C00, which came
+     out at 4.36 and 4.35 against the light ground — just under the 4.5 that
+     normal-size text needs. These clear it. */
+  --muted:#5A6B72;
+  --amber:#9C4E00; --cyan:#0E7C74;
+  /* The status colours were tuned for the dark ground and left unset here,
+     which put the severity labels and pills at 2.6 on white — the bug list is
+     the most important content on the page, so it cannot be the least legible. */
+  --red:#B3261E; --green:#136B3E;
+}
+
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+
+body{
+  background:var(--bg); color:var(--body);
+  font-family:var(--sans); font-size:17px; line-height:1.6;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{margin:0; color:var(--ink); line-height:1.15; font-weight:640; letter-spacing:-.02em}
+h1{font-size:clamp(38px,7vw,74px); letter-spacing:-.035em}
+h2{font-size:clamp(27px,4vw,42px)}
+h3{font-size:clamp(19px,2.2vw,23px)}
+p{margin:0 0 1em}
+a{color:var(--cyan); text-decoration:none}
+a:hover{text-decoration:underline}
+code,kbd{font-family:var(--mono); font-size:.9em}
+strong{color:var(--ink); font-weight:640}
+
+.wrap{max-width:var(--wrap); margin:0 auto; padding:0 24px}
+.eyebrow{
+  font-family:var(--mono); font-size:11.5px; font-weight:700; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--amber); margin:0 0 14px;
+}
+.lede{font-size:clamp(17px,2vw,21px); color:var(--body); max-width:62ch}
+section{padding:clamp(64px,9vw,116px) 0; position:relative}
+.rule{border-top:1px solid var(--rule)}
+
+/* ---------------------------------------------------------------- nav */
+.nav{
+  position:sticky; top:0; z-index:60;
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:saturate(160%) blur(14px);
+  border-bottom:1px solid var(--rule);
+}
+.nav-in{max-width:var(--wrap); margin:0 auto; padding:0 24px; height:60px;
+  display:flex; align-items:center; gap:26px}
+.brand{display:flex; align-items:center; gap:10px; color:var(--ink); font-weight:680; letter-spacing:-.02em}
+.brand:hover{text-decoration:none}
+.dot{width:9px; height:9px; border-radius:50%; background:var(--amber);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--amber) 22%,transparent); flex:none}
+.navlinks{display:flex; gap:22px; margin-left:auto; align-items:center}
+.navlinks a{color:var(--muted); font-size:14.5px; font-weight:520}
+.navlinks a:hover{color:var(--ink); text-decoration:none}
+.navlinks .cta{
+  color:var(--night); background:var(--amber); padding:8px 15px; border-radius:8px;
+  font-weight:640;
+}
+:root[data-theme="light"] .navlinks .cta{color:#fff}
+.navlinks .cta:hover{background:var(--amber-dk); text-decoration:none}
+.burger{display:none; margin-left:auto; background:none; border:1px solid var(--rule);
+  color:var(--ink); border-radius:8px; width:40px; height:34px; cursor:pointer; font-size:15px}
+@media(max-width:820px){
+  .navlinks{
+    position:fixed; inset:60px 0 auto 0; flex-direction:column; align-items:stretch;
+    gap:0; background:var(--bg-2); border-bottom:1px solid var(--rule);
+    padding:8px 20px 18px; display:none;
+  }
+  .navlinks.open{display:flex}
+  .navlinks a{padding:14px 4px; font-size:16px; border-bottom:1px solid var(--rule)}
+  .navlinks .cta{margin-top:12px; text-align:center; border-bottom:0}
+  .burger{display:block}
+}
+
+/* ---------------------------------------------------------------- hero */
+.hero{position:relative; overflow:hidden; padding:clamp(70px,11vw,132px) 0 clamp(56px,8vw,96px)}
+#grid{position:absolute; inset:0; width:100%; height:100%; display:block; opacity:.62}
+.hero-veil{
+  position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(1100px 520px at 22% 8%, color-mix(in srgb,var(--amber) 11%,transparent), transparent 62%),
+    radial-gradient(900px 460px at 88% 92%, color-mix(in srgb,var(--cyan) 10%,transparent), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb,var(--bg) 34%,transparent) 0%, color-mix(in srgb,var(--bg) 78%,transparent) 72%, var(--bg) 100%);
+}
+.hero-in{position:relative; z-index:2}
+.hero h1{max-width:17ch; color:var(--white)}
+:root[data-theme="light"] .hero h1{color:var(--ink)}
+.hero .lede{margin-top:22px; font-size:clamp(17px,2.1vw,22px)}
+.hero-cta{display:flex; flex-wrap:wrap; gap:12px; margin-top:32px}
+.btn{
+  display:inline-flex; align-items:center; gap:9px; padding:13px 22px; border-radius:10px;
+  font-weight:640; font-size:15.5px; border:1px solid transparent; cursor:pointer;
+  transition:transform .16s ease, background .16s ease, border-color .16s ease;
+}
+.btn:hover{text-decoration:none; transform:translateY(-1px)}
+.btn-primary{background:var(--amber); color:#1A0F03}
+.btn-primary:hover{background:#FFAE5E}
+.btn-ghost{border-color:var(--edge-2); color:var(--ink); background:color-mix(in srgb,var(--bg-2) 70%,transparent)}
+.btn-ghost:hover{border-color:var(--cyan); color:var(--ink)}
+
+.trust{display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:30px; font-size:13.5px; color:var(--muted); font-family:var(--mono)}
+.trust b{color:var(--cyan); font-weight:600}
+
+/* ---------------------------------------------------------------- terminal */
+.term{
+  background:#05090B; border:1px solid var(--edge); border-radius:12px; overflow:hidden;
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.85); font-family:var(--mono);
+}
+:root[data-theme="light"] .term{background:#08110F; box-shadow:0 20px 50px -26px rgba(0,0,0,.35)}
+.term-bar{display:flex; align-items:center; gap:7px; padding:11px 14px; background:#0A1013; border-bottom:1px solid var(--edge)}
+.term-bar i{width:11px; height:11px; border-radius:50%; display:block}
+.term-bar .t{margin-left:10px; font-size:11.5px; color:#6C7F87; letter-spacing:.05em}
+.term-body{padding:18px 18px 22px; font-size:13.2px; line-height:1.72; color:#C6D6DC;
+  white-space:pre-wrap; word-break:break-word; min-height:290px; overflow-x:auto}
+/* The terminal keeps a dark ground in BOTH themes, so it must NOT inherit the
+   page palette. Pointing these at --green/--red put dark-on-dark text at 2.9
+   the moment light mode gained its own status colours. Fixed values, measured
+   against #05090B: all clear 4.5. */
+.term-body .c{color:#4ED8D0} .term-body .a{color:#FF9A3C}
+.term-body .g{color:#5BD98A} .term-body .r{color:#FF8080}
+.term-body .d{color:#81949C}
+.caret{display:inline-block; width:8px; height:15px; background:var(--amber);
+  vertical-align:-2px; animation:blink 1.05s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------------------------------------------------------------- layout bits */
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:clamp(28px,5vw,64px); align-items:center}
+.grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:20px}
+.grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:16px}
+@media(max-width:900px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+@media(max-width:900px){.grid4{grid-template-columns:1fr 1fr}}
+
+.card{
+  background:var(--bg-2); border:1px solid var(--rule); border-radius:14px; padding:26px;
+  transition:border-color .2s ease, transform .2s ease;
+}
+.card:hover{border-color:var(--edge-2); transform:translateY(-2px)}
+.card h3{margin-bottom:9px}
+.card p:last-child{margin-bottom:0}
+.card .num{font-family:var(--mono); font-size:12px; color:var(--amber); letter-spacing:.12em; display:block; margin-bottom:12px}
+
+.stat{background:var(--bg-2); border:1px solid var(--rule); border-radius:14px; padding:22px}
+.stat b{display:block; font-size:clamp(28px,4vw,40px); color:var(--ink); font-weight:680; letter-spacing:-.03em; line-height:1}
+.stat span{display:block; margin-top:8px; font-size:13.5px; color:var(--muted)}
+
+.bug{border-left:3px solid var(--red); padding:4px 0 4px 20px; margin:0 0 26px}
+.bug h4{font-size:17.5px; margin-bottom:6px}
+.bug .sev{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--red)}
+.bug p{margin-bottom:0; font-size:15.5px}
+
+.take{
+  border-left:3px solid var(--amber); padding:18px 0 18px 22px; margin:34px 0;
+  font-size:clamp(18px,2.4vw,24px); color:var(--ink); font-weight:560; letter-spacing:-.015em;
+}
+
+pre{
+  background:#05090B; border:1px solid var(--edge); border-radius:11px; padding:18px 20px;
+  overflow-x:auto; font-family:var(--mono); font-size:13.2px; line-height:1.7; color:#C6D6DC; margin:0 0 18px;
+}
+:root[data-theme="light"] pre{background:#08110F}
+/* Same reasoning as the terminal: code blocks stay dark in both themes. */
+pre .k{color:#FF9A3C} pre .s{color:#4ED8D0} pre .cm{color:#81949C}
+
+table{width:100%; border-collapse:collapse; font-size:14.5px}
+th,td{text-align:left; padding:12px 14px; border-bottom:1px solid var(--rule)}
+th{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:600}
+td code{color:var(--cyan)}
+.scroller{overflow-x:auto; -webkit-overflow-scrolling:touch}
+
+.pill{display:inline-block; font-family:var(--mono); font-size:11.5px; letter-spacing:.1em;
+  text-transform:uppercase; padding:4px 10px; border-radius:99px; border:1px solid var(--rule); color:var(--muted)}
+.pill.ok{color:var(--green); border-color:color-mix(in srgb,var(--green) 40%,transparent)}
+.pill.warn{color:var(--amber); border-color:color-mix(in srgb,var(--amber) 40%,transparent)}
+.pill.no{color:var(--red); border-color:color-mix(in srgb,var(--red) 40%,transparent)}
+
+.band{background:var(--bg-2); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule)}
+
+ul.tick{list-style:none; padding:0; margin:0}
+ul.tick li{position:relative; padding-left:26px; margin-bottom:11px}
+ul.tick li::before{content:"→"; position:absolute; left:0; color:var(--amber); font-family:var(--mono)}
+
+/* reveal on scroll */
+.rv{opacity:0; transform:translateY(18px); transition:opacity .7s cubic-bezier(.2,.7,.3,1), transform .7s cubic-bezier(.2,.7,.3,1)}
+.rv.in{opacity:1; transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1; transform:none}}
+/* Without this the whole page is blank when scripts do not run — the reveal
+   animation would be hiding every word of content behind JavaScript. */
+.no-js .rv{opacity:1; transform:none}
+
+footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted); font-size:14px}
+.foot{display:flex; flex-wrap:wrap; gap:18px 40px; align-items:flex-start; justify-content:space-between}
+.foot a{color:var(--muted)} .foot a:hover{color:var(--ink)}
+
+.themetog{background:none; border:1px solid var(--rule); color:var(--muted); border-radius:8px;
+  width:34px; height:32px; cursor:pointer; font-size:14px; flex:none}
+.themetog:hover{color:var(--ink); border-color:var(--edge-2)}
+</style>
+</head>
+<body class="no-js">
+<script>document.body.classList.remove("no-js");</script>
+
+<nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="#top"><span class="dot"></span> Populace</a>
+    <div class="navlinks" id="navlinks">
+      <a href="#proof">Proof</a>
+      <a href="#how">How it works</a>
+      <a href="#report">The report</a>
+      <a href="#resilience">Resilience</a>
+      <a href="#safety">Safety</a>
+      <a href="#docs">Docs</a>
+      <a class="cta" href="#download">Download</a>
+    </div>
+    <button class="themetog" id="themetog" title="Switch theme" aria-label="Switch theme">◐</button>
+    <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">☰</button>
+  </div>
+</nav>
+
+<!-- ============================================================ hero -->
+<header class="hero" id="top">
+  <canvas id="grid" aria-hidden="true"></canvas>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="wrap hero-in">
+    <p class="eyebrow">A Gigzen product</p>
+    <h1>Your app, used by people who don't exist.</h1>
+    <p class="lede">
+      Populace brings a population of simulated people to life inside your application
+      and drives it through its <strong>real API</strong> — signing up, moving through
+      cities, posting, messaging, and deleting themselves afterwards. It finds the
+      bugs that only appear when more than one person is using your software at once.
+    </p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="#download">Download Populace</a>
+      <a class="btn btn-ghost" href="#proof">See what it found</a>
+    </div>
+    <div class="trust">
+      <span><b>5</b> real bugs found in a shipped app</span>
+      <span><b>0</b> runtime dependencies</span>
+      <span><b>59</b> self-tests</span>
+      <span><b>13</b>-method adapter contract</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================ terminal -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="term rv">
+      <div class="term-bar">
+        <i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i>
+        <span class="t">populace run --agents 6 --minutes 5</span>
+      </div>
+      <!-- The transcript is real content, so it lives in the HTML. The script
+           clears it and types it out; without scripts you simply read it. -->
+      <div class="term-body" id="termbody">
+  Bringing 6 people to life across manila, mumbai…
+
+<span class="g">   ✓ Jhun Ramirez (Manila, grab)
+   ✓ Ramesh Kadam (Mumbai, uber)
+   ✓ Maricel Santos (Manila, angkas)
+   ✓ Priya Sharma (Mumbai, ola)
+   ✓ Dante Cruz (Manila, joyride)
+   ✓ Imran Shaikh (Mumbai, swiggy)</span>
+
+  Running 6 people for 5 min…
+
+<span class="d">  tick 12/60 · 6 people · 2.0km · 4p 14l 6c 0m
+  tick 60/60 · 6 people · 1.8km · 15p 39l 15c 18m</span>
+
+<span class="c">  POPULACE REPORT — Buzz Buzz</span>
+<span class="r">  ✖ Problems found:</span>
+      · 13 of 318 API calls failed (4.1%).
+<span class="r">  ✖ recentPostsByOthers   24   24   82ms</span>
+<span class="d">      ↳ 24× returns only the caller's own rows</span>
+<span class="g">  ✔ Cleanup complete — 6 accounts removed.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ proof -->
+<section id="proof" class="band">
+  <div class="wrap">
+    <p class="eyebrow rv">Proven, not promised</p>
+    <h2 class="rv">It found five real bugs in a finished app.</h2>
+    <p class="lede rv" style="margin-top:16px">
+      Not a toy example. Buzz Buzz is a shipped social application for delivery riders
+      — built, tested by hand, and believed to work. Six simulated people used it for
+      five minutes. Every one of these was invisible to single-user testing, because
+      every one of them requires a <em>second person</em> to exist.
+    </p>
+
+    <div class="grid4 rv" style="margin:38px 0 46px">
+      <div class="stat"><b>5</b><span>real bugs, first run</span></div>
+      <div class="stat"><b>318</b><span>API calls made</span></div>
+      <div class="stat"><b>6</b><span>concurrent identities</span></div>
+      <div class="stat"><b>5<span style="font-size:.5em">min</span></b><span>to find them all</span></div>
+    </div>
+
+    <div class="grid2" style="align-items:start">
+      <div class="rv">
+        <div class="bug">
+          <span class="sev">Blocker</span>
+          <h4>Nobody could see anybody else's posts</h4>
+          <p>The feed query filtered by the author's own id. With one tester it looked
+             perfect — you always saw your own posts. With six, the app was six private
+             diaries that happened to share a database.</p>
+        </div>
+        <div class="bug">
+          <span class="sev">Blocker</span>
+          <h4>Profile updates silently wrote nothing</h4>
+          <p>An <code>INSERT … ON CONFLICT DO UPDATE</code> needs SELECT permission on
+             every column it touches. It had none, so the upsert reported success and
+             changed nothing. No error, no row.</p>
+        </div>
+        <div class="bug">
+          <span class="sev">High</span>
+          <h4>Account deletion left the data behind</h4>
+          <p>The auth record went; the posts, photos and messages stayed. The one path
+             almost nobody exercises, and the one regulators ask about first.</p>
+        </div>
+      </div>
+      <div class="rv">
+        <div class="bug">
+          <span class="sev">High</span>
+          <h4>Messages delivered to the wrong conversation</h4>
+          <p>Thread identity was derived from a pair of ids in inconsistent order, so
+             A→B and B→A were sometimes different threads and sometimes the same one.</p>
+        </div>
+        <div class="bug">
+          <span class="sev">Medium</span>
+          <h4>Group membership counted duplicates</h4>
+          <p>No unique constraint on the join table. Rejoining inflated the count, and
+             the number shown to users drifted upward the more they used the app.</p>
+        </div>
+
+        <div class="take">
+          “You cannot upsert a column you cannot select.”
+        </div>
+        <p style="font-size:15px; color:var(--muted)">
+          The rule that came out of the run — and the one that had silently broken
+          profile editing for every user of a shipped application.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ how -->
+<section id="how">
+  <div class="wrap">
+    <p class="eyebrow rv">How it works</p>
+    <h2 class="rv">The engine never learns your app.</h2>
+    <p class="lede rv" style="margin-top:16px">
+      Populace knows how to <em>be a person</em>: where they are, when they get bored,
+      who they reply to, when they give up on a slow screen. It knows nothing about your
+      software. Everything app-specific lives in one small adapter you write — and if
+      app logic ever leaks into the engine, Populace has collapsed back into a test script.
+    </p>
+
+    <div class="grid3 rv" style="margin-top:40px">
+      <div class="card">
+        <span class="num">01</span>
+        <h3>Write an adapter</h3>
+        <p>One file. Translate “a person did something” into your API calls. Only
+           <code>createUser</code> is mandatory — implement what you have, and Populace
+           reports honestly on what it therefore could not test.</p>
+      </div>
+      <div class="card">
+        <span class="num">02</span>
+        <h3>Run a population</h3>
+        <p>Deterministic identities across real cities, each with their own rhythm,
+           patience and habits. Agent <em>n</em> always gets the same phone number, so
+           re-runs reuse accounts instead of piling up new ones.</p>
+      </div>
+      <div class="card">
+        <span class="num">03</span>
+        <h3>Read the evidence</h3>
+        <p>What broke, how often, under how many concurrent users, how slow it got —
+           and, crucially, what was never tested at all.</p>
+      </div>
+    </div>
+
+    <h3 class="rv" style="margin:56px 0 16px">The 13-method contract</h3>
+    <p class="rv" style="max-width:62ch">
+      Implement as many as apply. Coverage is reported as a fraction and every gap is
+      named in the report, so a run can never quietly appear more thorough than it was.
+    </p>
+    <div class="scroller rv">
+      <table>
+        <thead><tr><th>Method</th><th>What a person is doing</th><th>Required</th></tr></thead>
+        <tbody>
+          <tr><td><code>createUser</code></td><td>Signing up for the first time</td><td><span class="pill no">Required</span></td></tr>
+          <tr><td><code>deleteUser</code></td><td>Deleting their account and data</td><td><span class="pill warn">Strongly advised</span></td></tr>
+          <tr><td><code>signIn</code></td><td>Coming back later — also makes cleanup read-only</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>setProfile</code></td><td>Filling in who they are</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>reportLocation</code></td><td>Moving through the city</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>post</code></td><td>Saying something publicly</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>recentPostsByOthers</code></td><td>Reading a feed — the multi-user path</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>like</code> / <code>comment</code></td><td>Reacting to somebody else</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>sendMessage</code> / <code>inbox</code></td><td>Private conversation between two people</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>joinGroup</code> / <code>groupMembers</code></td><td>Membership and counts</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>refreshSession</code></td><td>Staying signed in past token expiry</td><td><span class="pill">Optional</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ report -->
+<section id="report" class="band">
+  <div class="wrap">
+    <p class="eyebrow rv">The deliverable</p>
+    <h2 class="rv">A report you can hand to somebody else.</h2>
+    <p class="lede rv" style="margin-top:16px">
+      The live simulation is a demo. The report is the product. It is deliberately
+      conservative: anything unproven is called unproven, and there is no tolerance
+      threshold under which a real bug can hide.
+    </p>
+
+    <div class="grid2 rv" style="margin-top:40px; align-items:start">
+      <div>
+        <pre><span class="cm">  POPULACE REPORT — Buzz Buzz</span>
+  test · 6 people · 80.4s
+  ────────────────────────────────────────────
+  <span class="k">✖ Problems found:</span>
+      · 13 of 318 API calls failed (4.1%).
+
+  YOUR API UNDER 6 CONCURRENT USERS
+    method              calls fails    p50    p95
+  <span class="k">✖</span> recentPostsByOthers    24    24   82ms  120ms
+      ↳ 24× returns only the caller's own rows
+  <span class="k">✖</span> setProfile             18     6  204ms  281ms
+      ↳ 6× upsert reported success, wrote nothing
+    post                   15     0  138ms  190ms
+    <span class="s">like</span>                   39     0   96ms  141ms
+
+  NOT TESTED — adapter implements 11/13
+    · joinGroup     would have tested membership counts
+
+  <span class="s">✔ Cleanup complete — 6 accounts removed.</span></pre>
+      </div>
+      <div>
+        <ul class="tick">
+          <li><strong>Failures grouped by shape</strong>, not exact text — one bug is one
+              line, not fifty near-identical ones.</li>
+          <li><strong>Latency per endpoint</strong> (p50/p95/p99/max) measured under N
+              genuinely concurrent identities.</li>
+          <li><strong>Coverage stated honestly.</strong> Methods you did not implement are
+              listed with what they <em>would</em> have tested.</li>
+          <li><strong>Cleanup accounted for.</strong> If accounts could not be removed,
+              the report says so rather than claiming success.</li>
+          <li><strong>Machine-readable JSON</strong> for CI, plus a self-contained HTML
+              page — no scripts, nothing fetched — for the people who weren't watching
+              the terminal.</li>
+          <li><strong>Exits non-zero</strong> when problems are found, so a pipeline can
+              gate on it.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ resilience -->
+<section id="resilience">
+  <div class="wrap">
+    <p class="eyebrow rv">Built for real infrastructure</p>
+    <h2 class="rv">It tells you when the network was the problem.</h2>
+    <p class="lede rv" style="margin-top:16px">
+      Staging environments sit behind flaky VPNs. CI runners drop sockets. A testing tool
+      that only works on a perfect connection has not been tested yet — and one that blames
+      your API for a dropped packet will be ignored the first time it cries wolf, along with
+      all the real findings that come after it.
+    </p>
+
+    <div class="grid2 rv" style="margin-top:40px; align-items:start">
+      <div class="card">
+        <h3>Every call has a deadline</h3>
+        <p>One unresponsive endpoint used to freeze an entire run and produce nothing —
+           the worst failure a testing tool can have, because it doesn't look like a
+           failure. It looks like nothing. Now a slow endpoint becomes a timeout
+           <em>in the report</em>, and the other agents carry on.</p>
+      </div>
+      <div class="card">
+        <h3>Transport failures retry. Yours never do.</h3>
+        <p>A dropped socket is retried with jittered backoff. An error your server
+           actually returned — any status at all — is reported exactly once. Retrying a
+           500 until it passes would turn your bug into a green tick, which is the worst
+           thing a correctness tool can do.</p>
+      </div>
+      <div class="card">
+        <h3>Retries are visible</h3>
+        <p>A call that only worked on its third attempt is not the same as one that
+           worked first time. Retry counts are printed, and latency is measured on the
+           successful attempt alone so retry time can't quietly inflate your p95.</p>
+      </div>
+      <div class="card">
+        <h3>It gives up on a dead target</h3>
+        <p>After a run of consecutive unreachable calls, Populace concludes the host is
+           gone, stops, and says so — in seconds, rather than grinding out the full
+           duration and handing you nothing.</p>
+      </div>
+    </div>
+
+    <h3 class="rv" style="margin:52px 0 14px">Three verdicts, because two would be a lie</h3>
+    <div class="scroller rv">
+      <table>
+        <thead><tr><th>Verdict</th><th>Means</th><th>Exit</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="pill ok">clean</span></td>
+            <td>Every call reached your API and none failed.</td><td><code>0</code></td>
+          </tr>
+          <tr>
+            <td><span class="pill no">problems-found</span></td>
+            <td>Your API returned failures. These are findings about your code.</td><td><code>1</code></td>
+          </tr>
+          <tr>
+            <td><span class="pill warn">inconclusive</span></td>
+            <td>Your API never failed — but the run couldn't complete, so nothing was
+                proven. Calling this “clean” would be the most damaging lie the tool
+                could tell.</td><td><code>1</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ safety -->
+<section id="safety" class="band">
+  <div class="wrap">
+    <p class="eyebrow rv">Safety</p>
+    <h2 class="rv">It refuses to touch production.</h2>
+    <p class="lede rv" style="margin-top:16px">
+      Populace creates <strong>real accounts</strong> and writes <strong>real rows</strong>
+      through your <strong>real API</strong>. Pointed at production it would put invented
+      people in front of paying customers — that is deception, not testing, and it is
+      painful to unpick afterwards. So the guard refuses in three independent ways, and
+      any one of them is enough to stop a run.
+    </p>
+    <div class="grid3 rv" style="margin-top:38px">
+      <div class="card">
+        <span class="num">Refusal 01</span>
+        <h3>Environment must opt in</h3>
+        <p>The config has to declare a recognised non-production environment. Never
+           assumed, never inferred.</p>
+      </div>
+      <div class="card">
+        <span class="num">Refusal 02</span>
+        <h3>Explicit denylist</h3>
+        <p>Name your production hosts once in <code>neverRunAgainst</code> and no later
+           edit can point a run at them. No flag overrides it.</p>
+      </div>
+      <div class="card">
+        <span class="num">Refusal 03</span>
+        <h3>Loud about the gap</h3>
+        <p>An empty denylist is warned about every single run, because “I forgot to fill
+           it in” is the likeliest version of this mistake.</p>
+      </div>
+    </div>
+    <p class="rv" style="margin-top:30px">
+      Cleanup is equally deliberate: agents delete themselves after every run, and
+      <code>populace clean</code> finds anything a crashed run left behind. An identity it
+      could not verify is <em>never</em> reported as absent.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ download -->
+<section id="download">
+  <div class="wrap">
+    <p class="eyebrow rv">Get it</p>
+    <h2 class="rv">Download Populace</h2>
+    <p class="lede rv" style="margin-top:16px">
+      Node 18 or newer. <strong>Zero runtime dependencies</strong> — adapters bring their
+      own, and the engine brings none. Nothing to install beyond the source itself.
+    </p>
+
+    <div class="grid2 rv" style="margin-top:38px; align-items:start">
+      <div>
+        <h3 style="margin-bottom:14px">Clone and run — works right now</h3>
+        <pre><span class="cm"># get it</span>
+git clone https://github.com/Shakhtar-Sankur/populace.git
+cd populace
+
+<span class="cm"># see it work against a fake app, no setup</span>
+node src/cli.mjs demo
+
+<span class="cm"># point it at your own app</span>
+node src/cli.mjs init
+node src/cli.mjs doctor
+node src/cli.mjs run --agents 6 --minutes 5</pre>
+        <p style="font-size:14.5px; color:var(--muted)">
+          <code>demo</code> runs the whole product against an in-memory app, so you can see
+          exactly what a report looks like before writing a line of adapter code.
+        </p>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:14px">Other ways</h3>
+        <div class="card" style="margin-bottom:14px">
+          <h3 style="font-size:17px">Download a ZIP</h3>
+          <p style="font-size:15px">No git required —
+            <a href="https://github.com/Shakhtar-Sankur/populace/archive/refs/heads/main.zip">populace-main.zip</a>.
+            Unzip, then <code>node src/cli.mjs demo</code>.</p>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <h3 style="font-size:17px">npm <span class="pill warn" style="vertical-align:2px">Not yet published</span></h3>
+          <p style="font-size:15px">
+            The package is prepared and verified as <code>@gigzen/populace</code>, but it is
+            <strong>not on the registry yet</strong>. We would rather say so than have you
+            run an install that fails — or worse, install somebody else's package with a
+            similar name.</p>
+        </div>
+        <div class="card">
+          <h3 style="font-size:17px">Windows</h3>
+          <p style="font-size:15px">A PowerShell runner ships in
+            <code>examples/buzzbuzz/run-test.ps1</code> — the Unix one-liner does not work
+            in PowerShell, so there is a native one.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ docs -->
+<section id="docs" class="band">
+  <div class="wrap">
+    <p class="eyebrow rv">Reference</p>
+    <h2 class="rv">Commands and configuration</h2>
+
+    <div class="scroller rv" style="margin-top:32px">
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>populace demo</code></td><td>Run the whole product against a fake app, immediately</td></tr>
+          <tr><td><code>populace init</code></td><td>Scaffold a config and a blank adapter</td></tr>
+          <tr><td><code>populace doctor</code></td><td>Check config, reachability and coverage <em>without</em> running</td></tr>
+          <tr><td><code>populace run</code></td><td>Bring the population to life</td></tr>
+          <tr><td><code>populace clean</code></td><td>Delete every account a run created</td></tr>
+          <tr><td><code>populace report</code></td><td>Re-open the report from an earlier run</td></tr>
+          <tr><td><code>populace version</code></td><td>Version and environment, for bug reports</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="rv" style="margin:46px 0 14px">populace.config.mjs</h3>
+    <div class="rv">
+      <pre><span class="k">export default</span> {
+  app: <span class="s">"My App"</span>,
+  adapter: <span class="s">"./adapters/my-app.mjs"</span>,
+
+  <span class="cm">// Populace only runs against non-production environments, and it checks.</span>
+  environment: <span class="s">"test"</span>,
+
+  <span class="cm">// The safety net that matters most. No flag overrides this.</span>
+  neverRunAgainst: [<span class="s">"https://api.myapp.com"</span>],
+
+  <span class="cm">// Resilience — see the section above for why each exists.</span>
+  timeoutMs:   <span class="s">20000</span>,  <span class="cm">// give up waiting on one call</span>
+  retries:     <span class="s">3</span>,      <span class="cm">// extra tries for calls that never landed</span>
+  giveUpAfter: <span class="s">12</span>,     <span class="cm">// unreachable calls before stopping the run</span>
+
+  population: { agents: <span class="s">8</span>, cities: [<span class="s">"manila"</span>, <span class="s">"mumbai"</span>], minutes: <span class="s">10</span> },
+}</pre>
+    </div>
+
+    <div class="grid2 rv" style="margin-top:40px; align-items:start">
+      <div>
+        <h3 style="margin-bottom:12px">Use it from CI</h3>
+        <pre><span class="k">import</span> { simulate } <span class="k">from</span> <span class="s">"@gigzen/populace"</span>;
+
+<span class="k">const</span> report = <span class="k">await</span> simulate({
+  configPath: <span class="s">"./populace.config.mjs"</span>,
+});
+
+<span class="k">if</span> (report.verdict.status !== <span class="s">"clean"</span>) {
+  process.exit(<span class="s">1</span>);
+}</pre>
+      </div>
+      <div>
+        <h3 style="margin-bottom:12px">What it will not tell you</h3>
+        <p><strong>Whether people want your product.</strong> These people are generated
+           from patterns. They will never surprise you the way a real customer does, they
+           cannot tell you your onboarding is confusing or your pricing is wrong, and they
+           are least accurate for exactly the users least represented online.</p>
+        <p>Use Populace to prove your app <strong>works</strong>. Use real people to decide
+           what to <strong>build</strong>. A report full of green ticks means your API held
+           up — not that anyone wants what you made.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <div>
+      <a class="brand" href="#top" style="margin-bottom:10px"><span class="dot"></span> Populace</a>
+      <p style="margin:10px 0 0; max-width:44ch; font-size:13.5px">
+        A simulated population that tests your app through its real API.
+        Designed and built by Gigzen.
+      </p>
+    </div>
+    <div>
+      <p style="margin:0 0 8px; color:var(--ink); font-weight:600; font-size:14px">Product</p>
+      <p style="margin:0; line-height:2">
+        <a href="#proof">Proof</a><br>
+        <a href="#how">How it works</a><br>
+        <a href="#resilience">Resilience</a><br>
+        <a href="#download">Download</a>
+      </p>
+    </div>
+    <div>
+      <p style="margin:0 0 8px; color:var(--ink); font-weight:600; font-size:14px">Source</p>
+      <p style="margin:0; line-height:2">
+        <a href="https://github.com/Shakhtar-Sankur/populace">GitHub</a><br>
+        <a href="https://github.com/Shakhtar-Sankur/populace/blob/main/README.md">README</a><br>
+        <a href="https://github.com/Shakhtar-Sankur/populace/blob/main/adapters/contract.md">Adapter contract</a><br>
+        <a href="https://github.com/Shakhtar-Sankur/populace/blob/main/LICENSE">Licence</a>
+      </p>
+    </div>
+  </div>
+  <div class="wrap" style="margin-top:34px; font-size:13px">
+    © <span id="yr">2026</span> Gigzen. Populace is a Gigzen product.
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  document.getElementById("yr").textContent = new Date().getFullYear();
+
+  /* ---- theme -------------------------------------------------------- */
+  var tog = document.getElementById("themetog");
+  try {
+    var saved = localStorage.getItem("populace-theme");
+    if (saved) document.documentElement.setAttribute("data-theme", saved);
+  } catch (e) {}
+  tog.addEventListener("click", function () {
+    var now = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", now);
+    try { localStorage.setItem("populace-theme", now); } catch (e) {}
+  });
+
+  /* ---- mobile menu -------------------------------------------------- */
+  var burger = document.getElementById("burger");
+  var links = document.getElementById("navlinks");
+  burger.addEventListener("click", function () {
+    var open = links.classList.toggle("open");
+    burger.setAttribute("aria-expanded", String(open));
+    burger.textContent = open ? "✕" : "☰";
+  });
+  links.addEventListener("click", function (e) {
+    if (e.target.tagName === "A") {
+      links.classList.remove("open");
+      burger.setAttribute("aria-expanded", "false");
+      burger.textContent = "☰";
+    }
+  });
+
+  /* ---- reveal ------------------------------------------------------- */
+  var rv = [].slice.call(document.querySelectorAll(".rv"));
+  if (reduce || !("IntersectionObserver" in window)) {
+    rv.forEach(function (el) { el.classList.add("in"); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
+      });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.06 });
+    rv.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---- hero: a population moving through a city ----------------------
+     Long-exposure rendering: the canvas is never fully cleared, it is
+     painted over with a low-alpha ground colour each frame, so movement
+     leaves light trails the way traffic does in a long photograph.      */
+  var cv = document.getElementById("grid");
+  var ctx = cv.getContext("2d");
+  var agents = [], W = 0, H = 0, dpr = 1, raf = null;
+
+  function ground() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#070C0E";
+  }
+
+  function size() {
+    var host = cv.parentElement;
+    var w = host.offsetWidth, h = host.offsetHeight;
+
+    // A background tab (or a page opened with cmd-click) can report 0 before it
+    // is ever painted. Measuring once and writing that 0 to the canvas left the
+    // hero permanently blank for anyone who did not open the page in the
+    // foreground — so refuse a nonsense measurement and wait for a real one.
+    if (w < 2 || h < 2) return false;
+    if (w === W && h === H) return true;
+
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = w; H = h;
+    cv.width = W * dpr; cv.height = H * dpr;
+    // No inline width/height: the stylesheet already says 100%, and writing a
+    // stale pixel value here is what pinned it at 0.
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = ground();
+    ctx.fillRect(0, 0, W, H);
+    return true;
+  }
+
+  function seed() {
+    // Agents travel a rough street grid: they pick an axis, run along it, then
+    // turn. Not a physics model — just enough structure to read as a city.
+    var n = W < 700 ? 16 : W < 1100 ? 26 : 38;
+    agents = [];
+    for (var i = 0; i < n; i++) {
+      agents.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        ax: Math.random() < 0.5 ? 1 : 0,
+        dir: Math.random() < 0.5 ? 1 : -1,
+        sp: 0.25 + Math.random() * 0.85,
+        turn: 40 + Math.random() * 190,
+        t: 0,
+        warm: Math.random() < 0.42
+      });
+    }
+  }
+
+  function frame() {
+    // Fade the previous frame toward the background instead of clearing it.
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = ground();
+    ctx.globalAlpha = 0.055;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+
+    ctx.globalCompositeOperation = "lighter";
+    for (var i = 0; i < agents.length; i++) {
+      var a = agents[i];
+      if (a.ax) a.x += a.sp * a.dir; else a.y += a.sp * a.dir;
+
+      // Wrap rather than bounce: a city has no walls, and bouncing makes the
+      // motion read as a screensaver.
+      if (a.x < -20) a.x = W + 20; if (a.x > W + 20) a.x = -20;
+      if (a.y < -20) a.y = H + 20; if (a.y > H + 20) a.y = -20;
+
+      if (++a.t > a.turn) {
+        a.t = 0; a.ax = a.ax ? 0 : 1;
+        a.dir = Math.random() < 0.5 ? 1 : -1;
+        a.turn = 40 + Math.random() * 190;
+      }
+
+      var col = a.warm ? "255,154,60" : "78,216,208";
+      var g = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, 7);
+      g.addColorStop(0, "rgba(" + col + ",0.85)");
+      g.addColorStop(1, "rgba(" + col + ",0)");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(a.x, a.y, 7, 0, 6.2832); ctx.fill();
+    }
+    ctx.globalCompositeOperation = "source-over";
+    raf = requestAnimationFrame(frame);
+  }
+
+  function start() {
+    if (!size()) return;            // not laid out yet; an observer will call back
+    seed();
+    if (reduce) return;             // static ground; the veil still reads well
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(frame);
+  }
+
+  if (cv.parentElement) {
+    start();
+
+    // ResizeObserver rather than the resize event: it fires when the hero is
+    // first given a real size, which covers the background-tab case, late web
+    // fonts reflowing the headline, and device rotation — none of which the
+    // window resize event reliably reports.
+    if ("ResizeObserver" in window) {
+      var rt;
+      new ResizeObserver(function () {
+        clearTimeout(rt);
+        rt = setTimeout(start, 120);
+      }).observe(cv.parentElement);
+    } else {
+      var rt2;
+      addEventListener("resize", function () { clearTimeout(rt2); rt2 = setTimeout(start, 180); });
+    }
+
+    // Stop burning battery while the tab is hidden.
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+      } else {
+        start();                    // also re-measures if it never got a size
+      }
+    });
+  }
+
+  /* ---- terminal replay ---------------------------------------------- */
+  var LINES = [
+    { t: "\n  Bringing 6 people to life across manila, mumbai…\n", c: "" },
+    { t: "   ✓ Jhun Ramirez (Manila, grab)\n", c: "g" },
+    { t: "   ✓ Ramesh Kadam (Mumbai, uber)\n", c: "g" },
+    { t: "   ✓ Maricel Santos (Manila, angkas)\n", c: "g" },
+    { t: "   ✓ Priya Sharma (Mumbai, ola)\n", c: "g" },
+    { t: "   ✓ Dante Cruz (Manila, joyride)\n", c: "g" },
+    { t: "   ✓ Imran Shaikh (Mumbai, swiggy)\n", c: "g" },
+    { t: "\n  Running 6 people for 5 min…\n\n", c: "" },
+    { t: "  tick 12/60 · 6 people · 2.0km · 4p 14l 6c 0m\n", c: "d" },
+    { t: "  tick 24/60 · 6 people · 4.1km · 8p 35l 15c 8m\n", c: "d" },
+    { t: "  tick 48/60 · 6 people · 8.4km · 13p 39l 15c 18m\n", c: "d" },
+    { t: "  tick 60/60 · 6 people · 1.8km · 15p 39l 15c 18m\n", c: "d" },
+    { t: "\n  Removing simulated accounts…\n", c: "" },
+    { t: "\n  POPULACE REPORT — Buzz Buzz\n", c: "c" },
+    { t: "  ────────────────────────────────────────\n", c: "d" },
+    { t: "  ✖ Problems found:\n", c: "r" },
+    { t: "      · 13 of 318 API calls failed (4.1%).\n", c: "" },
+    { t: "\n  ✖ recentPostsByOthers   24   24   82ms\n", c: "r" },
+    { t: "      ↳ 24× returns only the caller's own rows\n", c: "d" },
+    { t: "  ✖ setProfile            18    6  204ms\n", c: "r" },
+    { t: "      ↳ 6× upsert reported success, wrote nothing\n", c: "d" },
+    { t: "\n  ✔ Cleanup complete — 6 accounts removed.\n", c: "g" }
+  ];
+
+  var out = document.getElementById("termbody");
+  var li = 0, ci = 0, buf = "";
+  var staticTranscript = out.innerHTML;   // kept, in case typing never starts
+
+  function type() {
+    if (li >= LINES.length) {
+      out.innerHTML = buf + '<span class="caret"></span>';
+      return;
+    }
+    var line = LINES[li];
+    // Type character by character, but emit whole lines as one span so the
+    // colouring stays correct while it is still being written.
+    ci += Math.max(1, Math.round(line.t.length / 14));
+    var shown = line.t.slice(0, ci);
+    var open = line.c ? '<span class="' + line.c + '">' : "<span>";
+    out.innerHTML = buf + open + esc(shown) + "</span>" + '<span class="caret"></span>';
+    out.scrollTop = out.scrollHeight;
+
+    if (ci >= line.t.length) {
+      buf += open + esc(line.t) + "</span>";
+      li++; ci = 0;
+      setTimeout(type, line.t.indexOf("tick") > -1 ? 210 : 90);
+    } else {
+      setTimeout(type, 16);
+    }
+  }
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  if (reduce || !("IntersectionObserver" in window)) {
+    // No animation: show the finished transcript immediately.
+    out.innerHTML = LINES.map(function (l) {
+      return '<span class="' + (l.c || "") + '">' + esc(l.t) + "</span>";
+    }).join("");
+  } else {
+    var started = false;
+    var begin = function () {
+      if (started) return;
+      started = true;
+      out.innerHTML = "";          // clear the static copy, then type it out
+      type();
+    };
+    var tio = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { begin(); tio.disconnect(); } });
+    }, { threshold: 0.25 });
+    tio.observe(out);
+    // If the observer never fires — hidden tab at load, an odd embedding —
+    // the static transcript stays on screen rather than an empty black box.
+    void staticTranscript;
+  }
+})();
+</script>
+</body>
+</html>
