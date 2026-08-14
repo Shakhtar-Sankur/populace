@@ -158,9 +158,11 @@ export function instrument(
       const entry = bucket(metrics, key);
       entry.calls += 1;
 
-      // Already given up on this target: fail instantly rather than spend the
-      // full deadline discovering the same thing again.
-      if (breaker.open) {
+      // Open and still inside its cooldown: fail instantly rather than spend
+      // the full deadline rediscovering the same thing. allows() lets a single
+      // probe through once the cooldown expires, so a passing outage recovers
+      // instead of ending the run.
+      if (!breaker.allows()) {
         const error = new TargetUnreachableError(breaker.openedAfter);
         error.fromAdapter = true;
         entry.failures += 1;
@@ -282,8 +284,14 @@ export function summarise(metrics) {
       // Set when Populace concluded the target was gone and stopped early.
       // Without this the report would show a short run full of failures and
       // give no clue that it was cut short deliberately.
-      gaveUp: Boolean(metrics.breaker?.open),
+      // gaveUp means ABANDONED, not merely open. A breaker that opened and
+      // then recovered is a run that survived an outage — reporting that as
+      // "gave up" would call a completed run incomplete.
+      gaveUp: Boolean(metrics.breaker?.abandoned),
       gaveUpAfter: metrics.breaker?.openedAfter ?? null,
+      // Outages ridden out and recovered from. Worth reporting: it is the
+      // difference between a clean network and one that merely held together.
+      outages: metrics.breaker?.trips ?? 0,
     },
     durationMs: (metrics.endedAt || Date.now()) - metrics.startedAt,
     methods,

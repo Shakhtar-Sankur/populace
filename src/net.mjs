@@ -74,16 +74,54 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * otherwise fine run must not abort that run; only a sustained one should.
  */
 export class CircuitBreaker {
-  constructor({ threshold = 12 } = {}) {
+  constructor({ threshold = 12, cooldownMs = 15_000, giveUpAfterProbes = 4 } = {}) {
     this.threshold = threshold;
+    this.cooldownMs = cooldownMs;
+    // How many cooldowns may expire with the target still dead before we stop
+    // trying. Four at 15s means a run survives roughly a minute of outage and
+    // still abandons a genuinely dead host promptly.
+    this.giveUpAfterProbes = giveUpAfterProbes;
+
     this.consecutive = 0;
     this.open = false;
     this.openedAfter = null;
+    this.openedAt = 0;
+    this.probes = 0;      // cooldowns elapsed without a success
+    this.trips = 0;       // how many times it opened during the run
+    this.abandoned = false; // permanently given up
+  }
+
+  /**
+   * Whether a call may go through right now.
+   *
+   * This is the half-open state, and leaving it out was a real bug: the breaker
+   * opened on the first burst of a flaky link and stayed open for the rest of
+   * the run, so a twenty-second blip killed a five-minute run that could have
+   * carried on. Network loss arrives in bursts, not as independent coin flips,
+   * so "N consecutive failures" is reached by any ordinary outage — the breaker
+   * has to be able to come back.
+   */
+  allows(now = Date.now()) {
+    if (this.abandoned) return false;
+    if (!this.open) return true;
+    if (now - this.openedAt < this.cooldownMs) return false;
+    // Cooldown elapsed: let exactly one call through to test the water.
+    this.openedAt = now;
+    this.probes += 1;
+    if (this.probes > this.giveUpAfterProbes) {
+      this.abandoned = true;
+      return false;
+    }
+    return true;
   }
 
   recordSuccess() {
     this.consecutive = 0;
     this.open = false;
+    // A probe that got through means the target is back. Clear the probe budget
+    // so a later, unrelated outage gets the full allowance again rather than
+    // inheriting the last one's.
+    this.probes = 0;
   }
 
   /**
@@ -99,15 +137,20 @@ export class CircuitBreaker {
     this.consecutive = 0;
     this.open = false;
     this.openedAfter = null;
+    this.openedAt = 0;
+    this.probes = 0;
+    this.abandoned = false;
   }
 
   /** @returns {boolean} true when this failure was the one that opened it. */
-  recordTransportFailure() {
+  recordTransportFailure(now = Date.now()) {
     if (this.threshold <= 0) return false; // disabled
     this.consecutive += 1;
     if (!this.open && this.consecutive >= this.threshold) {
       this.open = true;
       this.openedAfter = this.consecutive;
+      this.openedAt = now;
+      this.trips += 1;
       return true;
     }
     return false;
