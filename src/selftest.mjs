@@ -13,6 +13,7 @@ import { execFile } from "node:child_process";
 import { World } from "./engine/world.mjs";
 import { Agent } from "./engine/agent.mjs";
 import { buildPersonas } from "./engine/personas.mjs";
+import { isTransportError } from "./net.mjs";
 import {
   createMetrics,
   DEFAULT_TIMEOUT_MS,
@@ -576,6 +577,148 @@ check("a fast call leaves no timer holding the process open", async () => {
   });
   const elapsed = Date.now() - started;
   assert.ok(elapsed < 10_000, `process took ${elapsed}ms to exit; a 60s timer was left armed`);
+});
+
+// Reuses the clean run's world and teardown; only the metrics vary per case.
+const inconclusiveShape = {
+  config,
+  adapter: clean,
+  world: cleanWorld,
+  teardown: cleanTeardown,
+  startedAt: Date.now() - 5000,
+};
+
+// --- 4f. a bad link must not be reported as a bad API ----------------------
+// The most damaging thing this tool could do is blame a customer's code for a
+// dropped socket. Cry wolf once and the team stops reading the real findings.
+// The mirror danger is retrying a genuine 500 until it passes, which turns
+// their bug into a green tick. Both are tested here.
+
+function flakyCall({ failFirst, error, method = "post" }) {
+  let n = 0;
+  const metrics = createMetrics();
+  const app = instrument(
+    {
+      name: "f",
+      async [method]() {
+        n += 1;
+        if (n <= failFirst) throw error();
+        return "ok";
+      },
+    },
+    metrics,
+    { timeoutMs: 2000, retries: 3 },
+  );
+  return { app, metrics, attempts: () => n };
+}
+
+const dropped = () => Object.assign(new TypeError("fetch failed"), {
+  cause: { code: "ECONNRESET" },
+});
+
+check("isTransportError knows a dead socket from a rejected request", () => {
+  assert.equal(isTransportError(dropped()), true);
+  assert.equal(isTransportError(new Error("ENOTFOUND")), true);
+  assert.equal(isTransportError({ isTimeout: true }), true);
+  // Anything the server actually answered is the application's.
+  assert.equal(isTransportError(new Error("permission denied for table posts")), false);
+  assert.equal(isTransportError(new Error("500 Internal Server Error")), false);
+  assert.equal(isTransportError(null), false);
+});
+
+check("a dropped connection is retried and the call still succeeds", async () => {
+  const { app, attempts } = flakyCall({ failFirst: 2, error: dropped });
+  assert.equal(await app.post(), "ok");
+  assert.equal(attempts(), 3, "should have retried twice then succeeded");
+});
+
+check("retries are counted in the report, never hidden", async () => {
+  const { app, metrics } = flakyCall({ failFirst: 2, error: dropped });
+  await app.post();
+  const s = summarise(metrics);
+  assert.equal(s.retries, 2, "a call that only worked on its third try must say so");
+  assert.equal(s.failures, 0, "but it did ultimately succeed");
+  assert.equal(s.network.healthy, false);
+});
+
+check("an error the API actually returned is NEVER retried", async () => {
+  // Retrying this would turn a real bug into a passing run — the single worst
+  // thing a correctness tool can do.
+  const { app, attempts, metrics } = flakyCall({
+    failFirst: 99,
+    error: () => new Error("permission denied for table posts"),
+  });
+  await assert.rejects(() => app.post(), /permission denied/);
+  assert.equal(attempts(), 1, "exactly one attempt for an application error");
+  assert.equal(summarise(metrics).apiFailures, 1);
+  assert.equal(summarise(metrics).transportFailures, 0);
+});
+
+check("a link that never recovers is reported as transport, not as their bug", async () => {
+  const { app, attempts, metrics } = flakyCall({ failFirst: 99, error: dropped });
+  await assert.rejects(() => app.post());
+  assert.equal(attempts(), 4, "initial attempt plus three retries");
+  const s = summarise(metrics);
+  assert.equal(s.transportFailures, 1);
+  assert.equal(s.apiFailures, 0, "their code was never even reached");
+});
+
+check("latency excludes the failed attempts before a success", async () => {
+  // Folding retry time into latency is how p50/p95 become unpublishable.
+  const metrics = createMetrics();
+  let n = 0;
+  const app = instrument(
+    {
+      name: "f",
+      async post() {
+        n += 1;
+        if (n === 1) { await new Promise((r) => setTimeout(r, 120)); throw dropped(); }
+        return "ok";
+      },
+    },
+    metrics,
+    { timeoutMs: 2000, retries: 3 },
+  );
+  await app.post();
+  const p50 = summarise(metrics).methods[0].latencyMs.p50;
+  assert.ok(p50 < 100, `p50 was ${p50}ms — the failed 120ms attempt leaked into it`);
+});
+
+check("a run with only network trouble is inconclusive, not clean and not their fault", () => {
+  const report = buildReport({
+    ...inconclusiveShape,
+    metrics: (() => {
+      const m = createMetrics();
+      const b = { method: "post", calls: 2, failures: 1, apiFailures: 0, transportFailures: 1,
+                  retries: 3, durations: [10, 20], errors: new Map([["fetch failed", 1]]),
+                  firstErrorAt: Date.now() };
+      m.methods.set("post", b);
+      return m;
+    })(),
+  });
+  assert.equal(report.verdict.status, "inconclusive", "must not claim clean");
+  assert.equal(report.verdict.apiFailures, 0);
+  const text = renderReport(report);
+  assert.ok(/Inconclusive/.test(text));
+  assert.ok(/not your code|not your code\./i.test(text) || /network between/i.test(text),
+    "must say plainly that this was the network");
+  assert.ok(/CONNECTION/.test(text), "and show the connection quality");
+});
+
+check("a real API failure is still 'problems-found' even on a bad link", () => {
+  const report = buildReport({
+    ...inconclusiveShape,
+    metrics: (() => {
+      const m = createMetrics();
+      m.methods.set("post", { method: "post", calls: 4, failures: 2, apiFailures: 1,
+        transportFailures: 1, retries: 5, durations: [10, 20, 30, 40],
+        errors: new Map([["permission denied", 1], ["fetch failed", 1]]), firstErrorAt: Date.now() });
+      return m;
+    })(),
+  });
+  assert.equal(report.verdict.status, "problems-found", "their bug must not be downgraded by noise");
+  const text = renderReport(report);
+  assert.ok(/Problems found/.test(text));
 });
 
 // --- 5. session expiry ----------------------------------------------------

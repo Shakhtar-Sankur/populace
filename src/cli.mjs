@@ -13,6 +13,7 @@ import { ConfigError, loadAdapter, loadConfig } from "./config.mjs";
 import { createMetrics, instrument } from "./instrument.mjs";
 import { buildReport, renderReport, writeReport } from "./report.mjs";
 import { canSignInOnly } from "./contract.mjs";
+import { isTransportError } from "./net.mjs";
 import { diagnose } from "./diagnose.mjs";
 import { World } from "./engine/world.mjs";
 import { buildPersonas, CITIES } from "./engine/personas.mjs";
@@ -148,7 +149,7 @@ async function doctor() {
 async function run() {
   const { config, raw } = await open();
   const metrics = createMetrics();
-  const adapter = instrument(raw, metrics, { timeoutMs: config.timeoutMs });
+  const adapter = instrument(raw, metrics, { timeoutMs: config.timeoutMs, retries: config.retries });
   const startedAt = Date.now();
 
   const { agents, cities, minutes, tickSeconds } = config.population;
@@ -248,10 +249,6 @@ function render(config, tickNo, totalTicks, world) {
  * could not look" into "there was nothing there" hands the customer a false
  * all-clear over their own database.
  */
-const isTransportError = (e) => {
-  const s = String((e && (e.cause?.code || e.code || e.message)) || e);
-  return /fetch failed|ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|UND_ERR|network|socket hang up/i.test(s);
-};
 
 async function clean() {
   const { config, raw } = await open();
@@ -260,6 +257,16 @@ async function clean() {
   // earlier run created — including one that was killed mid-flight.
   const personas = buildPersonas(count, config.population.cities);
   const lookOnly = canSignInOnly(raw);
+
+  // Retry transport failures here too. `clean` is the command most likely to be
+  // run on a bad link — it is what you reach for after a run died — and every
+  // blip leaves an identity "unverified", which is deliberately sticky: it can
+  // never be reported as absent. Without retries a flaky network means the
+  // all-clear never arrives even though the accounts are long gone.
+  const probe = instrument(raw, createMetrics(), {
+    timeoutMs: config.timeoutMs,
+    retries: config.retries,
+  });
 
   const found = [];        // existed, and we deleted it
   const absent = [];       // definitively was not there
@@ -277,7 +284,7 @@ async function clean() {
   }
 
   for (const [i, persona] of personas.entries()) {
-    const agent = new Agent(persona, raw, i, config.identity || {});
+    const agent = new Agent(persona, probe, i, config.identity || {});
     try {
       if (lookOnly) {
         const user = await agent.findAccount();

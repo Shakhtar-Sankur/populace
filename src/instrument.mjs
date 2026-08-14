@@ -10,6 +10,8 @@
 // `adapter.post(...)`; the adapter does its thing; the numbers accumulate in
 // between.
 
+import { backoffMs, isTransportError, sleep } from "./net.mjs";
+
 const PERCENTILES = [50, 95, 99];
 
 // A call that never comes back is the worst failure mode this tool has, because
@@ -23,6 +25,12 @@ const PERCENTILES = [50, 95, 99];
 // as a timeout in the report — which is a finding — instead of a hung process,
 // which is nothing.
 export const DEFAULT_TIMEOUT_MS = 20_000;
+
+// Transport failures get retried; application failures never do. Three extra
+// attempts absorbs the ordinary blips of a real network — a CI runner losing a
+// socket, a staging box behind a flaky VPN — without papering over an endpoint
+// that is genuinely down, which still fails after the last attempt.
+export const DEFAULT_RETRIES = 3;
 
 export class TimeoutError extends Error {
   constructor(method, ms) {
@@ -55,6 +63,15 @@ function bucket(metrics, method) {
       method,
       calls: 0,
       failures: 0,
+      // Failures split by whose problem they are. `apiFailures` are findings
+      // about the customer's code; `transportFailures` are the network between
+      // us and them, and must never be presented as the same thing.
+      apiFailures: 0,
+      transportFailures: 0,
+      // Attempts that failed at transport level and were retried. Kept and
+      // reported: a run that only survived on its fifth try is not the same as
+      // one that worked first time, and hiding that would inflate reliability.
+      retries: 0,
       durations: [],
       errors: new Map(),
       firstErrorAt: null,
@@ -77,11 +94,16 @@ export function normaliseError(error) {
     .slice(0, 200);
 }
 
-export function instrument(adapter, metrics, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+export function instrument(
+  adapter,
+  metrics,
+  { timeoutMs = DEFAULT_TIMEOUT_MS, retries = DEFAULT_RETRIES } = {},
+) {
   const wrapped = { name: adapter.name };
   // 0 or Infinity disables the deadline, for adapters whose work is legitimately
   // long (a batch import, a deliberate slow-endpoint probe).
   const limited = Number.isFinite(timeoutMs) && timeoutMs > 0;
+  const maxAttempts = Math.max(1, Number(retries) + 1);
 
   for (const key of Object.keys(adapter)) {
     const value = adapter[key];
@@ -89,11 +111,11 @@ export function instrument(adapter, metrics, { timeoutMs = DEFAULT_TIMEOUT_MS } 
       wrapped[key] = value;
       continue;
     }
-    wrapped[key] = async (...args) => {
-      const entry = bucket(metrics, key);
-      const started = performance.now();
-      entry.calls += 1;
+
+    /** One attempt, with the deadline applied. Timing is per-attempt. */
+    const attemptOnce = async (args) => {
       const clock = limited ? deadline(key, timeoutMs) : null;
+      const started = performance.now();
       try {
         // We stop WAITING at the deadline; we cannot cancel the adapter's own
         // work, so a late reply may still land and is simply ignored. Recording
@@ -105,21 +127,54 @@ export function instrument(adapter, metrics, { timeoutMs = DEFAULT_TIMEOUT_MS } 
         // run with a stack trace that has nothing to do with the real problem.
         if (clock) call.then?.(undefined, () => {});
         const result = clock ? await Promise.race([call, clock.promise]) : await call;
-        entry.durations.push(performance.now() - started);
-        return result;
+        return { ok: true, result, ms: performance.now() - started };
       } catch (error) {
+        return { ok: false, error, ms: performance.now() - started };
+      } finally {
+        clock?.cancel();
+      }
+    };
+
+    wrapped[key] = async (...args) => {
+      const entry = bucket(metrics, key);
+      entry.calls += 1;
+
+      for (let attempt = 1; ; attempt++) {
+        const outcome = await attemptOnce(args);
+
+        if (outcome.ok) {
+          // Only the SUCCESSFUL attempt's duration is recorded. Including the
+          // failed attempts before it would fold network problems into the
+          // customer's latency figures and make p50/p95 unpublishable — which
+          // is exactly what went wrong in an earlier run of this tool.
+          entry.durations.push(outcome.ms);
+          return outcome.result;
+        }
+
+        const error = outcome.error;
+        const transport = isTransportError(error);
+
+        // Retry ONLY when the server never answered. Any response the server
+        // actually produced — including a 500 — is a finding about their code,
+        // and retrying it would quietly turn a real bug into a green tick.
+        if (transport && attempt < maxAttempts) {
+          entry.retries += 1;
+          await sleep(backoffMs(attempt));
+          continue;
+        }
+
         // Mark it as the adapter's, so the engine can tell a customer's API
         // failing apart from a bug of our own. Untagged failures reaching the
         // agent loop are Populace's fault and must not be reported as theirs.
         if (error && typeof error === "object") error.fromAdapter = true;
-        entry.durations.push(performance.now() - started);
+        entry.durations.push(outcome.ms);
         entry.failures += 1;
+        if (transport) entry.transportFailures += 1;
+        else entry.apiFailures += 1;
         if (entry.firstErrorAt === null) entry.firstErrorAt = Date.now();
         const shape = normaliseError(error);
         entry.errors.set(shape, (entry.errors.get(shape) || 0) + 1);
         throw error;
-      } finally {
-        clock?.cancel();
       }
     };
   }
@@ -142,6 +197,9 @@ export function summarise(metrics) {
       method: entry.method,
       calls: entry.calls,
       failures: entry.failures,
+      apiFailures: entry.apiFailures,
+      transportFailures: entry.transportFailures,
+      retries: entry.retries,
       failureRate: entry.calls ? entry.failures / entry.calls : 0,
       latencyMs: { ...latency, max: Math.round(sorted[sorted.length - 1] || 0) },
       errors: [...entry.errors.entries()]
@@ -150,15 +208,38 @@ export function summarise(metrics) {
     };
   });
 
-  methods.sort((a, b) => b.failures - a.failures || b.calls - a.calls);
+  // Sort by the customer's own failures first. On a bad link transport noise
+  // can dwarf a single real bug, and the bug is what they need to see at the
+  // top of the table.
+  methods.sort(
+    (a, b) => b.apiFailures - a.apiFailures || b.failures - a.failures || b.calls - a.calls,
+  );
 
-  const calls = methods.reduce((n, m) => n + m.calls, 0);
-  const failures = methods.reduce((n, m) => n + m.failures, 0);
+  const sum = (f) => methods.reduce((n, m) => n + f(m), 0);
+  const calls = sum((m) => m.calls);
+  const failures = sum((m) => m.failures);
+  const apiFailures = sum((m) => m.apiFailures);
+  const transportFailures = sum((m) => m.transportFailures);
+  const retries = sum((m) => m.retries);
 
   return {
     calls,
     failures,
+    apiFailures,
+    transportFailures,
+    retries,
     failureRate: calls ? failures / calls : 0,
+    // The rate that actually says something about their software. Reported
+    // separately so a bad link cannot inflate the number they are judged on.
+    apiFailureRate: calls ? apiFailures / calls : 0,
+    network: {
+      retries,
+      transportFailures,
+      // Attempts that had to be repeated, as a share of all attempts made.
+      // A high number here means the link was bad, NOT that the API was.
+      retryRate: calls + retries ? retries / (calls + retries) : 0,
+      healthy: retries === 0 && transportFailures === 0,
+    },
     durationMs: (metrics.endedAt || Date.now()) - metrics.startedAt,
     methods,
   };

@@ -30,6 +30,9 @@ const DEFAULTS = {
   // timeout and the run moves on. Without this a dead socket hangs the whole
   // simulation. Set 0 to disable if your adapter does legitimately long work.
   timeoutMs: 20_000,
+  // Extra attempts for calls that never reached the server. Transport only —
+  // an error your API actually returned is a finding and is never retried.
+  retries: 3,
   population: { agents: 6, cities: ["manila", "mumbai"], tickSeconds: 5, minutes: 10 },
   // Comfortably inside a 1-hour token, which is the common default.
   session: { refreshEveryMinutes: 30 },
