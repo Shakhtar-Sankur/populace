@@ -19,9 +19,11 @@ param(
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
-# This machine's link is NAT64 and Node otherwise wastes 10s per connection
-# trying IPv4 first. Harmless on a normal network.
-$env:NODE_OPTIONS = "--dns-result-order=ipv6first"
+# Deliberately no NODE_OPTIONS here. An earlier version set
+# --dns-result-order=ipv6first to work around connection failures on a NAT64
+# link. Measuring it afterwards showed 40/40 successful connections both with
+# and without the flag — the failures were the link recovering on its own, not
+# address-family ordering. The workaround was cargo cult, so it is gone.
 
 # The isolated test project. Never a production host — populace.config.mjs
 # lists the live ones in neverRunAgainst and refuses them before loading.
