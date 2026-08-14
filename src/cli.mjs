@@ -192,6 +192,11 @@ async function run() {
   let teardown = null;
   if (!has("keep")) {
     console.log(`\n  Removing simulated accounts…`);
+    // Cleanup gets a fresh budget. If the run gave up on the target, the
+    // breaker is open and every deletion fails instantly — which is how an
+    // earlier build left five invented accounts live in a real project, the
+    // safety mechanism causing the exact harm the product promises to avoid.
+    metrics.breaker?.reset();
     teardown = await world.teardown();
   }
 
