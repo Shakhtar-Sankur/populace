@@ -29,6 +29,17 @@ export default {
     // "https://xxxxxxxx.supabase.co",
   ],
 
+  // How long any single call into your adapter may take before Populace stops
+  // waiting, records it as a timeout, and lets the other agents carry on.
+  //
+  // Without a deadline one unresponsive endpoint freezes the whole simulation
+  // and you get no report at all — the run just stops moving. With one, a slow
+  // endpoint shows up in the report as a timeout, which is a finding.
+  //
+  // Raise it if your API is legitimately slow; set 0 to disable it entirely if
+  // your adapter does long work on purpose (a batch import, say).
+  timeoutMs: 20_000,
+
   population: {
     agents: 8,
     cities: ["manila", "mumbai"], // manila · mumbai · delhi · jakarta · bangkok
