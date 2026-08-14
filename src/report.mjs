@@ -10,6 +10,7 @@ import path from "node:path";
 import { summarise } from "./instrument.mjs";
 import { coverageOf } from "./contract.mjs";
 import { renderHtmlReport } from "./html-report.mjs";
+import { VERSION } from "./version.mjs";
 
 const pct = (n) => `${(n * 100).toFixed(1)}%`;
 const ms = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}s` : `${Math.round(n)}ms`);
@@ -23,7 +24,7 @@ export function buildReport({ config, adapter, world, metrics, teardown, started
   const verdict = decideVerdict({ api, world, teardown, engineErrors });
 
   return {
-    populace: { version: "0.1.0", generatedAt: new Date().toISOString() },
+    populace: { version: VERSION, generatedAt: new Date().toISOString() },
     run: {
       app: config.app || adapter.name || "unknown",
       adapter: config.adapter,
