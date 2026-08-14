@@ -491,6 +491,73 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
       </div>
     </div>
 
+    <!-- The most common question, answered where it is asked. -->
+    <h3 class="rv" style="margin:60px 0 8px">What you connect it to — and what you don't</h3>
+    <div class="grid2 rv" style="margin-top:22px; align-items:start">
+      <div class="card" style="border-color:color-mix(in srgb,var(--cyan) 34%,transparent)">
+        <span class="num" style="color:var(--cyan)">Point it here</span>
+        <h3>Your API</h3>
+        <p>The same HTTP endpoints, database and auth your real app talks to — your
+           <strong>test</strong> environment of them. Six agents sign in as six genuinely
+           different users, so the server has to keep them apart.</p>
+        <p style="margin-bottom:0"><strong>Why:</strong> every bug found so far lived on the
+           server — a feed query filtered to the wrong user, an upsert with no read
+           permission, a delete that left the rows behind. None was visible from the screen.</p>
+      </div>
+      <div class="card">
+        <span class="num" style="color:var(--muted)">Not this</span>
+        <h3>Your .apk or .aab</h3>
+        <p>There is no “drop in your build and go”. A compiled binary is a
+           <em>client</em>; driving it means automating taps on screens, which tests the
+           interface rather than what happens when several people use it at once.</p>
+        <p style="margin-bottom:0">Populace works one layer below that, which is why one
+           adapter covers your Android app, your iOS app and your web app together — they
+           all speak to the same API.</p>
+      </div>
+    </div>
+
+    <h3 class="rv" style="margin:52px 0 14px">The whole integration is one file</h3>
+    <p class="rv" style="max-width:64ch">
+      This is a real, working adapter — the Supabase one used for the run that found five
+      bugs, trimmed to its essentials. If your backend speaks HTTP, yours looks like this.
+    </p>
+    <div class="rv">
+      <pre><span class="cm">// adapters/my-app.mjs — everything Populace needs to know about your app</span>
+<span class="k">export function</span> createAdapter(target) {
+  <span class="k">const</span> api = target.url, key = target.key;
+
+  <span class="k">return</span> {
+    name: <span class="s">"My App"</span>,
+
+    <span class="cm">// The one method every adapter must have: make a real account.</span>
+    <span class="k">async</span> createUser(person) {
+      <span class="k">const</span> r = <span class="k">await</span> fetch(`${api}/auth/v1/signup`, {
+        method: <span class="s">"POST"</span>,
+        headers: { apikey: key, <span class="s">"content-type"</span>: <span class="s">"application/json"</span> },
+        body: JSON.stringify({ phone: person.phone, password: person.password }),
+      });
+      <span class="k">if</span> (!r.ok) <span class="k">throw new</span> Error(<span class="k">await</span> r.text());   <span class="cm">// a real failure, reported once</span>
+      <span class="k">return</span> { id: (<span class="k">await</span> r.json()).user.id, token: <span class="s">"…"</span> };
+    },
+
+    <span class="cm">// Say something publicly. Populace decides WHEN; you decide HOW.</span>
+    <span class="k">async</span> post(user, text) { <span class="cm">/* one fetch */</span> },
+
+    <span class="cm">// Read the feed — this is the call that exposed the biggest bug.</span>
+    <span class="k">async</span> recentPostsByOthers(user) { <span class="cm">/* one fetch */</span> },
+
+    <span class="cm">// Delete the account and its data. Runs automatically after every run.</span>
+    <span class="k">async</span> deleteUser(user) { <span class="cm">/* one fetch */</span> },
+  };
+}</pre>
+    </div>
+    <p class="rv" style="max-width:64ch; font-size:15.5px; color:var(--muted)">
+      Implement <code>createUser</code> and you can run. Add a method, and Populace starts
+      exercising that behaviour; leave one out, and the report names it under
+      <strong>NOT TESTED</strong> along with what it would have caught. It never quietly
+      appears more thorough than it was.
+    </p>
+
     <h3 class="rv" style="margin:56px 0 16px">The 13-method contract</h3>
     <p class="rv" style="max-width:62ch">
       Implement as many as apply. Coverage is reported as a fraction and every gap is
