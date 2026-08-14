@@ -805,6 +805,38 @@ check("a run cut short says so, and is never called clean", () => {
   assert.ok(/incomplete/i.test(renderReport(report)));
 });
 
+check("cleanup gets a fresh budget after the run gave up", async () => {
+  // A real run left FIVE invented accounts live in a customer project because
+  // the breaker was still open at teardown, so every deleteUser failed in 0ms.
+  // The safety mechanism caused the exact harm the product exists to avoid.
+  const breaker = new CircuitBreaker({ threshold: 2 });
+  breaker.recordTransportFailure();
+  breaker.recordTransportFailure();
+  assert.equal(breaker.open, true, "precondition: the run gave up");
+
+  const deleted = [];
+  const metrics = createMetrics();
+  const app = instrument(
+    { name: "t", async createUser() { return { id: "u" }; }, async deleteUser(u) { deleted.push(u.id); } },
+    metrics,
+    { timeoutMs: 500, retries: 0, breaker },
+  );
+
+  metrics.breaker.reset();
+  assert.equal(breaker.open, false, "cleanup must not inherit the run's verdict");
+
+  const personas = buildPersonas(2, ["manila"]);
+  const world = new World({ adapter: app, personas, identity: {}, hooks: {} });
+  world.agents = personas.map((p, i) => {
+    const a = new Agent(p, app, i, {});
+    a.user = { id: `u${i}` };
+    return a;
+  });
+  const result = await world.teardown();
+  assert.equal(result.removed, 2, "both accounts must actually be removed");
+  assert.equal(deleted.length, 2);
+});
+
 // --- 5. session expiry ----------------------------------------------------
 // Tokens expire. Without a refresh, every agent starts failing at once and the
 // run reports a catastrophe that belongs to us, not to the customer's app —

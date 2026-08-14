@@ -86,6 +86,21 @@ export class CircuitBreaker {
     this.open = false;
   }
 
+  /**
+   * Force it shut for a new phase of work.
+   *
+   * Cleanup needs this. An open breaker made teardown fail all five deletions
+   * instantly and left five invented accounts live in a customer's project —
+   * the safety mechanism causing the exact harm the product promises to avoid.
+   * Cleanup is when you most need to keep trying, so it starts with a fresh
+   * budget rather than inheriting the run's verdict on the network.
+   */
+  reset() {
+    this.consecutive = 0;
+    this.open = false;
+    this.openedAfter = null;
+  }
+
   /** @returns {boolean} true when this failure was the one that opened it. */
   recordTransportFailure() {
     if (this.threshold <= 0) return false; // disabled

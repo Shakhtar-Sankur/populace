@@ -29,6 +29,8 @@ export async function simulate({ configPath, overrides = {}, on = {}, cleanup = 
   await world.populate();
   await world.run(config.population);
 
+  // Same fresh budget for the programmatic path — see cli.mjs.
+  if (cleanup) metrics.breaker?.reset();
   const teardown = cleanup ? await world.teardown() : null;
   metrics.endedAt = Date.now();
 
