@@ -56,3 +56,62 @@ export function backoffMs(attempt, base = 250, cap = 4000) {
 }
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Stops retrying once the target is clearly gone rather than merely flaky.
+ *
+ * Retries fix a flaky link and make a dead one agonising: every call costs the
+ * full deadline times every attempt, so a run against an unreachable host
+ * crawls for twenty minutes and then produces nothing. Observed exactly that —
+ * the retry fix removed the hang and replaced it with a grind.
+ *
+ * So: after `threshold` transport failures in a row with no success in between,
+ * the breaker opens. Calls then fail immediately, the run ends early, and the
+ * report says the target became unreachable — in seconds instead of the best
+ * part of an hour.
+ *
+ * Any single success closes it again. A brief outage in the middle of an
+ * otherwise fine run must not abort that run; only a sustained one should.
+ */
+export class CircuitBreaker {
+  constructor({ threshold = 12 } = {}) {
+    this.threshold = threshold;
+    this.consecutive = 0;
+    this.open = false;
+    this.openedAfter = null;
+  }
+
+  recordSuccess() {
+    this.consecutive = 0;
+    this.open = false;
+  }
+
+  /** @returns {boolean} true when this failure was the one that opened it. */
+  recordTransportFailure() {
+    if (this.threshold <= 0) return false; // disabled
+    this.consecutive += 1;
+    if (!this.open && this.consecutive >= this.threshold) {
+      this.open = true;
+      this.openedAfter = this.consecutive;
+      return true;
+    }
+    return false;
+  }
+
+  /** An application error says the server IS answering, so the link is alive. */
+  recordApiFailure() {
+    this.recordSuccess();
+  }
+}
+
+export class TargetUnreachableError extends Error {
+  constructor(consecutive) {
+    super(
+      `Target became unreachable — ${consecutive} consecutive calls failed at the network ` +
+        `level with no response. Stopping rather than retrying for the rest of the run.`,
+    );
+    this.name = "TargetUnreachableError";
+    this.isTransport = true;
+    this.circuitOpen = true;
+  }
+}

@@ -33,6 +33,9 @@ const DEFAULTS = {
   // Extra attempts for calls that never reached the server. Transport only —
   // an error your API actually returned is a finding and is never retried.
   retries: 3,
+  // Consecutive unreachable calls before Populace declares the target down and
+  // stops, instead of retrying every call for the rest of the run. 0 disables.
+  giveUpAfter: 12,
   population: { agents: 6, cities: ["manila", "mumbai"], tickSeconds: 5, minutes: 10 },
   // Comfortably inside a 1-hour token, which is the common default.
   session: { refreshEveryMinutes: 30 },

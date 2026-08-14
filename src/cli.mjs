@@ -149,7 +149,7 @@ async function doctor() {
 async function run() {
   const { config, raw } = await open();
   const metrics = createMetrics();
-  const adapter = instrument(raw, metrics, { timeoutMs: config.timeoutMs, retries: config.retries });
+  const adapter = instrument(raw, metrics, { timeoutMs: config.timeoutMs, retries: config.retries, giveUpAfter: config.giveUpAfter });
   const startedAt = Date.now();
 
   const { agents, cities, minutes, tickSeconds } = config.population;
@@ -158,7 +158,17 @@ async function run() {
   const world = World.fromConfig(config, adapter, {
     joined: (a) => console.log(`   ✓ ${a.persona.name} (${a.persona.city.name}, ${a.persona.platform})`),
     joinFailed: (p, e) => console.log(`   ✖ ${p.name}: ${e.message}`),
-    tick: (n, total, w) => render(config, n, total, w),
+    tick: (n, total, w) => {
+      render(config, n, total, w);
+      // Stop as soon as the target is judged gone. Grinding out the remaining
+      // ticks against a dead host wastes the operator's time and adds nothing
+      // to the report.
+      if (metrics.breaker?.open) {
+        console.log(`
+  ✖ Target unreachable — stopping early after ${n} of ${total} ticks.`);
+        w.stop();
+      }
+    },
   });
 
   process.on("SIGINT", () => {

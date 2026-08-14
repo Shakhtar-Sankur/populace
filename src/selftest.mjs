@@ -13,7 +13,7 @@ import { execFile } from "node:child_process";
 import { World } from "./engine/world.mjs";
 import { Agent } from "./engine/agent.mjs";
 import { buildPersonas } from "./engine/personas.mjs";
-import { isTransportError } from "./net.mjs";
+import { CircuitBreaker, isTransportError } from "./net.mjs";
 import {
   createMetrics,
   DEFAULT_TIMEOUT_MS,
@@ -719,6 +719,90 @@ check("a real API failure is still 'problems-found' even on a bad link", () => {
   assert.equal(report.verdict.status, "problems-found", "their bug must not be downgraded by noise");
   const text = renderReport(report);
   assert.ok(/Problems found/.test(text));
+});
+
+// --- 4g. giving up on a target that is simply gone -------------------------
+// Retries fixed the flaky case and made the DEAD case worse: every call then
+// cost the full deadline times every attempt. Observed on a real run — it
+// stopped hanging and started grinding, 12 minutes without completing a tick.
+// So a sustained outage has to end the run quickly instead.
+
+const alwaysDown = () => {
+  const metrics = createMetrics();
+  let n = 0;
+  const app = instrument(
+    { name: "d", async post() { n += 1; throw dropped(); } },
+    metrics,
+    { timeoutMs: 50, retries: 3, giveUpAfter: 4 },
+  );
+  return { app, metrics, attempts: () => n };
+};
+
+check("the breaker opens after a run of unreachable calls", async () => {
+  const { app, metrics } = alwaysDown();
+  for (let i = 0; i < 6; i++) await app.post().catch(() => {});
+  assert.equal(metrics.breaker.open, true);
+  assert.equal(summarise(metrics).network.gaveUp, true);
+});
+
+check("once open, calls fail instantly instead of burning the deadline", async () => {
+  const { app, metrics } = alwaysDown();
+  while (!metrics.breaker.open) await app.post().catch(() => {});
+  const started = Date.now();
+  await app.post().catch(() => {});
+  assert.ok(Date.now() - started < 40, "an open breaker must not wait or retry");
+});
+
+check("a single success closes the breaker again", async () => {
+  // A blip in the middle of an otherwise fine run must not abort that run.
+  const breaker = new CircuitBreaker({ threshold: 3 });
+  breaker.recordTransportFailure();
+  breaker.recordTransportFailure();
+  breaker.recordSuccess();
+  breaker.recordTransportFailure();
+  breaker.recordTransportFailure();
+  assert.equal(breaker.open, false, "non-consecutive failures must not trip it");
+  assert.equal(breaker.recordTransportFailure(), true, "three in a row should");
+});
+
+check("an error the API returned proves the link is alive and resets the breaker", async () => {
+  // Otherwise a genuinely broken endpoint looks like a dead network and kills
+  // the run that was about to find the bug.
+  const metrics = createMetrics();
+  const app = instrument(
+    { name: "d", async post() { throw new Error("permission denied for table posts"); } },
+    metrics,
+    { timeoutMs: 50, retries: 3, giveUpAfter: 3 },
+  );
+  for (let i = 0; i < 8; i++) await app.post().catch(() => {});
+  assert.equal(metrics.breaker.open, false, "their bug must not be mistaken for an outage");
+  assert.equal(summarise(metrics).apiFailures, 8);
+});
+
+check("giveUpAfter: 0 disables the breaker", async () => {
+  const metrics = createMetrics();
+  const app = instrument(
+    { name: "d", async post() { throw dropped(); } },
+    metrics,
+    { timeoutMs: 30, retries: 0, giveUpAfter: 0 },
+  );
+  for (let i = 0; i < 10; i++) await app.post().catch(() => {});
+  assert.equal(metrics.breaker.open, false);
+});
+
+check("a run cut short says so, and is never called clean", () => {
+  const m = createMetrics();
+  m.breaker = { open: true, openedAfter: 12 };
+  m.methods.set("post", { method: "post", calls: 5, failures: 5, apiFailures: 0,
+    transportFailures: 5, retries: 9, durations: [1, 1, 1, 1, 1],
+    errors: new Map([["Target became unreachable", 5]]), firstErrorAt: Date.now() });
+  const report = buildReport({ ...inconclusiveShape, metrics: m });
+  assert.notEqual(report.verdict.status, "clean");
+  assert.ok(
+    report.verdict.problems.some((p) => /stopped early/i.test(p)),
+    "the report must admit it covers less than it was asked to",
+  );
+  assert.ok(/incomplete/i.test(renderReport(report)));
 });
 
 // --- 5. session expiry ----------------------------------------------------
