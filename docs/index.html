@@ -58,8 +58,8 @@ body{
   overflow-x:hidden;
 }
 h1,h2,h3,h4{margin:0; color:var(--ink); line-height:1.15; font-weight:640; letter-spacing:-.02em}
-h1{font-size:clamp(38px,7vw,74px); letter-spacing:-.035em}
-h2{font-size:clamp(27px,4vw,42px)}
+h1{font-size:clamp(42px,8.4vw,104px); letter-spacing:-.04em; font-weight:700}
+h2{font-size:clamp(30px,5.2vw,60px); letter-spacing:-.03em}
 h3{font-size:clamp(19px,2.2vw,23px)}
 p{margin:0 0 1em}
 a{color:var(--cyan); text-decoration:none}
@@ -72,6 +72,10 @@ strong{color:var(--ink); font-weight:640}
   font-family:var(--mono); font-size:11.5px; font-weight:700; letter-spacing:.22em;
   text-transform:uppercase; color:var(--amber); margin:0 0 14px;
 }
+.eyebrow-brand{display:inline-flex; align-items:center; gap:9px; color:var(--ink);
+  border:1px solid var(--rule); border-radius:99px; padding:7px 15px 7px 12px;
+  background:color-mix(in srgb,var(--bg-2) 65%,transparent)}
+.gmark-lg{height:15px; width:15px; color:var(--amber)}
 .lede{font-size:clamp(17px,2vw,21px); color:var(--body); max-width:62ch}
 section{padding:clamp(64px,9vw,116px) 0; position:relative}
 .rule{border-top:1px solid var(--rule)}
@@ -87,6 +91,21 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
   display:flex; align-items:center; gap:26px}
 .brand{display:flex; align-items:center; gap:10px; color:var(--ink); font-weight:680; letter-spacing:-.02em}
 .brand:hover{text-decoration:none}
+
+/* Gigzen lockup. align-items:center on the row and display:block on the svg —
+   an inline svg sits on the text baseline and rides visibly high otherwise,
+   which is exactly how this looked wrong the first time it was built. */
+.byline{display:inline-flex; align-items:center; gap:6px; margin-left:9px; padding-left:11px;
+  border-left:1px solid var(--rule); font-weight:500; font-size:13px; color:var(--muted); letter-spacing:0}
+.byline-lab{font-size:12px}
+.gmark{height:14px; width:14px; display:block; flex:none; color:var(--ink)}
+.gword{color:var(--ink); font-weight:600; letter-spacing:-.01em}
+@media(max-width:560px){ .byline{display:none} }
+
+/* Reading position. Meta-style pages are long; a thin progress rail is the
+   cheapest way to tell someone how much is left. */
+.progress{position:fixed; top:0; left:0; height:2px; width:0;
+  background:linear-gradient(90deg,var(--amber),var(--cyan)); z-index:80; transition:width .1s linear}
 .dot{width:9px; height:9px; border-radius:50%; background:var(--amber);
   box-shadow:0 0 0 3px color-mix(in srgb,var(--amber) 22%,transparent); flex:none}
 .navlinks{display:flex; gap:22px; margin-left:auto; align-items:center}
@@ -113,7 +132,19 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
 }
 
 /* ---------------------------------------------------------------- hero */
-.hero{position:relative; overflow:hidden; padding:clamp(70px,11vw,132px) 0 clamp(56px,8vw,96px)}
+/* Meta-scale hero: it owns the viewport, the type is the loudest thing on the
+   page, and the motion sits behind it rather than beside it. min-height rather
+   than height so a long headline on a small phone can still grow. */
+.hero{position:relative; overflow:hidden; display:flex; align-items:center;
+  min-height:min(94vh,900px); padding:clamp(80px,10vw,120px) 0 clamp(64px,8vw,96px)}
+.scrollcue{position:absolute; left:50%; bottom:26px; transform:translateX(-50%); z-index:3;
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:9px}
+.scrollcue i{display:block; width:1px; height:38px; background:linear-gradient(var(--amber),transparent);
+  animation:drop 2.1s ease-in-out infinite}
+@keyframes drop{0%{transform:scaleY(.25); transform-origin:top}50%{transform:scaleY(1); transform-origin:top}
+  51%{transform-origin:bottom}100%{transform:scaleY(.25); transform-origin:bottom}}
+@media(max-width:700px){.scrollcue{display:none}}
 #grid{position:absolute; inset:0; width:100%; height:100%; display:block; opacity:.62}
 .hero-veil{
   position:absolute; inset:0; pointer-events:none;
@@ -133,8 +164,13 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
   transition:transform .16s ease, background .16s ease, border-color .16s ease;
 }
 .btn:hover{text-decoration:none; transform:translateY(-1px)}
+/* Near-black on the bright amber of the dark theme. Light mode darkens --amber
+   to #9C4E00 for contrast against white, which turned this into dark-on-dark at
+   3.15 — the loudest button on the page, and the least readable. */
 .btn-primary{background:var(--amber); color:#1A0F03}
 .btn-primary:hover{background:#FFAE5E}
+:root[data-theme="light"] .btn-primary{color:#FFFFFF}
+:root[data-theme="light"] .btn-primary:hover{background:#7E3E00}
 .btn-ghost{border-color:var(--edge-2); color:var(--ink); background:color-mix(in srgb,var(--bg-2) 70%,transparent)}
 .btn-ghost:hover{border-color:var(--cyan); color:var(--ink)}
 
@@ -215,6 +251,19 @@ td code{color:var(--cyan)}
 
 .band{background:var(--bg-2); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule)}
 
+/* The Gigzen statement. Full-bleed and centred so it reads as a signature on
+   the work rather than another feature block. */
+.gzband{
+  border-top:1px solid var(--rule); text-align:center;
+  background:
+    radial-gradient(760px 320px at 50% 0%, color-mix(in srgb,var(--amber) 9%,transparent), transparent 70%),
+    var(--bg-2);
+}
+.gzband .lede{max-width:64ch}
+.gmark-xl{height:52px; width:52px; margin:0 auto; color:var(--amber)}
+.footmark{display:flex; align-items:center; gap:8px; margin:12px 0 0; font-size:14px}
+.footmark .gmark{height:16px; width:16px}
+
 ul.tick{list-style:none; padding:0; margin:0}
 ul.tick li{position:relative; padding-left:26px; margin-bottom:11px}
 ul.tick li::before{content:"→"; position:absolute; left:0; color:var(--amber); font-family:var(--mono)}
@@ -239,9 +288,27 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
 <body class="no-js">
 <script>document.body.classList.remove("no-js");</script>
 
+<!-- The Gigzen mark, traced from the master artwork. One closed path taking
+     currentColor, so it inverts with the theme and needs no second copy. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="gigzen" viewBox="0 0 64 64">
+    <path d="M33.19 2 L60.1 14.82 L48.54 20.68 L33.66 13.4 L16.25 23.06 L15.14 23.85 L15.14 40.15 L33.19 47.91 L49.02 39.84 L49.34 38.73 L48.54 38.25 L30.34 33.66 L30.5 30.97 L44.43 24.01 L61.05 29.86 L61.05 46.64 L33.5 62 L2.95 46.64 L2.95 17.51 L33.03 2.16 Z" fill="currentColor"/>
+  </symbol>
+</svg>
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+
 <nav class="nav">
   <div class="nav-in">
-    <a class="brand" href="#top"><span class="dot"></span> Populace</a>
+    <a class="brand" href="#top">
+      <span class="dot"></span>
+      <span>Populace</span>
+      <span class="byline">
+        <span class="byline-lab">by</span>
+        <svg class="gmark" aria-hidden="true"><use href="#gigzen"></use></svg>
+        <span class="gword">Gigzen</span>
+      </span>
+    </a>
     <div class="navlinks" id="navlinks">
       <a href="#proof">Proof</a>
       <a href="#how">How it works</a>
@@ -261,7 +328,10 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
   <canvas id="grid" aria-hidden="true"></canvas>
   <div class="hero-veil" aria-hidden="true"></div>
   <div class="wrap hero-in">
-    <p class="eyebrow">A Gigzen product</p>
+    <p class="eyebrow eyebrow-brand">
+      <svg class="gmark gmark-lg" aria-hidden="true"><use href="#gigzen"></use></svg>
+      A Gigzen product
+    </p>
     <h1>Your app, used by people who don't exist.</h1>
     <p class="lede">
       Populace brings a population of simulated people to life inside your application
@@ -280,6 +350,7 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
       <span><b>13</b>-method adapter contract</span>
     </div>
   </div>
+  <div class="scrollcue" aria-hidden="true"><i></i><span>Scroll</span></div>
 </header>
 
 <!-- ============================================================ terminal -->
@@ -732,10 +803,34 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
   </div>
 </section>
 
+<!-- ============================================================ gigzen -->
+<section class="gzband">
+  <div class="wrap" style="text-align:center">
+    <svg class="gmark gmark-xl rv" aria-hidden="true"><use href="#gigzen"></use></svg>
+    <h2 class="rv" style="margin-top:22px">Populace is a Gigzen product.</h2>
+    <p class="lede rv" style="margin:18px auto 0; text-align:center">
+      Gigzen is a software company in Bhubaneswar, India. We built Populace because we
+      needed it ourselves — our own social application looked finished and was quietly
+      broken for every user but the first. Everything on this page was designed, built
+      and tested by Gigzen.
+    </p>
+    <div class="hero-cta rv" style="justify-content:center">
+      <a class="btn btn-ghost" href="https://github.com/Shakhtar-Sankur/populace">Source on GitHub</a>
+      <a class="btn btn-ghost" href="mailto:hello@gigzen.com">Talk to us</a>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap foot">
     <div>
-      <a class="brand" href="#top" style="margin-bottom:10px"><span class="dot"></span> Populace</a>
+      <a class="brand" href="#top" style="margin-bottom:10px">
+        <span class="dot"></span><span>Populace</span>
+      </a>
+      <p class="footmark">
+        <svg class="gmark" aria-hidden="true"><use href="#gigzen"></use></svg>
+        <span class="gword">Gigzen</span>
+      </p>
       <p style="margin:10px 0 0; max-width:44ch; font-size:13.5px">
         A simulated population that tests your app through its real API.
         Designed and built by Gigzen.
@@ -799,6 +894,21 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
       burger.textContent = "☰";
     }
   });
+
+  /* ---- reading progress --------------------------------------------- */
+  var bar = document.getElementById("progress");
+  var ticking = false;
+  function progress() {
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (h > 0 ? Math.min(100, (scrollY / h) * 100) : 0) + "%";
+    ticking = false;
+  }
+  addEventListener("scroll", function () {
+    // rAF-gated: writing a style on every scroll event is the classic way to
+    // make a long page feel heavy on a phone.
+    if (!ticking) { ticking = true; requestAnimationFrame(progress); }
+  }, { passive: true });
+  progress();
 
   /* ---- reveal ------------------------------------------------------- */
   var rv = [].slice.call(document.querySelectorAll(".rv"));
@@ -916,16 +1026,18 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
     // first given a real size, which covers the background-tab case, late web
     // fonts reflowing the headline, and device rotation — none of which the
     // window resize event reliably reports.
+    var rt;
+    var relayout = function () { clearTimeout(rt); rt = setTimeout(start, 120); };
+
     if ("ResizeObserver" in window) {
-      var rt;
-      new ResizeObserver(function () {
-        clearTimeout(rt);
-        rt = setTimeout(start, 120);
-      }).observe(cv.parentElement);
-    } else {
-      var rt2;
-      addEventListener("resize", function () { clearTimeout(rt2); rt2 = setTimeout(start, 180); });
+      new ResizeObserver(relayout).observe(cv.parentElement);
     }
+    // Kept alongside the observer rather than as a fallback. ResizeObserver
+    // callbacks are delivered during the rendering steps, which a browser skips
+    // entirely for a page it is not painting — so a viewport change that
+    // happens while the tab is in the background never reaches it. The plain
+    // event does, and start() is idempotent, so running both is harmless.
+    addEventListener("resize", relayout);
 
     // Stop burning battery while the tab is hidden.
     document.addEventListener("visibilitychange", function () {
