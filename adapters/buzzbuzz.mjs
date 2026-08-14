@@ -228,9 +228,13 @@ export function createAdapter(target) {
     },
 
     async joinGroup(user, groupId) {
+      // Mirrors the app: ignoreDuplicates so this is ON CONFLICT DO NOTHING.
+      // A plain upsert takes the UPDATE path on a repeat join, and there is no
+      // UPDATE policy on group_members — which is the failure this adapter
+      // surfaced on a 644-call run.
       const { error } = await user.client
         .from("group_members")
-        .upsert({ group_id: groupId, user_id: user.id });
+        .upsert({ group_id: groupId, user_id: user.id }, { ignoreDuplicates: true });
       if (error) throw error;
     },
 
