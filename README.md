@@ -186,6 +186,24 @@ multi-user simulation is best at finding.
 - **`populace-report.html`** beside it — one self-contained file, no scripts and nothing
   fetched from the network, for the people who were not watching the terminal
 
+### A run always finishes
+
+Every call into your adapter has a deadline (`timeoutMs`, 20s by default). Past
+it, Populace stops waiting, records a timeout against that endpoint, and the
+other agents carry on.
+
+This matters more than it sounds. We found it the hard way: a real run against a
+flaky link froze two minutes in and sat there silently until something outside
+killed it nine minutes later. No report, no error — just a progress line that
+stopped moving. The API under test was fine; one dead socket had taken the whole
+run with it.
+
+A hang is the worst outcome a testing tool can produce, because it does not look
+like a failure. It looks like nothing, and the natural conclusion is that the
+tool is broken. So now a slow or unresponsive endpoint becomes **a line in the
+report**, which is a finding you can act on — and the run still ends with a
+verdict. Set `timeoutMs: 0` if your adapter does long work on purpose.
+
 ---
 
 ## What it will not tell you
