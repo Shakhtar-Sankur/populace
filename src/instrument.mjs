@@ -10,7 +10,13 @@
 // `adapter.post(...)`; the adapter does its thing; the numbers accumulate in
 // between.
 
-import { backoffMs, isTransportError, sleep } from "./net.mjs";
+import {
+  backoffMs,
+  CircuitBreaker,
+  isTransportError,
+  sleep,
+  TargetUnreachableError,
+} from "./net.mjs";
 
 const PERCENTILES = [50, 95, 99];
 
@@ -31,6 +37,13 @@ export const DEFAULT_TIMEOUT_MS = 20_000;
 // socket, a staging box behind a flaky VPN — without papering over an endpoint
 // that is genuinely down, which still fails after the last attempt.
 export const DEFAULT_RETRIES = 3;
+
+// Consecutive transport failures before Populace concludes the target is gone
+// and stops the run. Twelve is roughly two full ticks' worth of calls for a
+// small population — long enough that a brief outage does not abort a good run,
+// short enough that a dead host is called in under a minute instead of grinding
+// out the full duration and producing nothing.
+export const DEFAULT_GIVE_UP_AFTER = 12;
 
 export class TimeoutError extends Error {
   constructor(method, ms) {
@@ -97,9 +110,15 @@ export function normaliseError(error) {
 export function instrument(
   adapter,
   metrics,
-  { timeoutMs = DEFAULT_TIMEOUT_MS, retries = DEFAULT_RETRIES } = {},
+  {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    retries = DEFAULT_RETRIES,
+    giveUpAfter = DEFAULT_GIVE_UP_AFTER,
+    breaker = new CircuitBreaker({ threshold: giveUpAfter }),
+  } = {},
 ) {
   const wrapped = { name: adapter.name };
+  metrics.breaker = breaker;
   // 0 or Infinity disables the deadline, for adapters whose work is legitimately
   // long (a batch import, a deliberate slow-endpoint probe).
   const limited = Number.isFinite(timeoutMs) && timeoutMs > 0;
@@ -139,10 +158,25 @@ export function instrument(
       const entry = bucket(metrics, key);
       entry.calls += 1;
 
+      // Already given up on this target: fail instantly rather than spend the
+      // full deadline discovering the same thing again.
+      if (breaker.open) {
+        const error = new TargetUnreachableError(breaker.openedAfter);
+        error.fromAdapter = true;
+        entry.failures += 1;
+        entry.transportFailures += 1;
+        entry.durations.push(0);
+        if (entry.firstErrorAt === null) entry.firstErrorAt = Date.now();
+        const shape = normaliseError(error);
+        entry.errors.set(shape, (entry.errors.get(shape) || 0) + 1);
+        throw error;
+      }
+
       for (let attempt = 1; ; attempt++) {
         const outcome = await attemptOnce(args);
 
         if (outcome.ok) {
+          breaker.recordSuccess();
           // Only the SUCCESSFUL attempt's duration is recorded. Including the
           // failed attempts before it would fold network problems into the
           // customer's latency figures and make p50/p95 unpublishable — which
@@ -154,10 +188,16 @@ export function instrument(
         const error = outcome.error;
         const transport = isTransportError(error);
 
+        // An error the server RETURNED proves the link is alive, whatever it
+        // says about their code. That must reset the breaker, or a genuinely
+        // broken endpoint would look like a dead network and abort the run.
+        if (transport) breaker.recordTransportFailure();
+        else breaker.recordApiFailure();
+
         // Retry ONLY when the server never answered. Any response the server
         // actually produced — including a 500 — is a finding about their code,
         // and retrying it would quietly turn a real bug into a green tick.
-        if (transport && attempt < maxAttempts) {
+        if (transport && attempt < maxAttempts && !breaker.open) {
           entry.retries += 1;
           await sleep(backoffMs(attempt));
           continue;
@@ -239,6 +279,11 @@ export function summarise(metrics) {
       // A high number here means the link was bad, NOT that the API was.
       retryRate: calls + retries ? retries / (calls + retries) : 0,
       healthy: retries === 0 && transportFailures === 0,
+      // Set when Populace concluded the target was gone and stopped early.
+      // Without this the report would show a short run full of failures and
+      // give no clue that it was cut short deliberately.
+      gaveUp: Boolean(metrics.breaker?.open),
+      gaveUpAfter: metrics.breaker?.openedAfter ?? null,
     },
     durationMs: (metrics.endedAt || Date.now()) - metrics.startedAt,
     methods,

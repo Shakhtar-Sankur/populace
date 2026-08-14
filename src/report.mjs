@@ -100,6 +100,15 @@ function decideVerdict({ api, world, teardown, engineErrors = [] }) {
         `These were NOT tested.`,
     );
   }
+  // Stated separately and first among network problems: a run that was cut
+  // short covers less than it appears to, and every number below it is drawn
+  // from a shorter sample than the one that was asked for.
+  if (api.network?.gaveUp) {
+    problems.push(
+      `Populace stopped early — the target stopped responding entirely ` +
+        `(${api.network.gaveUpAfter} consecutive unreachable calls). This run is incomplete.`,
+    );
+  }
   if (teardown?.failed?.length) {
     problems.push(`${teardown.failed.length} simulated accounts could NOT be deleted and are still live.`);
   }
