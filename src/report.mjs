@@ -83,8 +83,22 @@ function decideVerdict({ api, world, teardown, engineErrors = [] }) {
   // the report will call the run clean while its own table shows the failure.
   // For a correctness tool that is the worst possible defect — it exits 0 and
   // CI waves the bug through.
-  if (api.failures > 0) {
-    problems.push(`${api.failures} of ${api.calls} API calls failed (${pct(api.failureRate)}).`);
+  //
+  // But the two kinds of failure are stated separately, because they belong to
+  // different people. Blaming a customer's API for a dropped socket is how a
+  // testing tool loses its credibility — and once a team decides the reports
+  // cry wolf, they stop reading the real findings too.
+  if (api.apiFailures > 0) {
+    problems.push(
+      `${api.apiFailures} of ${api.calls} API calls failed (${pct(api.apiFailureRate)}).`,
+    );
+  }
+  if (api.transportFailures > 0) {
+    problems.push(
+      `${api.transportFailures} of ${api.calls} calls never reached the API after ` +
+        `${api.retries} retries — the network between Populace and your server, not your code. ` +
+        `These were NOT tested.`,
+    );
   }
   if (teardown?.failed?.length) {
     problems.push(`${teardown.failed.length} simulated accounts could NOT be deleted and are still live.`);
@@ -94,12 +108,30 @@ function decideVerdict({ api, world, teardown, engineErrors = [] }) {
   }
 
   const failing = api.methods.filter((m) => m.failures > 0);
+
+  // Three outcomes, not two. A run that found no bugs but could not reach the
+  // server half the time has not proved anything, and calling it "clean" would
+  // be the single most damaging lie this tool could tell. It is also not
+  // "problems-found" in the customer's code — so it gets its own name.
+  let status = "clean";
+  if (api.apiFailures > 0 || engineErrors.length || !world.agents.length || teardown?.failed?.length) {
+    status = "problems-found";
+  } else if (problems.length) {
+    status = "inconclusive";
+  }
+
   return {
-    status: problems.length ? "problems-found" : "clean",
+    status,
     problems,
+    // Kept explicit so a CI job can branch on "is this my bug or my network?"
+    // without re-deriving it from the prose.
+    apiFailures: api.apiFailures,
+    transportFailures: api.transportFailures,
     failingMethods: failing.map((m) => ({
       method: m.method,
       failureRate: Number(m.failureRate.toFixed(3)),
+      apiFailures: m.apiFailures,
+      transportFailures: m.transportFailures,
       topError: m.errors[0]?.message ?? null,
     })),
   };
@@ -131,9 +163,27 @@ export function renderReport(report) {
   // alone — so this line can never contradict the table printed below it.
   if (report.verdict.status === "clean" && report.api.failures === 0) {
     L.push(`  ✔ No failures across ${report.api.calls} API calls.`);
+  } else if (report.verdict.status === "inconclusive") {
+    // Deliberately not "✖". Nothing is known to be wrong with their code — the
+    // run simply could not prove otherwise, and saying so plainly is the point.
+    L.push(`  ⚠ Inconclusive — your API did not fail, but the run could not complete:`);
+    for (const p of report.verdict.problems) L.push(`      · ${p}`);
   } else {
     L.push(`  ✖ Problems found:`);
     for (const p of report.verdict.problems) L.push(`      · ${p}`);
+  }
+
+  // Connection quality, whenever it was anything other than perfect. A reader
+  // comparing two runs needs to know whether the latency below was measured
+  // over a good link or a bad one.
+  const net = report.api.network;
+  if (net && !net.healthy) {
+    L.push("");
+    L.push(
+      `  CONNECTION — ${net.retries} retried attempt(s), ` +
+        `${pct(net.retryRate)} of all attempts; ${net.transportFailures} never got through.`,
+    );
+    L.push(`    Latency below is measured on successful attempts only, so it is not inflated by these.`);
   }
   L.push(rule);
 
