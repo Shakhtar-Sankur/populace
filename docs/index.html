@@ -44,22 +44,6 @@ img,svg,canvas{max-width:100%}
 }
 /* The page is dark by design — it is a terminal product. Light mode softens
    the ground rather than inverting it, so the identity survives. */
-:root[data-theme="light"]{
-  --bg:#F7F9F9; --bg-2:#FFFFFF; --bg-3:#EEF3F4;
-  --rule:#DCE5E7; --ink:#0B1416; --body:#3C4C52;
-  /* Measured, not guessed. The first pass used #66787F and #B85C00, which came
-     out at 4.36 and 4.35 against the light ground — just under the 4.5 that
-     normal-size text needs. These clear it. */
-  --muted:#5A6B72;
-  --amber:#9C4E00; --cyan:#0E7C74;
-  /* The spectrum darkened for white. Same hues, inverted lightness, so the
-     section identities survive the theme switch instead of washing out. */
-  --violet:#6D3BD4; --magenta:#C01F6E; --blue:#1257C4; --lime:#3F7A00; --gold:#8A5A00;
-  /* The status colours were tuned for the dark ground and left unset here,
-     which put the severity labels and pills at 2.6 on white — the bug list is
-     the most important content on the page, so it cannot be the least legible. */
-  --red:#B3261E; --green:#136B3E;
-}
 
 html{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
@@ -111,7 +95,6 @@ ul.tick li::before{color:var(--accent)}
   animation:drift1 26s ease-in-out infinite alternate}
 .aura::after{background:radial-gradient(circle,var(--cyan),transparent 66%); bottom:-24%; right:-12%;
   animation:drift2 32s ease-in-out infinite alternate}
-:root[data-theme="light"] .aura::before,:root[data-theme="light"] .aura::after{opacity:.16}
 @keyframes drift1{to{transform:translate3d(14%,10%,0) scale(1.18)}}
 @keyframes drift2{to{transform:translate3d(-12%,-8%,0) scale(1.12)}}
 
@@ -173,7 +156,10 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
    cheapest way to tell someone how much is left. */
 .progress{position:fixed; top:0; left:0; height:2px; width:0;
   background:linear-gradient(90deg,var(--amber),var(--cyan)); z-index:80; transition:width .1s linear}
-.dot{width:9px; height:9px; border-radius:50%; background:var(--amber);
+/* The brand dot follows the product, not the palette default. Amber is Buzz
+   Buzz's colour; Populace is lime, and the two should be tellable apart in
+   a browser tab strip. */
+.dot{width:9px; height:9px; border-radius:2px; background:var(--lime);
   box-shadow:0 0 0 3px color-mix(in srgb,var(--amber) 22%,transparent); flex:none}
 .navlinks{display:flex; gap:22px; margin-left:auto; align-items:center}
 .navlinks a{color:var(--muted); font-size:14.5px; font-weight:520}
@@ -182,7 +168,6 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
   color:var(--night); background:var(--amber); padding:8px 15px; border-radius:8px;
   font-weight:640;
 }
-:root[data-theme="light"] .navlinks .cta{color:#fff}
 .navlinks .cta:hover{background:var(--amber-dk); text-decoration:none}
 .burger{display:none; margin-left:auto; background:none; border:1px solid var(--rule);
   color:var(--ink); border-radius:8px; width:40px; height:34px; cursor:pointer; font-size:15px}
@@ -222,15 +207,10 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
 }
 .hero-in{position:relative; z-index:2}
 .hero h1{max-width:17ch; color:var(--white)}
-:root[data-theme="light"] .hero h1{color:var(--ink)}
 /* The hero runs white into the spectrum rather than accent-to-accent: the first
    words stay at full contrast and the colour arrives as the line lands. */
 .hero-grad{
   background:linear-gradient(103deg,var(--white) 0%, var(--white) 26%, var(--gold) 52%, var(--magenta) 74%, var(--violet) 100%);
-  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
-}
-:root[data-theme="light"] .hero-grad{
-  background:linear-gradient(103deg,var(--ink) 0%, var(--ink) 26%, var(--gold) 54%, var(--magenta) 76%, var(--violet) 100%);
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
 }
 .hero .lede{margin-top:22px; font-size:clamp(17px,2.1vw,22px)}
@@ -246,8 +226,6 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
    3.15 — the loudest button on the page, and the least readable. */
 .btn-primary{background:var(--amber); color:#1A0F03}
 .btn-primary:hover{background:#FFAE5E}
-:root[data-theme="light"] .btn-primary{color:#FFFFFF}
-:root[data-theme="light"] .btn-primary:hover{background:#7E3E00}
 .btn-ghost{border-color:var(--edge-2); color:var(--ink); background:color-mix(in srgb,var(--bg-2) 70%,transparent)}
 .btn-ghost:hover{border-color:var(--cyan); color:var(--ink)}
 
@@ -259,7 +237,6 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
   background:#05090B; border:1px solid var(--edge); border-radius:12px; overflow:hidden;
   box-shadow:0 30px 70px -30px rgba(0,0,0,.85); font-family:var(--mono);
 }
-:root[data-theme="light"] .term{background:#08110F; box-shadow:0 20px 50px -26px rgba(0,0,0,.35)}
 .term-bar{display:flex; align-items:center; gap:7px; padding:11px 14px; background:#0A1013; border-bottom:1px solid var(--edge)}
 .term-bar i{width:11px; height:11px; border-radius:50%; display:block}
 .term-bar .t{margin-left:10px; font-size:11.5px; color:#6C7F87; letter-spacing:.05em}
@@ -338,7 +315,6 @@ pre{
   background:#05090B; border:1px solid var(--edge); border-radius:11px; padding:18px 20px;
   overflow-x:auto; font-family:var(--mono); font-size:13.2px; line-height:1.7; color:#C6D6DC; margin:0 0 18px;
 }
-:root[data-theme="light"] pre{background:#08110F}
 /* Same reasoning as the terminal: code blocks stay dark in both themes. */
 pre .k{color:#FF9A3C} pre .s{color:#4ED8D0} pre .cm{color:#81949C}
 
@@ -385,19 +361,133 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
 .foot{display:flex; flex-wrap:wrap; gap:18px 40px; align-items:flex-start; justify-content:space-between}
 .foot a{color:var(--muted)} .foot a:hover{color:var(--ink)}
 
-.themetog{background:none; border:1px solid var(--rule); color:var(--muted); border-radius:8px;
-  width:34px; height:32px; cursor:pointer; font-size:14px; flex:none}
-.themetog:hover{color:var(--ink); border-color:var(--edge-2)}
+
+/* GIGZEN wordmark — same blue as the mark, so the lockup reads as one object.
+   The fallback is a solid blue rather than nothing: with background-clip
+   unsupported and the fill left transparent, the company name disappears. */
+.gword {
+  background: linear-gradient(100deg, #6FB4F5 0%, #2E7FE0 50%, #0038B8 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .gword { background: none; -webkit-text-fill-color: currentColor; color: #0038B8; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   COLOUR, IN THIS SITE'S OWN LANGUAGE
+   ══════════════════════════════════════════════════════════════════════
+   The company site and this one must not look like the same page with a
+   different logo. They are deliberately opposite:
+
+     gigzen.com   light paper, 28px radii, generous air, soft edges
+     this page    near-black, 6px radii, dense, hard edges, mono labels
+
+   Both are colourful. The difference is that colour there is a wash you
+   sit inside, and colour here is a signal: it marks a section, a
+   severity, a stream of output. This is a terminal product and the page
+   should feel like instrumentation, not a brochure.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* 1. HARD EDGES. Roundness belongs to the company site; this one gives it up
+      almost entirely. 6px reads as engineered, 28px reads as friendly. */
+.btn, .card, .band, .bug, .pill, .stat, .term, pre, .scroller { border-radius: 6px; }
+.dot, .sev { border-radius: 2px; }
+
+/* 2. THE ACCENT DOES REAL WORK. It was tinting eyebrows only, which is why a
+      page with seven section colours still read as monochrome. Now it marks
+      the section edge, the heading, the rules and the panel it applies to. */
+section { position: relative; }
+section > .wrap > .eyebrow::before {
+  content: ""; display: inline-block; width: 22px; height: 2px;
+  background: var(--accent); margin-inline-end: 10px; vertical-align: middle;
+}
+.card {
+  border: 1px solid var(--rule);
+  border-top: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--accent) 6%, var(--bg-2)) 0%, var(--bg-2) 60%);
+  transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--rule));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+              0 18px 40px -30px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* 3. MONO FOR ANYTHING THAT IS DATA. Labels, counters, section markers. The
+      company site uses one humanist face throughout; this one switches face
+      to say "this is output", which no amount of colour can say by itself. */
+.eyebrow, .pill, .k, .sev, .num { font-family: var(--mono); }
+.eyebrow { letter-spacing: .16em; text-transform: uppercase; font-size: 11.5px; }
+.pill {
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--rule));
+  color: color-mix(in srgb, var(--accent) 82%, var(--ink));
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  font-size: 11.5px; letter-spacing: .08em;
+}
+
+/* 4. SECTION NUMBERING, in the accent. A counter rather than hand-typed
+      numbers, so inserting a section can never leave the page numbered
+      01 02 04 — the failure mode of every numbered page maintained by hand. */
+main { counter-reset: sec; }
+section[id] { counter-increment: sec; }
+section[id] > .wrap > .eyebrow::after {
+  content: " / " counter(sec, decimal-leading-zero);
+  color: color-mix(in srgb, var(--accent) 70%, var(--muted));
+  opacity: .8;
+}
+
+/* 5. THE SPECTRUM, VISIBLE AT A GLANCE. A hairline at the top of each section
+      in that section's colour: scrolling the page reads as moving through a
+      spectrum, which is the colourfulness asked for, delivered as structure
+      rather than as decoration. */
+section[id]::before {
+  content: ""; position: absolute; inset-inline: 0; top: 0; height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%, var(--accent) 18%, var(--accent) 82%, transparent 100%);
+  opacity: .55;
+}
+
+/* 6. Severity keeps its own colours — those mean something specific and must
+      never drift into the section accent. */
+.sev { letter-spacing: .1em; font-size: 10.5px; }
+
+/* 7. The primary action takes Populace's own colour. It was amber, which now
+      belongs to Buzz Buzz; two Gigzen products should not share a CTA colour.
+      Lime with near-black text measures 11:1. */
+.btn-primary { background: var(--lime); color: #0A1400; }
+.btn-primary:hover { background: #BDF573; }
+.btn-ghost:hover { border-color: var(--accent); }
+
+/* 8. Instrumentation texture: a fine grid, brighter under the hero, fading
+      out down the page so it never competes with the reading column. */
+.gridlines { opacity: .5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card:hover { transform: none; }
+}
+
 </style>
 </head>
 <body class="no-js">
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;pointer-events:none">
+  <defs>
+    <linearGradient id="gzBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6FB4F5"/>
+      <stop offset=".55" stop-color="#2E7FE0"/>
+      <stop offset="1" stop-color="#0038B8"/>
+    </linearGradient>
+  </defs>
+</svg>
 <script>document.body.classList.remove("no-js");</script>
 
 <!-- The Gigzen mark, traced from the master artwork. One closed path taking
      currentColor, so it inverts with the theme and needs no second copy. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <symbol id="gigzen" viewBox="0 0 64 64">
-    <path d="M33.19 2 L60.1 14.82 L48.54 20.68 L33.66 13.4 L16.25 23.06 L15.14 23.85 L15.14 40.15 L33.19 47.91 L49.02 39.84 L49.34 38.73 L48.54 38.25 L30.34 33.66 L30.5 30.97 L44.43 24.01 L61.05 29.86 L61.05 46.64 L33.5 62 L2.95 46.64 L2.95 17.51 L33.03 2.16 Z" fill="currentColor"/>
+    <path d="M33.19 2 L60.1 14.82 L48.54 20.68 L33.66 13.4 L16.25 23.06 L15.14 23.85 L15.14 40.15 L33.19 47.91 L49.02 39.84 L49.34 38.73 L48.54 38.25 L30.34 33.66 L30.5 30.97 L44.43 24.01 L61.05 29.86 L61.05 46.64 L33.5 62 L2.95 46.64 L2.95 17.51 L33.03 2.16 Z" fill="url(#gzBlue)"/>
   </symbol>
 </svg>
 
@@ -423,7 +513,6 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
       <a href="#docs">Docs</a>
       <a class="cta" href="#download">Download</a>
     </div>
-    <button class="themetog" id="themetog" title="Switch theme" aria-label="Switch theme">◐</button>
     <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">☰</button>
   </div>
 </nav>
@@ -1069,16 +1158,14 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
   document.getElementById("yr").textContent = new Date().getFullYear();
 
   /* ---- theme -------------------------------------------------------- */
-  var tog = document.getElementById("themetog");
+  /* There is no longer a light theme. Anyone who used the old toggle still has
+     populace-theme="light" saved, and the attribute it set now matches no
+     styles at all — so it has to be actively cleared, not just ignored, or
+     they get a half-painted page forever. */
   try {
-    var saved = localStorage.getItem("populace-theme");
-    if (saved) document.documentElement.setAttribute("data-theme", saved);
+    localStorage.removeItem("populace-theme");
+    document.documentElement.removeAttribute("data-theme");
   } catch (e) {}
-  tog.addEventListener("click", function () {
-    var now = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", now);
-    try { localStorage.setItem("populace-theme", now); } catch (e) {}
-  });
 
   /* ---- mobile menu -------------------------------------------------- */
   var burger = document.getElementById("burger");
