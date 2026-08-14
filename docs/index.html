@@ -23,6 +23,16 @@ img,svg,canvas{max-width:100%}
   --amber:#FF9A3C; --amber-dk:#C26A18;
   --cyan:#4ED8D0; --cyan-dk:#2AA79F;
   --red:#FF6B6B; --green:#5BD98A;
+
+  /* A spectrum rather than two accents. Each section takes one, so scrolling
+     moves through the colour wheel instead of repeating the same amber. Every
+     value is light enough to clear 4.5:1 on the near-black ground — the point
+     is saturation, not brightness that has to be dimmed later to be legible. */
+  --violet:#B79CFF;
+  --magenta:#FF6FB5;
+  --blue:#5FA8FF;
+  --lime:#A8E85C;
+  --gold:#FFD166;
   --dim:#7B8C94; --chalk:#E8EFF1; --white:#FFFFFF;
 
   --bg:var(--night); --bg-2:var(--night-2); --bg-3:var(--night-3);
@@ -42,6 +52,9 @@ img,svg,canvas{max-width:100%}
      normal-size text needs. These clear it. */
   --muted:#5A6B72;
   --amber:#9C4E00; --cyan:#0E7C74;
+  /* The spectrum darkened for white. Same hues, inverted lightness, so the
+     section identities survive the theme switch instead of washing out. */
+  --violet:#6D3BD4; --magenta:#C01F6E; --blue:#1257C4; --lime:#3F7A00; --gold:#8A5A00;
   /* The status colours were tuned for the dark ground and left unset here,
      which put the severity labels and pills at 2.6 on white — the bug list is
      the most important content on the page, so it cannot be the least legible. */
@@ -67,7 +80,61 @@ a:hover{text-decoration:underline}
 code,kbd{font-family:var(--mono); font-size:.9em}
 strong{color:var(--ink); font-weight:640}
 
-.wrap{max-width:var(--wrap); margin:0 auto; padding:0 24px}
+.wrap{max-width:var(--wrap); margin:0 auto; padding:0 24px; position:relative; z-index:2}
+
+/* ---------------------------------------------------------------- colour system
+   Each section declares --accent; everything inside inherits it. One variable
+   swap re-tints a whole band, so the palette stays coherent by construction
+   instead of by remembering to change six values together. */
+section{--accent:var(--amber)}
+#proof{--accent:var(--magenta)}
+#how{--accent:var(--cyan)}
+#report{--accent:var(--violet)}
+#resilience{--accent:var(--blue)}
+#safety{--accent:var(--lime)}
+#download{--accent:var(--gold)}
+#docs{--accent:var(--cyan)}
+.eyebrow{color:var(--accent)}
+.card .num{color:var(--accent)}
+ul.tick li::before{color:var(--accent)}
+.take{border-left-color:var(--accent)}
+
+/* Aurora: three slow, blurred colour fields drifting behind the page. Blur is
+   applied to a pseudo-element rather than the section, so text is never
+   composited through the filter. */
+.aura{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0}
+.aura::before,.aura::after{
+  content:""; position:absolute; width:52vw; height:52vw; max-width:760px; max-height:760px;
+  border-radius:50%; filter:blur(90px); opacity:.28;
+}
+.aura::before{background:radial-gradient(circle,var(--accent),transparent 66%); top:-18%; left:-10%;
+  animation:drift1 26s ease-in-out infinite alternate}
+.aura::after{background:radial-gradient(circle,var(--cyan),transparent 66%); bottom:-24%; right:-12%;
+  animation:drift2 32s ease-in-out infinite alternate}
+:root[data-theme="light"] .aura::before,:root[data-theme="light"] .aura::after{opacity:.16}
+@keyframes drift1{to{transform:translate3d(14%,10%,0) scale(1.18)}}
+@keyframes drift2{to{transform:translate3d(-12%,-8%,0) scale(1.12)}}
+
+/* Engineering-drawing grid, very faint. Reads as technical without competing. */
+.gridlines{
+  position:absolute; inset:0; pointer-events:none; z-index:0; opacity:.5;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb,var(--rule) 60%,transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb,var(--rule) 60%,transparent) 1px, transparent 1px);
+  background-size:72px 72px;
+  mask-image:radial-gradient(ellipse 78% 62% at 50% 42%, #000 30%, transparent 78%);
+  -webkit-mask-image:radial-gradient(ellipse 78% 62% at 50% 42%, #000 30%, transparent 78%);
+}
+
+/* Gradient display type. -webkit-text-fill-color:transparent hides the real
+   colour, so the gradient stops themselves must all be legible on the ground —
+   there is no fallback colour doing the work once this applies. */
+.grad{
+  background:linear-gradient(96deg,var(--accent) 0%, var(--cyan) 52%, var(--violet) 100%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+}
+@supports not (background-clip:text){ .grad{ -webkit-text-fill-color:currentColor; color:var(--ink) } }
 .eyebrow{
   font-family:var(--mono); font-size:11.5px; font-weight:700; letter-spacing:.22em;
   text-transform:uppercase; color:var(--amber); margin:0 0 14px;
@@ -156,6 +223,16 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
 .hero-in{position:relative; z-index:2}
 .hero h1{max-width:17ch; color:var(--white)}
 :root[data-theme="light"] .hero h1{color:var(--ink)}
+/* The hero runs white into the spectrum rather than accent-to-accent: the first
+   words stay at full contrast and the colour arrives as the line lands. */
+.hero-grad{
+  background:linear-gradient(103deg,var(--white) 0%, var(--white) 26%, var(--gold) 52%, var(--magenta) 74%, var(--violet) 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+:root[data-theme="light"] .hero-grad{
+  background:linear-gradient(103deg,var(--ink) 0%, var(--ink) 26%, var(--gold) 54%, var(--magenta) 76%, var(--violet) 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
 .hero .lede{margin-top:22px; font-size:clamp(17px,2.1vw,22px)}
 .hero-cta{display:flex; flex-wrap:wrap; gap:12px; margin-top:32px}
 .btn{
@@ -207,16 +284,40 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
 @media(max-width:900px){.grid4{grid-template-columns:1fr 1fr}}
 
 .card{
-  background:var(--bg-2); border:1px solid var(--rule); border-radius:14px; padding:26px;
-  transition:border-color .2s ease, transform .2s ease;
+  position:relative; background:var(--bg-2); border:1px solid var(--rule);
+  border-radius:14px; padding:26px; overflow:hidden;
+  transition:border-color .22s ease, transform .22s ease, box-shadow .22s ease;
 }
-.card:hover{border-color:var(--edge-2); transform:translateY(-2px)}
+/* A lit top edge in the section's accent — the cheapest way to make a grid of
+   cards feel wired together rather than like six grey boxes. */
+.card::before{
+  content:""; position:absolute; inset:0 0 auto 0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  opacity:.6; transition:opacity .22s ease;
+}
+.card:hover{
+  border-color:color-mix(in srgb,var(--accent) 46%,var(--rule));
+  transform:translateY(-3px);
+  box-shadow:0 18px 46px -26px color-mix(in srgb,var(--accent) 60%,transparent);
+}
+.card:hover::before{opacity:1}
 .card h3{margin-bottom:9px}
 .card p:last-child{margin-bottom:0}
 .card .num{font-family:var(--mono); font-size:12px; color:var(--amber); letter-spacing:.12em; display:block; margin-bottom:12px}
 
-.stat{background:var(--bg-2); border:1px solid var(--rule); border-radius:14px; padding:22px}
-.stat b{display:block; font-size:clamp(28px,4vw,40px); color:var(--ink); font-weight:680; letter-spacing:-.03em; line-height:1}
+.stat{
+  position:relative; background:
+    linear-gradient(180deg, color-mix(in srgb,var(--accent) 9%,transparent), transparent 62%), var(--bg-2);
+  border:1px solid var(--rule); border-radius:14px; padding:22px; overflow:hidden;
+}
+.stat::after{
+  content:""; position:absolute; left:0; top:0; width:3px; height:100%;
+  background:linear-gradient(180deg,var(--accent),transparent);
+}
+.stat b{display:block; font-size:clamp(30px,4.4vw,46px); font-weight:700; letter-spacing:-.035em; line-height:1;
+  background:linear-gradient(180deg,var(--ink),var(--accent));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--ink)}
+@supports not (background-clip:text){ .stat b{ -webkit-text-fill-color:currentColor } }
 .stat span{display:block; margin-top:8px; font-size:13.5px; color:var(--muted)}
 
 .bug{border-left:3px solid var(--red); padding:4px 0 4px 20px; margin:0 0 26px}
@@ -332,7 +433,7 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
       <svg class="gmark gmark-lg" aria-hidden="true"><use href="#gigzen"></use></svg>
       A Gigzen product
     </p>
-    <h1>Your app, used by people who don't exist.</h1>
+    <h1 class="grad hero-grad">Your app, used by people who don't exist.</h1>
     <p class="lede">
       Populace brings a population of simulated people to life inside your application
       and drives it through its <strong>real API</strong> — signing up, moving through
@@ -390,9 +491,11 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
 
 <!-- ============================================================ proof -->
 <section id="proof" class="band">
+  <div class="aura" aria-hidden="true"></div>
+  <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
     <p class="eyebrow rv">Proven, not promised</p>
-    <h2 class="rv">It found five real bugs in a finished app.</h2>
+    <h2 class="rv grad">It found five real bugs in a finished app.</h2>
     <p class="lede rv" style="margin-top:16px">
       Not a toy example. Buzz Buzz is a shipped social application for delivery riders
       — built, tested by hand, and believed to work. Six simulated people used it for
@@ -458,9 +561,11 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
 
 <!-- ============================================================ how -->
 <section id="how">
+  <div class="aura" aria-hidden="true"></div>
+  <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
     <p class="eyebrow rv">How it works</p>
-    <h2 class="rv">The engine never learns your app.</h2>
+    <h2 class="rv grad">The engine never learns your app.</h2>
     <p class="lede rv" style="margin-top:16px">
       Populace knows how to <em>be a person</em>: where they are, when they get bored,
       who they reply to, when they give up on a slow screen. It knows nothing about your
@@ -586,9 +691,11 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
 
 <!-- ============================================================ report -->
 <section id="report" class="band">
+  <div class="aura" aria-hidden="true"></div>
+  <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
     <p class="eyebrow rv">The deliverable</p>
-    <h2 class="rv">A report you can hand to somebody else.</h2>
+    <h2 class="rv grad">A report you can hand to somebody else.</h2>
     <p class="lede rv" style="margin-top:16px">
       The live simulation is a demo. The report is the product. It is deliberately
       conservative: anything unproven is called unproven, and there is no tolerance
@@ -640,9 +747,11 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
 
 <!-- ============================================================ resilience -->
 <section id="resilience">
+  <div class="aura" aria-hidden="true"></div>
+  <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
     <p class="eyebrow rv">Built for real infrastructure</p>
-    <h2 class="rv">It tells you when the network was the problem.</h2>
+    <h2 class="rv grad">It tells you when the network was the problem.</h2>
     <p class="lede rv" style="margin-top:16px">
       Staging environments sit behind flaky VPNs. CI runners drop sockets. A testing tool
       that only works on a perfect connection has not been tested yet — and one that blames
@@ -706,9 +815,11 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
 
 <!-- ============================================================ safety -->
 <section id="safety" class="band">
+  <div class="aura" aria-hidden="true"></div>
+  <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
     <p class="eyebrow rv">Safety</p>
-    <h2 class="rv">It refuses to touch production.</h2>
+    <h2 class="rv grad">It refuses to touch production.</h2>
     <p class="lede rv" style="margin-top:16px">
       Populace creates <strong>real accounts</strong> and writes <strong>real rows</strong>
       through your <strong>real API</strong>. Pointed at production it would put invented
@@ -746,9 +857,11 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
 
 <!-- ============================================================ download -->
 <section id="download">
+  <div class="aura" aria-hidden="true"></div>
+  <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
     <p class="eyebrow rv">Get it</p>
-    <h2 class="rv">Download Populace</h2>
+    <h2 class="rv grad">Download Populace</h2>
     <p class="lede rv" style="margin-top:16px">
       Node 18 or newer. <strong>Zero runtime dependencies</strong> — adapters bring their
       own, and the engine brings none. Nothing to install beyond the source itself.
@@ -803,9 +916,11 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
 
 <!-- ============================================================ docs -->
 <section id="docs" class="band">
+  <div class="aura" aria-hidden="true"></div>
+  <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
     <p class="eyebrow rv">Reference</p>
-    <h2 class="rv">Commands and configuration</h2>
+    <h2 class="rv grad">Commands and configuration</h2>
 
     <div class="scroller rv" style="margin-top:32px">
       <table>
@@ -998,6 +1113,21 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
   var ctx = cv.getContext("2d");
   var agents = [], W = 0, H = 0, dpr = 1, raf = null;
 
+  // The same spectrum the page uses, as raw channels so they can be composited
+  // with varying alpha without a colour parse on every frame.
+  var PALETTE = [
+    "255,154,60",   // amber
+    "78,216,208",   // cyan
+    "183,156,255",  // violet
+    "255,111,181",  // magenta
+    "95,168,255",   // blue
+    "168,232,92"    // lime
+  ];
+
+  // Squared link distance — comparing squares avoids a sqrt per pair, and the
+  // inner loop runs O(n²) every frame.
+  var LINK2 = 150 * 150;
+
   function ground() {
     return getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#070C0E";
   }
@@ -1038,7 +1168,9 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
         sp: 0.25 + Math.random() * 0.85,
         turn: 40 + Math.random() * 190,
         t: 0,
-        warm: Math.random() < 0.42
+        // Each agent keeps one colour for its whole life, so the trails read as
+        // distinct people moving rather than a single shifting mass.
+        col: PALETTE[i % PALETTE.length]
       });
     }
   }
@@ -1067,12 +1199,27 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
         a.turn = 40 + Math.random() * 190;
       }
 
-      var col = a.warm ? "255,154,60" : "78,216,208";
-      var g = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, 7);
-      g.addColorStop(0, "rgba(" + col + ",0.85)");
-      g.addColorStop(1, "rgba(" + col + ",0)");
+      var g = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, 8);
+      g.addColorStop(0, "rgba(" + a.col + ",0.9)");
+      g.addColorStop(1, "rgba(" + a.col + ",0)");
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(a.x, a.y, 7, 0, 6.2832); ctx.fill();
+      ctx.beginPath(); ctx.arc(a.x, a.y, 8, 0, 6.2832); ctx.fill();
+    }
+
+    // Link agents that are close together. This is the actual subject of the
+    // product — people interacting — so the hero shows connections forming and
+    // breaking rather than dots on independent errands.
+    ctx.lineWidth = 1;
+    for (var p = 0; p < agents.length; p++) {
+      for (var q = p + 1; q < agents.length; q++) {
+        var A = agents[p], B = agents[q];
+        var dx = A.x - B.x, dy = A.y - B.y;
+        var d2 = dx * dx + dy * dy;
+        if (d2 > LINK2) continue;
+        // Fade with distance so links dissolve instead of snapping off.
+        ctx.strokeStyle = "rgba(" + A.col + "," + (0.3 * (1 - d2 / LINK2)).toFixed(3) + ")";
+        ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+      }
     }
     ctx.globalCompositeOperation = "source-over";
     raf = requestAnimationFrame(frame);
