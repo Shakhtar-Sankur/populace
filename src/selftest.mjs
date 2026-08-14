@@ -733,15 +733,50 @@ const alwaysDown = () => {
   const app = instrument(
     { name: "d", async post() { n += 1; throw dropped(); } },
     metrics,
-    { timeoutMs: 50, retries: 3, giveUpAfter: 4 },
+    {
+      timeoutMs: 50,
+      retries: 3,
+      // A real cooldown is 15s, which a test cannot wait for. The behaviour
+      // under test is "does it eventually stop trying", not the duration.
+      breaker: new CircuitBreaker({ threshold: 4, cooldownMs: 1, giveUpAfterProbes: 1 }),
+    },
   );
   return { app, metrics, attempts: () => n };
 };
 
 check("the breaker opens after a run of unreachable calls", async () => {
   const { app, metrics } = alwaysDown();
-  for (let i = 0; i < 6; i++) await app.post().catch(() => {});
-  assert.equal(metrics.breaker.open, true);
+  for (let i = 0; i < 4; i++) await app.post().catch(() => {});
+  assert.equal(metrics.breaker.open, true, "four consecutive failures should trip it");
+  // Open is not the same as given up: the target may yet come back, and a run
+  // that recovers must not be reported as abandoned.
+  assert.equal(summarise(metrics).network.gaveUp, false, "open, but still willing to retry");
+});
+
+check("an abandoned breaker short-circuits instantly and reports giving up", async () => {
+  // Deliberately NOT driven by repeated calls through a fake adapter. That
+  // version passed standalone and failed inside the suite, because the fake
+  // rejects instantly and whether the cooldown elapsed depended on wall-clock
+  // milliseconds passing between calls — a race, not a behaviour. Whether the
+  // breaker reaches abandonment is covered above with an injected clock; what
+  // matters here is what instrument() does once it has.
+  const breaker = new CircuitBreaker({ threshold: 1, cooldownMs: 60_000, giveUpAfterProbes: 0 });
+  breaker.recordTransportFailure(0);
+  assert.equal(breaker.allows(120_000), false, "budget of 0 means the first probe is the last");
+  assert.equal(breaker.abandoned, true);
+
+  let reached = 0;
+  const metrics = createMetrics();
+  const app = instrument(
+    { name: "d", async post() { reached += 1; return "ok"; } },
+    metrics,
+    { timeoutMs: 500, retries: 3, breaker },
+  );
+
+  const started = Date.now();
+  await assert.rejects(() => app.post(), /unreachable/i);
+  assert.equal(reached, 0, "the adapter must not be called at all once abandoned");
+  assert.ok(Date.now() - started < 50, "and it must fail instantly, not wait");
   assert.equal(summarise(metrics).network.gaveUp, true);
 });
 
@@ -792,7 +827,7 @@ check("giveUpAfter: 0 disables the breaker", async () => {
 
 check("a run cut short says so, and is never called clean", () => {
   const m = createMetrics();
-  m.breaker = { open: true, openedAfter: 12 };
+  m.breaker = { open: true, abandoned: true, openedAfter: 12, trips: 1 };
   m.methods.set("post", { method: "post", calls: 5, failures: 5, apiFailures: 0,
     transportFailures: 5, retries: 9, durations: [1, 1, 1, 1, 1],
     errors: new Map([["Target became unreachable", 5]]), firstErrorAt: Date.now() });
@@ -835,6 +870,72 @@ check("cleanup gets a fresh budget after the run gave up", async () => {
   const result = await world.teardown();
   assert.equal(result.removed, 2, "both accounts must actually be removed");
   assert.equal(deleted.length, 2);
+});
+
+// --- 4h. the breaker has to be able to come back ---------------------------
+// Two live runs died at tick 1 of 60 on a link that was working seconds before
+// and worked again seconds after. The breaker opened on the first burst and
+// stayed open for the whole run.
+//
+// The mistake underneath was a probability one: transport failures were assumed
+// independent, so twelve in a row looked like a 1-in-4000 event. Real loss is
+// bursty — when a mobile link drops it drops for seconds — so twelve in a row
+// is simply what any ordinary outage looks like. A breaker without a recovery
+// path therefore ends every run on the first blip.
+
+check("the breaker reopens the circuit after its cooldown", () => {
+  const b = new CircuitBreaker({ threshold: 2, cooldownMs: 1000 });
+  const t0 = 10_000;
+  b.recordTransportFailure(t0); b.recordTransportFailure(t0);
+  assert.equal(b.open, true);
+  assert.equal(b.allows(t0 + 100), false, "still cooling down");
+  assert.equal(b.allows(t0 + 1100), true, "cooldown elapsed — one probe allowed");
+});
+
+check("a probe that succeeds closes the breaker and the run continues", () => {
+  const b = new CircuitBreaker({ threshold: 2, cooldownMs: 1000 });
+  const t0 = 10_000;
+  b.recordTransportFailure(t0); b.recordTransportFailure(t0);
+  assert.equal(b.allows(t0 + 1100), true);
+  b.recordSuccess();
+  assert.equal(b.open, false);
+  assert.equal(b.abandoned, false);
+  assert.equal(b.allows(t0 + 1200), true, "back to normal, no cooldown");
+});
+
+check("it still abandons a target that is genuinely gone", () => {
+  const b = new CircuitBreaker({ threshold: 2, cooldownMs: 1000, giveUpAfterProbes: 3 });
+  let t = 10_000;
+  b.recordTransportFailure(t); b.recordTransportFailure(t);
+  // Every probe fails: four cooldowns pass, the budget runs out.
+  for (let i = 0; i < 3; i++) { t += 1100; assert.equal(b.allows(t), true, `probe ${i + 1}`); }
+  t += 1100;
+  assert.equal(b.allows(t), false, "budget spent — stop trying");
+  assert.equal(b.abandoned, true);
+});
+
+check("a recovered outage is NOT reported as having given up", () => {
+  // The distinction that matters to a customer: a run that rode out a blip is
+  // complete, and calling it incomplete would understate a good result.
+  const b = new CircuitBreaker({ threshold: 2, cooldownMs: 1000 });
+  const t0 = 10_000;
+  b.recordTransportFailure(t0); b.recordTransportFailure(t0);
+  b.allows(t0 + 1100); b.recordSuccess();
+  const m = createMetrics(); m.breaker = b;
+  m.methods.set("post", { method:"post", calls:4, failures:2, apiFailures:0, transportFailures:2,
+    retries:3, durations:[10,20,30,40], errors:new Map(), firstErrorAt:Date.now() });
+  const s = summarise(m);
+  assert.equal(s.network.gaveUp, false, "it recovered — the run was not abandoned");
+  assert.equal(s.network.outages, 1, "but the outage is still reported");
+});
+
+check("recovering resets the probe budget for a later, separate outage", () => {
+  const b = new CircuitBreaker({ threshold: 1, cooldownMs: 100, giveUpAfterProbes: 2 });
+  let t = 1000;
+  b.recordTransportFailure(t);
+  t += 150; b.allows(t); b.recordSuccess();          // outage one, survived
+  b.recordTransportFailure(t);                       // outage two, later
+  t += 150; assert.equal(b.allows(t), true, "full allowance again, not inherited");
 });
 
 // --- 5. session expiry ----------------------------------------------------

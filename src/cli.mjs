@@ -164,7 +164,7 @@ async function run() {
       // Stop as soon as the target is judged gone. Grinding out the remaining
       // ticks against a dead host wastes the operator's time and adds nothing
       // to the report.
-      if (metrics.breaker?.open) {
+      if (metrics.breaker?.abandoned) {
         console.log(`
   ✖ Target unreachable — stopping early after ${n} of ${total} ticks.`);
         w.stop();
