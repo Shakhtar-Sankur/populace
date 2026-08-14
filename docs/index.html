@@ -280,6 +280,10 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
 .grid2{display:grid; grid-template-columns:1fr 1fr; gap:clamp(28px,5vw,64px); align-items:center}
 .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:20px}
 .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:16px}
+/* Grid items default to min-width:auto, so a <pre> wider than its track forces
+   the whole row past the viewport instead of scrolling inside itself. Below
+   ~500px that pushed the entire page sideways. */
+.grid2 > *, .grid3 > *, .grid4 > *{min-width:0}
 @media(max-width:900px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
 @media(max-width:900px){.grid4{grid-template-columns:1fr 1fr}}
 
@@ -447,7 +451,7 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
     <div class="trust">
       <span><b>5</b> real bugs found in a shipped app</span>
       <span><b>0</b> runtime dependencies</span>
-      <span><b>59</b> self-tests</span>
+      <span><b>66</b> self-tests</span>
       <span><b>13</b>-method adapter contract</span>
     </div>
   </div>
@@ -550,6 +554,20 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
         <div class="take">
           “You cannot upsert a column you cannot select.”
         </div>
+
+        <h3 style="margin:34px 0 10px">And a clean run since</h3>
+        <p style="font-size:15.5px">
+          The same six people, the same schema, after the fixes:
+          <strong>627 API calls across twelve endpoints, zero failures</strong>, six
+          accounts created and all six removed. Every multi-user path exercised — 88
+          reads of other people's feeds, 87 likes and 37 comments on other people's
+          posts, 35 private messages between drivers.
+        </p>
+        <p style="font-size:15px; color:var(--muted)">
+          Run against a local instance of the production schema, so the latency figures
+          are loopback numbers and are deliberately not quoted here. What it establishes
+          is correctness under concurrency, not speed.
+        </p>
         <p style="font-size:15px; color:var(--muted)">
           The rule that came out of the run — and the one that had silently broken
           profile editing for every user of a shipped application.
