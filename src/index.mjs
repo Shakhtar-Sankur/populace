@@ -22,7 +22,7 @@ export async function simulate({ configPath, overrides = {}, on = {}, cleanup = 
   const config = await loadConfig({ configPath, overrides });
   const raw = await loadAdapter(config);
   const metrics = createMetrics();
-  const adapter = instrument(raw, metrics);
+  const adapter = instrument(raw, metrics, { timeoutMs: config.timeoutMs });
   const startedAt = Date.now();
 
   const world = World.fromConfig(config, adapter, on);

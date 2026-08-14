@@ -9,10 +9,17 @@
 // that the failures are CAUGHT, grouped, and reflected in the verdict.
 
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { World } from "./engine/world.mjs";
 import { Agent } from "./engine/agent.mjs";
 import { buildPersonas } from "./engine/personas.mjs";
-import { createMetrics, instrument, normaliseError, summarise } from "./instrument.mjs";
+import {
+  createMetrics,
+  DEFAULT_TIMEOUT_MS,
+  instrument,
+  normaliseError,
+  summarise,
+} from "./instrument.mjs";
 import { buildReport, renderReport } from "./report.mjs";
 import { canSignInOnly, CONTRACT_METHODS, coverageOf, isStub } from "./contract.mjs";
 import { diagnose } from "./diagnose.mjs";
@@ -452,6 +459,123 @@ check("a cleanup that removed nothing is never rendered as complete", async () =
   const text = renderReport({ ...cleanReport, cleanup: result });
   assert.ok(!/Cleanup complete/.test(text), "must not say complete");
   assert.ok(/Cleanup partial/.test(text), "must say what actually happened");
+});
+
+// --- 4e. a call that never returns must not hang the run -------------------
+// A real run froze at tick 24/60 on one dead socket and produced no report at
+// all. The customer's API was not at fault and nothing was logged — the worst
+// kind of failure, because it looks like nothing. Every adapter call now has a
+// deadline.
+
+const never = () => new Promise(() => {});
+
+function timed(adapterFns, timeoutMs) {
+  const metrics = createMetrics();
+  return { metrics, app: instrument({ name: "t", ...adapterFns }, metrics, { timeoutMs }) };
+}
+
+check("a hung adapter call rejects instead of hanging forever", async () => {
+  const { app } = timed({ async post() { return never(); } }, 40);
+  const started = Date.now();
+  await assert.rejects(() => app.post(), /timed out after 40ms/);
+  assert.ok(Date.now() - started < 2000, "must give up at the deadline, not wait");
+});
+
+check("a timeout is recorded as a failure, not silently swallowed", async () => {
+  const { metrics, app } = timed({ async post() { return never(); } }, 40);
+  await app.post().catch(() => {});
+  const post = summarise(metrics).methods.find((m) => m.method === "post");
+  assert.equal(post.calls, 1);
+  assert.equal(post.failures, 1, "a run that gets no answer has failed, and must say so");
+  assert.ok(post.errors[0].message.includes("timed out"), "and the report must name why");
+});
+
+check("a timeout is attributed to the adapter, not to Populace", async () => {
+  // If this leaks as an untagged error the agent loop treats it as OUR bug and
+  // aborts the run — turning a slow customer endpoint into a crash.
+  const { app } = timed({ async post() { return never(); } }, 40);
+  const err = await app.post().catch((e) => e);
+  assert.equal(err.fromAdapter, true);
+  assert.equal(err.isTimeout, true);
+});
+
+check("one hung method does not stop the others from working", async () => {
+  const { app } = timed(
+    { async post() { return never(); }, async like() { return "ok"; } },
+    40,
+  );
+  const [slow, fast] = await Promise.allSettled([app.post(), app.like()]);
+  assert.equal(slow.status, "rejected");
+  assert.equal(fast.status, "fulfilled", "the run must carry on around a dead endpoint");
+  assert.equal(fast.value, "ok");
+});
+
+check("calls that finish in time are untouched by the deadline", async () => {
+  const { metrics, app } = timed({ async post() { return "fine"; } }, 5000);
+  assert.equal(await app.post(), "fine");
+  assert.equal(summarise(metrics).methods.find((m) => m.method === "post").failures, 0);
+});
+
+check("a real rejection still reports its own message, not a timeout", async () => {
+  const { app } = timed({ async post() { throw new Error("row-level security"); } }, 5000);
+  await assert.rejects(() => app.post(), /row-level security/);
+});
+
+check("a late rejection after the deadline does not crash the process", async () => {
+  // Nothing awaits the original promise once we have raced past it, so an
+  // unhandled rejection here would take down the whole run.
+  let unhandled = null;
+  const onUnhandled = (e) => { unhandled = e; };
+  process.on("unhandledRejection", onUnhandled);
+  const { app } = timed(
+    { async post() { await new Promise((r) => setTimeout(r, 30)); throw new Error("late"); } },
+    10,
+  );
+  await app.post().catch(() => {});
+  await new Promise((r) => setTimeout(r, 120));
+  process.off("unhandledRejection", onUnhandled);
+  assert.equal(unhandled, null, "a late failure must not become an unhandled rejection");
+});
+
+check("the deadline can be switched off for legitimately long work", async () => {
+  const { app } = timed({ async post() { await new Promise((r) => setTimeout(r, 60)); return "done"; } }, 0);
+  assert.equal(await app.post(), "done");
+});
+
+check("instrument applies a default deadline when none is given", async () => {
+  assert.ok(DEFAULT_TIMEOUT_MS > 0, "there must be a default, or hangs come straight back");
+  const metrics = createMetrics();
+  const app = instrument({ name: "t", async post() { return "ok"; } }, metrics);
+  assert.equal(await app.post(), "ok");
+});
+
+check("a fast call leaves no timer holding the process open", async () => {
+  // An uncleared timer per call would make `populace run` hang on exit for the
+  // full deadline after the simulation had already finished.
+  //
+  // This has to run in its OWN process. Checking getActiveResourcesInfo() here
+  // would see the deliberately-hung deadlines from the checks running alongside
+  // it and fail for a reason that has nothing to do with the code under test —
+  // which is exactly what the first version of this test did.
+  const here = new URL("./instrument.mjs", import.meta.url).href;
+  const script = `
+    import { createMetrics, instrument } from ${JSON.stringify(here)};
+    const app = instrument({ name: "t", async post() { return "ok"; } }, createMetrics(), {
+      timeoutMs: 60_000,
+    });
+    await app.post();
+  `;
+  const started = Date.now();
+  await new Promise((resolve, reject) => {
+    execFile(
+      process.execPath,
+      ["--input-type=module", "-e", script],
+      { timeout: 20_000 },
+      (err) => (err ? reject(err) : resolve()),
+    );
+  });
+  const elapsed = Date.now() - started;
+  assert.ok(elapsed < 10_000, `process took ${elapsed}ms to exit; a 60s timer was left armed`);
 });
 
 // --- 5. session expiry ----------------------------------------------------

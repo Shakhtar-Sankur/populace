@@ -12,6 +12,39 @@
 
 const PERCENTILES = [50, 95, 99];
 
+// A call that never comes back is the worst failure mode this tool has, because
+// it does not look like a failure — it looks like nothing. A real run against a
+// flaky network froze at tick 24 of 60 and sat there silently until an external
+// timeout killed it 9 minutes later, producing no report at all. The customer's
+// API was fine; one socket died and the whole run went with it.
+//
+// So every adapter call gets a deadline. Past it we stop waiting, record a
+// normal failure, and let the other agents carry on. A slow API then shows up
+// as a timeout in the report — which is a finding — instead of a hung process,
+// which is nothing.
+export const DEFAULT_TIMEOUT_MS = 20_000;
+
+export class TimeoutError extends Error {
+  constructor(method, ms) {
+    super(`${method} timed out after ${ms}ms`);
+    this.name = "TimeoutError";
+    this.isTimeout = true;
+  }
+}
+
+/**
+ * Reject once `ms` has passed. Resolves to a cancel() so the timer is always
+ * cleared — an uncleared timer keeps the process alive past the end of a run,
+ * which would make `populace run` hang on exit for every fast call.
+ */
+function deadline(method, ms) {
+  let timer;
+  const promise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new TimeoutError(method, ms)), ms);
+  });
+  return { promise, cancel: () => clearTimeout(timer) };
+}
+
 export function createMetrics() {
   return { methods: new Map(), startedAt: Date.now(), endedAt: null };
 }
@@ -44,8 +77,11 @@ export function normaliseError(error) {
     .slice(0, 200);
 }
 
-export function instrument(adapter, metrics) {
+export function instrument(adapter, metrics, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   const wrapped = { name: adapter.name };
+  // 0 or Infinity disables the deadline, for adapters whose work is legitimately
+  // long (a batch import, a deliberate slow-endpoint probe).
+  const limited = Number.isFinite(timeoutMs) && timeoutMs > 0;
 
   for (const key of Object.keys(adapter)) {
     const value = adapter[key];
@@ -57,8 +93,18 @@ export function instrument(adapter, metrics) {
       const entry = bucket(metrics, key);
       const started = performance.now();
       entry.calls += 1;
+      const clock = limited ? deadline(key, timeoutMs) : null;
       try {
-        const result = await value.apply(adapter, args);
+        // We stop WAITING at the deadline; we cannot cancel the adapter's own
+        // work, so a late reply may still land and is simply ignored. Recording
+        // the timeout as the outcome is honest — the run did not get an answer
+        // in time, which is exactly what a user of the API would experience.
+        const call = value.apply(adapter, args);
+        // Never leave a late rejection unhandled: once we have raced past it,
+        // nothing is awaiting `call`, and an unhandled rejection would crash the
+        // run with a stack trace that has nothing to do with the real problem.
+        if (clock) call.then?.(undefined, () => {});
+        const result = clock ? await Promise.race([call, clock.promise]) : await call;
         entry.durations.push(performance.now() - started);
         return result;
       } catch (error) {
@@ -72,6 +118,8 @@ export function instrument(adapter, metrics) {
         const shape = normaliseError(error);
         entry.errors.set(shape, (entry.errors.get(shape) || 0) + 1);
         throw error;
+      } finally {
+        clock?.cancel();
       }
     };
   }

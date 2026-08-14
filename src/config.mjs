@@ -26,6 +26,10 @@ function stringsIn(value, found = []) {
 
 const DEFAULTS = {
   environment: "test",
+  // How long any single adapter call may take before it is recorded as a
+  // timeout and the run moves on. Without this a dead socket hangs the whole
+  // simulation. Set 0 to disable if your adapter does legitimately long work.
+  timeoutMs: 20_000,
   population: { agents: 6, cities: ["manila", "mumbai"], tickSeconds: 5, minutes: 10 },
   // Comfortably inside a 1-hour token, which is the common default.
   session: { refreshEveryMinutes: 30 },
