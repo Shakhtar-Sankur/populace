@@ -148,7 +148,7 @@ async function doctor() {
 async function run() {
   const { config, raw } = await open();
   const metrics = createMetrics();
-  const adapter = instrument(raw, metrics);
+  const adapter = instrument(raw, metrics, { timeoutMs: config.timeoutMs });
   const startedAt = Date.now();
 
   const { agents, cities, minutes, tickSeconds } = config.population;
