@@ -14,6 +14,7 @@ import { World } from "./engine/world.mjs";
 import { Agent } from "./engine/agent.mjs";
 import { buildPersonas } from "./engine/personas.mjs";
 import { CircuitBreaker, isTransportError } from "./net.mjs";
+import { smoke, smokePersona } from "./smoke.mjs";
 import {
   createMetrics,
   DEFAULT_TIMEOUT_MS,
@@ -971,6 +972,114 @@ check("a fallback failure reports the original cause, not just the symptom", asy
   // And the report must carry both, since that is where a customer reads it.
   const shape = summarise(metrics).methods[0].errors[0].message;
   assert.match(shape, /rate limit/, "the grouped error must not drop the cause either");
+});
+
+// --- 4j. the smoke test, which is what a stranger meets first --------------
+// `doctor` says which methods EXIST; `smoke` says whether they WORK. It is the
+// only thing standing between someone's first adapter and a five-minute run
+// that reports nonsense because post() returned undefined.
+
+const smokeAdapter = (over = {}) => ({
+  name: "s",
+  async createUser() { return { id: "u1" }; },
+  async post() { return "p1"; },
+  async recentPostsByOthers() { return []; },
+  async like() {},
+  async comment() {},
+  async openConversation() { return "c1"; },
+  async sendMessage() {},
+  async listGroups() { return [{ id: "g1" }]; },
+  async joinGroup() {},
+  async deleteUser() {},
+  ...over,
+});
+
+check("smoke passes a correct adapter", async () => {
+  const { results, fatal } = await smoke({ adapter: smokeAdapter(), persona: smokePersona() });
+  assert.equal(fatal, false);
+  assert.equal(results.filter((r) => r.status === "fail").length, 0,
+    JSON.stringify(results.filter((r) => r.status === "fail")));
+});
+
+check("smoke stops immediately when createUser is missing", async () => {
+  const { results, fatal } = await smoke({
+    adapter: { name: "s", async deleteUser() {} }, persona: smokePersona(),
+  });
+  assert.equal(fatal, true, "nothing can be attempted without an identity");
+  assert.equal(results.length, 1, "and it should not pretend to have tried the rest");
+});
+
+check("smoke catches createUser returning no id", async () => {
+  const { results, fatal } = await smoke({
+    adapter: smokeAdapter({ async createUser() { return { nope: 1 }; } }), persona: smokePersona(),
+  });
+  assert.equal(fatal, true);
+  assert.match(results[0].detail, /no `id`/);
+});
+
+check("smoke catches post returning undefined", async () => {
+  // NOT `async post() {}` — an empty body is a stub, and isStub correctly calls
+  // that "not implemented", so it is skipped rather than failed. The bug being
+  // tested is different: a method that really runs and forgets to return.
+  const { results } = await smoke({
+    adapter: smokeAdapter({
+      async post(user, text) {
+        await Promise.resolve();
+        void user; void text;          // did the work, returned nothing
+      },
+    }),
+    persona: smokePersona(),
+  });
+  const post = results.find((r) => r.method === "post");
+  assert.equal(post.status, "fail");
+  assert.match(post.detail, /return the new post/i);
+});
+
+check("smoke catches a feed that is not an array", async () => {
+  const { results } = await smoke({
+    adapter: smokeAdapter({ async recentPostsByOthers() { return { rows: [] }; } }),
+    persona: smokePersona(),
+  });
+  assert.equal(results.find((r) => r.method === "recentPostsByOthers").status, "fail");
+});
+
+check("smoke reports a throwing method rather than dying", async () => {
+  const { results } = await smoke({
+    adapter: smokeAdapter({ async like() { throw new Error("column does not exist"); } }),
+    persona: smokePersona(),
+  });
+  const like = results.find((r) => r.method === "like");
+  assert.equal(like.status, "fail");
+  assert.match(like.detail, /column does not exist/, "the real error must survive");
+  // and the run must have continued past it
+  assert.ok(results.some((r) => r.method === "deleteUser"), "later methods must still be tried");
+});
+
+check("smoke skips what is not implemented instead of failing it", async () => {
+  const { results } = await smoke({
+    adapter: { name: "s", async createUser() { return { id: "u" }; }, async deleteUser() {} },
+    persona: smokePersona(),
+  });
+  const skipped = results.filter((r) => r.status === "skip");
+  assert.ok(skipped.length > 5, "an adapter with two methods is incomplete, not broken");
+  assert.equal(results.filter((r) => r.status === "fail").length, 0);
+});
+
+check("smoke always removes the account it created", async () => {
+  let deleted = false;
+  await smoke({
+    adapter: smokeAdapter({ async deleteUser() { deleted = true; } }), persona: smokePersona(),
+  });
+  assert.equal(deleted, true, "leaving an account behind is a bad first impression");
+});
+
+check("smoke says so when it cannot clean up after itself", async () => {
+  const { results } = await smoke({
+    adapter: { name: "s", async createUser() { return { id: "u" }; } }, persona: smokePersona(),
+  });
+  const del = results.find((r) => r.method === "deleteUser");
+  assert.equal(del.status, "skip");
+  assert.match(del.detail, /populace clean/, "and must say how to remove it");
 });
 
 // --- 5. session expiry ----------------------------------------------------

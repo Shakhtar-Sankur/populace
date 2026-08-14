@@ -15,6 +15,7 @@ import { buildReport, renderReport, writeReport } from "./report.mjs";
 import { canSignInOnly } from "./contract.mjs";
 import { isTransportError } from "./net.mjs";
 import { diagnose } from "./diagnose.mjs";
+import { renderSmoke, smoke, smokePersona } from "./smoke.mjs";
 import { PACKAGE_NAME, VERSION } from "./version.mjs";
 import { World } from "./engine/world.mjs";
 import { buildPersonas, CITIES } from "./engine/personas.mjs";
@@ -388,6 +389,42 @@ async function demo() {
 
 // ---------------------------------------------------------------- main
 
+// ---------------------------------------------------------------- smoke
+
+/**
+ * Prove an adapter is wired correctly, in seconds rather than minutes.
+ *
+ * `doctor` says which methods EXIST; this says whether they WORK. That is the
+ * gap someone falls into when writing their first adapter against an API we
+ * have never seen: everything is implemented, the run starts, and five minutes
+ * later the report is nonsense because `post` returned undefined.
+ */
+async function smokeCmd() {
+  const { config, raw } = await open();
+  const metrics = createMetrics();
+  const adapter = instrument(raw, metrics, {
+    timeoutMs: config.timeoutMs,
+    retries: config.retries,
+    giveUpAfter: config.giveUpAfter,
+  });
+
+  console.log(`
+  Smoke-testing ${config.adapter} against ${config.environment}…
+`);
+
+  const { results, fatal } = await smoke({
+    adapter,
+    persona: smokePersona(config.identity?.phonePrefix ?? "0900"),
+    onStep: ({ method, status }) => {
+      const mark = status === "ok" ? "✓" : status === "skip" ? "·" : "✖";
+      console.log(`   ${mark} ${method}`);
+    },
+  });
+
+  console.log(renderSmoke(results));
+  if (fatal || results.some((r) => r.status === "fail")) process.exitCode = 1;
+}
+
 // ---------------------------------------------------------------- report
 
 /**
@@ -449,7 +486,7 @@ async function version() {
   console.log(`${PACKAGE_NAME} ${VERSION}  ·  node ${process.version}  ·  ${process.platform}`);
 }
 
-const commands = { init, doctor, run, clean, demo, report, version };
+const commands = { init, doctor, run, clean, demo, report, version, smoke: smokeCmd };
 
 // `--version` and `-v` are what people actually type.
 if (has("version") || argv[0] === "-v") {
@@ -464,6 +501,7 @@ if (!commands[command]) {
     populace demo                     see it work, against a fake app, right now
     populace init                     scaffold a config and adapter here
     populace doctor                   check everything WITHOUT running
+    populace smoke                    prove your adapter works, in seconds
     populace run                      bring the population to life
     populace clean                    delete accounts a run created
     populace report                   re-open the report from an earlier run

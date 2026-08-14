@@ -451,7 +451,7 @@ footer{padding:56px 0 44px; border-top:1px solid var(--rule); color:var(--muted)
     <div class="trust">
       <span><b>5</b> real bugs found in a shipped app</span>
       <span><b>0</b> runtime dependencies</span>
-      <span><b>66</b> self-tests</span>
+      <span><b>75</b> self-tests</span>
       <span><b>13</b>-method adapter contract</span>
     </div>
   </div>
@@ -947,6 +947,7 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
           <tr><td><code>populace demo</code></td><td>Run the whole product against a fake app, immediately</td></tr>
           <tr><td><code>populace init</code></td><td>Scaffold a config and a blank adapter</td></tr>
           <tr><td><code>populace doctor</code></td><td>Check config, reachability and coverage <em>without</em> running</td></tr>
+          <tr><td><code>populace smoke</code></td><td>Prove your adapter works — one user, every method once, seconds not minutes</td></tr>
           <tr><td><code>populace run</code></td><td>Bring the population to life</td></tr>
           <tr><td><code>populace clean</code></td><td>Delete every account a run created</td></tr>
           <tr><td><code>populace report</code></td><td>Re-open the report from an earlier run</td></tr>

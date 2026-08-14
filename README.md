@@ -144,13 +144,27 @@ example in ~150 lines.
 `populace doctor` on a fresh scaffold says `2/13` and refuses to run — a method
 that exists but does nothing is not coverage.
 
+### Check the adapter before you run
+
+`doctor` tells you which methods exist. `smoke` tells you whether they work:
+
+```bash
+populace smoke
+```
+
+It creates one user, calls every method you implemented once, checks what came
+back against what the contract promises, and deletes the user again. Seconds,
+not minutes — and it reports on *your adapter*, not your app, which is the
+question you actually have while writing one.
+
+A full run against a subtly wrong adapter spends five minutes producing a report
+about nothing. This is the step that stops that.
+
 **If your API uses expiring tokens, implement `refreshSession`.** Without it,
 any run longer than your token lifetime collapses at once and the report blames
 your API for what were really expired tokens — and the run cannot even delete
 its own accounts, stranding simulated users in your environment. See it happen:
 `node examples/token-expiry/expiry-demo.mjs`
-
----
 
 ## The safety guard
 
