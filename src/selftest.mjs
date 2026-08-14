@@ -938,6 +938,41 @@ check("recovering resets the probe budget for a later, separate outage", () => {
   t += 150; assert.equal(b.allows(t), true, "full allowance again, not inherited");
 });
 
+// --- 4i. an adapter must not lose the error that mattered -----------------
+// The Buzz Buzz adapter falls back to signIn when signUp fails, and threw only
+// the fallback's error. Two nights of debugging chased "Invalid login
+// credentials" when the real cause was signUp being refused and the sign-in
+// then failing merely because the account had never been created. This is a
+// generic hazard for any adapter with a fallback, so it is tested generically.
+
+check("a fallback failure reports the original cause, not just the symptom", async () => {
+  const metrics = createMetrics();
+  const app = instrument(
+    {
+      name: "f",
+      async createUser() {
+        const first = new Error("email rate limit exceeded");
+        try {
+          throw first;                               // primary path refused
+        } catch (primary) {
+          const second = new Error("Invalid login credentials"); // fallback also fails
+          throw new Error(`${second.message} (signup first failed: ${primary.message})`);
+        }
+      },
+    },
+    metrics,
+    { timeoutMs: 500, retries: 0 },
+  );
+
+  const err = await app.createUser().catch((e) => e);
+  assert.match(err.message, /Invalid login credentials/, "the symptom is still reported");
+  assert.match(err.message, /rate limit exceeded/, "and so is the cause that explains it");
+
+  // And the report must carry both, since that is where a customer reads it.
+  const shape = summarise(metrics).methods[0].errors[0].message;
+  assert.match(shape, /rate limit/, "the grouped error must not drop the cause either");
+});
+
 // --- 5. session expiry ----------------------------------------------------
 // Tokens expire. Without a refresh, every agent starts failing at once and the
 // run reports a catastrophe that belongs to us, not to the customer's app —

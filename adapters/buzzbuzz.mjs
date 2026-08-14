@@ -81,8 +81,19 @@ export function createAdapter(target) {
       });
       if (error) {
         // Already exists from an earlier run — reuse it rather than piling up.
+        const signUpError = error;
         ({ data, error } = await client.auth.signInWithPassword({ email, password: PASSWORD }));
-        if (error) throw new Error(error.message);
+        if (error) {
+          // Report BOTH, because the fallback's error is usually the misleading
+          // one. This threw a bare "Invalid login credentials" for two nights of
+          // debugging: the real cause was signUp being refused — a rate limit
+          // after many runs in one hour — and the sign-in then failing simply
+          // because the account had never been created. The message named the
+          // symptom and hid the cause, which sent the diagnosis the wrong way
+          // twice. Losing the first error to report the second is exactly the
+          // fault this tool exists to catch, in our own reference adapter.
+          throw new Error(`${error.message} (signup first failed: ${signUpError.message})`);
+        }
       }
       if (!data.user) throw new Error("no user returned");
 
