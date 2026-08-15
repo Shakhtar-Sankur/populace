@@ -19,10 +19,10 @@
 import { CONTRACT, isStub } from "./contract.mjs";
 
 /** One persona, kept identical between smoke runs so it is easy to clean up. */
-export function smokePersona(prefix = "0900") {
+export function smokePersona(prefix = "0900", n = 1) {
   return {
-    name: "Populace Smoke",
-    phone: `${prefix}000001`,
+    name: n === 1 ? "Populace Smoke" : `Populace Smoke ${n}`,
+    phone: `${prefix}00000${n}`,
     password: "SimDriver!2026",
     city: { name: "Manila", lat: 14.5995, lng: 120.9842 },
     platform: "grab",
@@ -106,6 +106,23 @@ export async function smoke({ adapter, persona = smokePersona(), onStep = () => 
     return { results, user: null, fatal: true };
   }
 
+  // A conversation needs two people. Opening one with yourself is not a
+  // weaker version of the test — most backends refuse it outright, and Buzz
+  // Buzz's start_direct_thread raises "Invalid direct thread" on me = p_other,
+  // which is correct behaviour being reported as an adapter fault.
+  //
+  // So a counterpart is created when, and only when, the adapter implements
+  // conversations. Any adapter without them pays nothing for this.
+  let partner = null;
+  if (implemented("openConversation")) {
+    try {
+      partner = await adapter.createUser(smokePersona(persona.phone.slice(0, 4), 2));
+    } catch (error) {
+      record("openConversation", "skip",
+        `needs a second account and one could not be created: ${error.message}`);
+    }
+  }
+
   // Everything the persona might need, in an order where later calls can use
   // what earlier ones returned.
   let postId;
@@ -141,9 +158,13 @@ export async function smoke({ adapter, persona = smokePersona(), onStep = () => 
           value = await adapter.comment(user, postId, "smoke");
           break;
         case "openConversation":
-          // Only one identity exists here, so a conversation with oneself is the
-          // honest limit of a smoke test. It still proves the call is wired.
-          value = await adapter.openConversation(user, user);
+          if (!partner) { record(name, "skip", "no second account"); continue; }
+          // partner.id, not partner. The contract's second argument is an id,
+          // and passing the whole user object put a live Supabase client into
+          // an RPC body — supabase-js serialises that body, so the adapter died
+          // with "Converting circular structure to JSON" and the report blamed
+          // the adapter for a fault in this file.
+          value = await adapter.openConversation(user, partner.id);
           conversationId = value;
           break;
         case "sendMessage":
@@ -174,6 +195,9 @@ export async function smoke({ adapter, persona = smokePersona(), onStep = () => 
   if (implemented("deleteUser")) {
     try {
       await adapter.deleteUser(user);
+      // The counterpart is removed on the same pass. Leaving it behind would
+      // be worse than never creating it.
+      if (partner) await adapter.deleteUser(partner);
       record("deleteUser", "ok");
     } catch (error) {
       record("deleteUser", "fail", error.message);
