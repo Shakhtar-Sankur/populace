@@ -466,6 +466,62 @@ section[id]::before {
 .gword { color: #9B7BFF; -webkit-text-fill-color: #9B7BFF; background: none;
   font-weight: 700; letter-spacing: -.01em; }
 .gmark, .brand svg use { color: #9B7BFF; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE POPULATION MOTIF
+   ══════════════════════════════════════════════════════════════════════════
+   Buzz Buzz has bees and honeycomb. This product's subject is a crowd of
+   simulated people, so its motif is the agent: a dot. Used three ways —
+
+     field     a dot matrix behind sections, the population as texture
+     cohort    six dots marking a section, one per simulated user
+     trail     a dot with a fading tail, an agent that has moved
+
+   Dots rather than hexagons keeps the two products visually unrelated at a
+   glance, which is the point: they share a company, not an audience.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the field ─────────────────────────────────────────────────────────── */
+.pop-field {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(currentColor 1.15px, transparent 1.15px);
+  background-size: 26px 26px;
+  color: var(--accent);
+  opacity: .14;
+  mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+}
+section > .wrap { position: relative; z-index: 1; }
+
+/* ── the cohort ────────────────────────────────────────────────────────────
+   Six dots, because a Populace run uses six agents. The last one is hollow:
+   the run that made this product's reputation had one user whose profile was
+   never created, and the mark remembers it. */
+.cohort { display: inline-flex; gap: 5px; align-items: center; margin-inline-end: 11px; }
+.cohort i {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  display: block; opacity: .85;
+}
+.cohort i:last-child { background: none; box-shadow: inset 0 0 0 1.5px var(--accent); opacity: .6; }
+
+/* ── the trail ─────────────────────────────────────────────────────────────
+   An agent with motion behind it, used on the eyebrow rule. */
+section > .wrap > .eyebrow::before {
+  background: linear-gradient(90deg, transparent, var(--accent));
+}
+
+/* Cards carry a faint corner of the field, so the motif appears at two scales
+   rather than only as a full-width wash. */
+.card { position: relative; overflow: hidden; }
+.card::after {
+  content: ""; position: absolute; inset-inline-end: -14px; top: -14px;
+  width: 86px; height: 86px; pointer-events: none;
+  background-image: radial-gradient(var(--accent) 1.1px, transparent 1.1px);
+  background-size: 13px 13px; opacity: .2;
+  mask-image: radial-gradient(circle at 100% 0, #000, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at 100% 0, #000, transparent 72%);
+}
+
 </style>
 </head>
 <body class="no-js">
@@ -572,10 +628,11 @@ section[id]::before {
 
 <!-- ============================================================ proof -->
 <section id="proof" class="band">
+  <div class="pop-field" aria-hidden="true"></div>
   <div class="aura" aria-hidden="true"></div>
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv">Proven, not promised</p>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Proven, not promised</p>
     <h2 class="rv grad">It found five real bugs in a finished app.</h2>
     <p class="lede rv" style="margin-top:16px">
       Not a toy example. Buzz Buzz is a shipped social application for delivery riders
@@ -656,10 +713,11 @@ section[id]::before {
 
 <!-- ============================================================ how -->
 <section id="how">
+  <div class="pop-field" aria-hidden="true"></div>
   <div class="aura" aria-hidden="true"></div>
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv">How it works</p>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>How it works</p>
     <h2 class="rv grad">The engine never learns your app.</h2>
     <p class="lede rv" style="margin-top:16px">
       Populace knows how to <em>be a person</em>: where they are, when they get bored,
@@ -786,10 +844,11 @@ section[id]::before {
 
 <!-- ============================================================ report -->
 <section id="report" class="band">
+  <div class="pop-field" aria-hidden="true"></div>
   <div class="aura" aria-hidden="true"></div>
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv">The deliverable</p>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>The deliverable</p>
     <h2 class="rv grad">A report you can hand to somebody else.</h2>
     <p class="lede rv" style="margin-top:16px">
       The live simulation is a demo. The report is the product. It is deliberately
@@ -842,10 +901,11 @@ section[id]::before {
 
 <!-- ============================================================ resilience -->
 <section id="resilience">
+  <div class="pop-field" aria-hidden="true"></div>
   <div class="aura" aria-hidden="true"></div>
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv">Built for real infrastructure</p>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Built for real infrastructure</p>
     <h2 class="rv grad">It tells you when the network was the problem.</h2>
     <p class="lede rv" style="margin-top:16px">
       Staging environments sit behind flaky VPNs. CI runners drop sockets. A testing tool
@@ -910,10 +970,11 @@ section[id]::before {
 
 <!-- ============================================================ safety -->
 <section id="safety" class="band">
+  <div class="pop-field" aria-hidden="true"></div>
   <div class="aura" aria-hidden="true"></div>
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv">Safety</p>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Safety</p>
     <h2 class="rv grad">It refuses to touch production.</h2>
     <p class="lede rv" style="margin-top:16px">
       Populace creates <strong>real accounts</strong> and writes <strong>real rows</strong>
@@ -952,10 +1013,11 @@ section[id]::before {
 
 <!-- ============================================================ download -->
 <section id="download">
+  <div class="pop-field" aria-hidden="true"></div>
   <div class="aura" aria-hidden="true"></div>
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv">Get it</p>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Get it</p>
     <h2 class="rv grad">Download Populace</h2>
     <p class="lede rv" style="margin-top:16px">
       Node 18 or newer. <strong>Zero runtime dependencies</strong> — adapters bring their
@@ -1011,10 +1073,11 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
 
 <!-- ============================================================ docs -->
 <section id="docs" class="band">
+  <div class="pop-field" aria-hidden="true"></div>
   <div class="aura" aria-hidden="true"></div>
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv">Reference</p>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Reference</p>
     <h2 class="rv grad">Commands and configuration</h2>
 
     <div class="scroller rv" style="margin-top:32px">
