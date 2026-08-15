@@ -185,17 +185,35 @@ export class Agent {
     this.note(`posted: ${body.slice(0, 34)}…`);
   }
 
+  /**
+   * Take the id out of whatever the adapter returned.
+   *
+   * The contract says these methods return "posts" and "groups" without saying
+   * they must be objects, and plenty of APIs answer a list endpoint with bare
+   * ids. `smoke` already accepted both — it used `first.id ?? first` — but the
+   * engine did not, so an adapter returning strings passed the smoke test and
+   * then failed on the first tick of a real run. That is exactly the "subtly
+   * wrong adapter" case smoke exists to rule out, so the two now agree.
+   */
+  static idOf(item) {
+    if (item === null || item === undefined) return undefined;
+    if (typeof item === "object") return item.id ?? item.uuid ?? item._id ?? item.key;
+    return item;                                  // already a bare id
+  }
+
   async reactToSomeone() {
     if (!this.can("recentPostsByOthers") || !this.can("like")) return;
     const posts = await this.adapter.recentPostsByOthers(this.user, 10);
     if (!posts?.length) return;
     const target = pickOne(posts);
-    await this.adapter.like(this.user, target.id);
+    const targetId = Agent.idOf(target);
+    if (targetId === undefined) return;
+    await this.adapter.like(this.user, targetId);
     this.stats.likes += 1;
 
     if (chance(0.4) && this.can("comment")) {
       const body = replyLine(this.stats.comments + this.index);
-      await this.adapter.comment(this.user, target.id, body);
+      await this.adapter.comment(this.user, targetId, body);
       this.stats.comments += 1;
       this.note(`commented "${body.slice(0, 22)}…"`);
     } else {
@@ -221,9 +239,11 @@ export class Agent {
     const groups = await this.adapter.listGroups(this.user);
     if (!groups?.length) return;
     const group = pickOne(groups);
-    await this.adapter.joinGroup(this.user, group.id);
+    const groupId = Agent.idOf(group);
+    if (groupId === undefined) return;
+    await this.adapter.joinGroup(this.user, groupId);
     this.stats.groups += 1;
-    this.note(`joined ${group.id}`);
+    this.note(`joined ${groupId}`);
   }
 
   /**
