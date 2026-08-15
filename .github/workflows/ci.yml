@@ -55,14 +55,45 @@ jobs:
           fi
           echo "Both reports written; the HTML has no scripts and fetches nothing."
 
-      - name: A fresh scaffold refuses to run
-        # The whole honesty argument rests on this: a new adapter reports 2/13
-        # and stops, rather than passing while testing nothing.
+      - name: A fresh scaffold refuses to run, and says why in a sentence
+        # `init` used to emit a stub whose methods threw, so this step asserted
+        # "2/13 and stops". It now scaffolds the working REST template, so the
+        # refusal comes from the target being unset instead — and for a while
+        # that surfaced as a raw TypeError:
+        #   Cannot read properties of undefined (reading 'replace')
+        # Still a non-zero exit, so this step stayed green while a newcomer's
+        # first command printed a JS stack trace. Exit codes alone were not
+        # enough; the message is asserted now too.
         run: |
           mkdir -p /tmp/scaffold && cd /tmp/scaffold
           node "$GITHUB_WORKSPACE/src/cli.mjs" init
-          if node "$GITHUB_WORKSPACE/src/cli.mjs" doctor; then
-            echo "::error::doctor exited 0 on an unimplemented scaffold. It must refuse."
+          if node "$GITHUB_WORKSPACE/src/cli.mjs" doctor > out.txt 2>&1; then
+            cat out.txt
+            echo "::error::doctor exited 0 on a scaffold with no target. It must refuse."
             exit 1
           fi
-          echo "A fresh scaffold correctly refuses to run."
+          cat out.txt
+          if grep -qiE "Cannot read propert|undefined \(reading|TypeError" out.txt; then
+            echo "::error::doctor refused with an internal error rather than an explanation."
+            exit 1
+          fi
+          grep -qi "No target URL" out.txt || {
+            echo "::error::doctor refused, but not with the expected guidance."
+            exit 1
+          }
+          echo "A fresh scaffold refuses, and explains itself."
+
+      - name: The scaffolded adapter is the working one
+        # init's whole purpose changed: it must hand over code that runs, not a
+        # file full of throws. If someone reverts it to the stub, this fails.
+        run: |
+          cd /tmp/scaffold
+          grep -q "createUser not implemented" adapters/my-app.mjs && {
+            echo "::error::init scaffolded the stub. It should scaffold the REST template."
+            exit 1
+          }
+          grep -q "auth/signup" adapters/my-app.mjs || {
+            echo "::error::the scaffolded adapter does not look like the REST template."
+            exit 1
+          }
+          echo "init scaffolded the working template."

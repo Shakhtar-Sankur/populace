@@ -19,6 +19,22 @@
  */
 
 export function createAdapter(target, config) {
+  /**
+   * Fail with a sentence, not a TypeError.
+   *
+   * A fresh scaffold has `url: process.env.MY_APP_TEST_URL`, which is
+   * undefined until you set it — so the very first `populace doctor` a new
+   * user runs went straight into `target.url.replace(...)` and printed
+   * "Cannot read properties of undefined (reading 'replace')". Technically a
+   * correct refusal, and a terrible first five minutes.
+   */
+  if (!target?.url) {
+    throw new Error(
+      "No target URL. Set `target.url` in populace.config.mjs, or export the " +
+      "environment variable it reads. It must point at your TEST environment.",
+    );
+  }
+
   const base = target.url.replace(/\/$/, "");
 
   /**
