@@ -148,6 +148,94 @@ check("engine runs against an adapter that knows nothing about any real app", ()
   assert.ok(clean.db.locations > 0, "should have reported locations");
 });
 
+/* ── portability ────────────────────────────────────────────────────────────
+   The contract says these methods return "posts" and "groups". It does not say
+   they must be OBJECTS, and many APIs answer a list endpoint with bare ids.
+   The engine used to read `target.id` directly while `smoke` accepted either
+   form, so an adapter returning strings passed the smoke test and then failed
+   on the first tick of a real run — the precise "subtly wrong adapter" case
+   smoke exists to rule out. These pin the two together. */
+check("ids are taken from objects, bare values, and common aliases", () => {
+  assert.equal(Agent.idOf({ id: "a" }), "a");
+  assert.equal(Agent.idOf("bare-string-id"), "bare-string-id");
+  assert.equal(Agent.idOf(42), 42);
+  assert.equal(Agent.idOf({ uuid: "u" }), "u");
+  assert.equal(Agent.idOf({ _id: "m" }), "m");
+  assert.equal(Agent.idOf(null), undefined);
+  assert.equal(Agent.idOf(undefined), undefined);
+});
+
+// A second world, driven by an adapter shaped like a plain REST API: its list
+// endpoints return bare ids rather than objects. Built with the same World the
+// real runs use, so this exercises the actual code path.
+const bareSeen = { likes: [], joins: [] };
+const bareAdapter = {
+  name: "bare-id-api",
+  async createUser(p) { return { id: `u_${p.phone}` }; },
+  async setProfile() {},
+  async reportLocation() {},
+  async post() { return "post_1"; },
+  async recentPostsByOthers() { return ["post_1", "post_2"]; },
+  async like(_u, id) { bareSeen.likes.push(id); },
+  async comment(_u, id, _b) { bareSeen.likes.push(id); },
+  async listGroups() { return ["group_1", "group_2"]; },
+  async joinGroup(_u, id) { bareSeen.joins.push(id); },
+  async deleteUser() {},
+};
+const bareWorld = new World({
+  adapter: bareAdapter,
+  personas: buildPersonas(4, ["manila", "mumbai"]),
+});
+await bareWorld.populate({ staggerMs: 0 });
+await bareWorld.run({ minutes: 1, tickSeconds: 5, realtime: false });
+await bareWorld.teardown();
+
+check("a run survives an adapter whose lists contain bare ids", () => {
+  assert.equal(bareWorld.agents.length, 4);
+  assert.ok(bareSeen.likes.length + bareSeen.joins.length > 0,
+    "the bare-id adapter was never exercised, so this proves nothing");
+  assert.ok(!bareSeen.likes.includes(undefined),
+    "like received undefined instead of an id");
+  assert.ok(!bareSeen.joins.includes(undefined),
+    "joinGroup received undefined instead of an id");
+});
+
+/* smoke and the engine must call createUser with the SAME object. When they
+   disagreed, an adapter written against either one passed the other's test and
+   failed its run — the tool whose job is "your wiring is right" being the thing
+   that was wrong. Both shapes are captured here so drift shows up as a failed
+   check rather than as a stranger's confusing first run. */
+{
+  let fromEngine = null;
+  let fromSmoke = null;
+
+  const spyAdapter = (sink) => ({
+    name: "shape-spy",
+    async createUser(arg) { sink(arg); return { id: "u1" }; },
+    async deleteUser() {},
+  });
+
+  const spyWorld = new World({
+    adapter: spyAdapter((a) => { fromEngine ??= a; }),
+    personas: buildPersonas(1, ["manila"]),
+  });
+  await spyWorld.populate({ staggerMs: 0 });
+
+  await smoke({ adapter: spyAdapter((a) => { fromSmoke ??= a; }) });
+
+  check("smoke calls createUser with the same shape the engine does", () => {
+    assert.ok(fromEngine, "the engine never called createUser");
+    assert.ok(fromSmoke, "smoke never called createUser");
+    assert.deepEqual(
+      Object.keys(fromEngine).sort(),
+      Object.keys(fromSmoke).sort(),
+      "smoke and the engine disagree about createUser's argument",
+    );
+    // And the documented keys are actually the ones present.
+    assert.deepEqual(Object.keys(fromEngine).sort(), ["index", "name", "persona", "phone"]);
+  });
+}
+
 check("people behave differently from one another", () => {
   const distances = new Set(cleanWorld.agents.map((a) => a.distanceKm.toFixed(3)));
   assert.ok(distances.size > 1, "identical agents would find identical bugs");

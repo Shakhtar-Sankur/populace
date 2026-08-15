@@ -95,9 +95,31 @@ export async function smoke({ adapter, persona = smokePersona(), onStep = () => 
     return { results, user: null, fatal: true };
   }
 
+  /**
+   * The engine calls `createUser({ name, phone, persona, index })` — a wrapper,
+   * documented in adapters/contract.md. smoke used to pass the flat persona
+   * instead, which is a DIFFERENT object with different keys.
+   *
+   * That made smoke lie in the most damaging direction available to it. An
+   * adapter written against the shape smoke passed sailed through 13/13 and
+   * then failed on every signup of a real run; one written against the
+   * documented shape failed smoke while being correct. Either way the tool
+   * whose entire job is "tell me my adapter is wired right" was the thing
+   * that was wrong.
+   *
+   * Caught by pointing smoke and a run at the same new backend and getting
+   * opposite answers.
+   */
+  const asEngineCallsIt = (p, index = 0) => ({
+    name: p.name,
+    phone: p.phone,
+    persona: p,
+    index,
+  });
+
   let user;
   try {
-    user = await adapter.createUser(persona);
+    user = await adapter.createUser(asEngineCallsIt(persona));
     const problem = EXPECTATIONS.createUser(user);
     record("createUser", problem ? "fail" : "ok", problem ?? "");
     if (problem) return { results, user: null, fatal: true };
@@ -116,7 +138,9 @@ export async function smoke({ adapter, persona = smokePersona(), onStep = () => 
   let partner = null;
   if (implemented("openConversation")) {
     try {
-      partner = await adapter.createUser(smokePersona(persona.phone.slice(0, 4), 2));
+      partner = await adapter.createUser(
+        asEngineCallsIt(smokePersona(persona.phone.slice(0, 4), 2), 1),
+      );
     } catch (error) {
       record("openConversation", "skip",
         `needs a second account and one could not be created: ${error.message}`);
