@@ -1030,18 +1030,18 @@ section > .wrap > .eyebrow::before {
 
     <div class="grid2 rv" style="margin-top:38px; align-items:start">
       <div>
-        <h3 style="margin-bottom:14px">Clone and run — works right now</h3>
-        <pre><span class="cm"># get it</span>
-git clone https://github.com/Shakhtar-Sankur/populace.git
-cd populace
+        <h3 style="margin-bottom:14px">Install it</h3>
+        <pre><span class="cm"># from npm</span>
+npm install -g @gigzen/populace
 
 <span class="cm"># see it work against a fake app, no setup</span>
-node src/cli.mjs demo
+populace demo
 
 <span class="cm"># point it at your own app</span>
-node src/cli.mjs init
-node src/cli.mjs doctor
-node src/cli.mjs run --agents 6 --minutes 5</pre>
+populace init
+populace doctor
+populace smoke
+populace run --agents 6 --minutes 5</pre>
         <p style="font-size:14.5px; color:var(--muted)">
           <code>demo</code> runs the whole product against an in-memory app, so you can see
           exactly what a report looks like before writing a line of adapter code.
@@ -1057,12 +1057,16 @@ node src/cli.mjs run --agents 6 --minutes 5</pre>
             Unzip, then <code>node src/cli.mjs demo</code>.</p>
         </div>
         <div class="card" style="margin-bottom:14px">
-          <h3 style="font-size:17px">npm <span class="pill warn" style="vertical-align:2px">Not yet published</span></h3>
+          <h3 style="font-size:17px">From source</h3>
           <p style="font-size:15px">
-            The package is prepared and verified as <code>@gigzen/populace</code>, but it is
-            <strong>not on the registry yet</strong>. We would rather say so than have you
-            run an install that fails — or worse, install somebody else's package with a
-            similar name.</p>
+            <code>git clone https://github.com/Shakhtar-Sankur/populace.git</code>, then
+            <code>node src/cli.mjs demo</code>. Same code, no install.</p>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <h3 style="font-size:17px">Check what you installed</h3>
+          <p style="font-size:15px">
+            The scope matters: it is <code>@gigzen/populace</code>. An unrelated package
+            called <code>populace</code> exists and is not this.</p>
         </div>
         <div class="card">
           <h3 style="font-size:17px">Windows</h3>

@@ -3,6 +3,11 @@
 **A simulated population that uses your app through its real API — so you can
 test what needs more than one person.**
 
+```bash
+npm install -g @gigzen/populace
+populace demo
+```
+
 **Site:** https://shakhtar-sankur.github.io/populace/ &nbsp;·&nbsp;
 **Test report:** [the full engineering record](https://shakhtar-sankur.github.io/gigzen/test-report.html)
 &nbsp;·&nbsp; A [Gigzen](https://shakhtar-sankur.github.io/gigzen/) product
