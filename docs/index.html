@@ -7,7 +7,7 @@
 <meta name="description" content="Populace brings a population of simulated people to life inside your app and drives it through its real API. It found six real bugs in a finished, shipped application — the last on the run meant to sign the work off. Built by Gigzen.">
 <meta name="author" content="Gigzen">
 <meta property="og:title" content="Populace — a simulated population that tests your app for real">
-<meta property="og:description" content="Multi-user testing that uses your app the way people do. Five real bugs found in a shipped app. Zero runtime dependencies.">
+<meta property="og:description" content="Multi-user testing that uses your app the way people do. Six real bugs found in a shipped app. Zero runtime dependencies.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#070C0E">
 <style>
@@ -550,6 +550,7 @@ section > .wrap > .eyebrow::before {
     </a>
     <div class="navlinks" id="navlinks">
       <a href="#proof">Proof</a>
+      <a href="#foryou">Is it for you</a>
       <a href="#how">How it works</a>
       <a href="#report">The report</a>
       <a href="#resilience">Resilience</a>
@@ -633,7 +634,7 @@ section > .wrap > .eyebrow::before {
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
     <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Proven, not promised</p>
-    <h2 class="rv grad">It found five real bugs in a finished app.</h2>
+    <h2 class="rv grad">It found six real bugs in a finished app.</h2>
     <p class="lede rv" style="margin-top:16px">
       Not a toy example. Buzz Buzz is a shipped social application for delivery riders
       — built, tested by hand, and believed to work. Six simulated people used it for
@@ -716,6 +717,88 @@ section > .wrap > .eyebrow::before {
 </section>
 
 <!-- ============================================================ how -->
+
+<!-- ══ the pitch: is this you, what does it cost, why not roll your own ══ -->
+<section id="foryou">
+  <div class="pop-field" aria-hidden="true"></div>
+  <div class="wrap">
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Is this you</p>
+    <h2 class="rv">You cannot test this alone, and you know it.</h2>
+    <p class="lede rv" style="margin-top:16px; max-width:56ch">
+      Populace is for anyone shipping software where <strong>the second user is the problem</strong>.
+      If none of the lines below is your product, you do not need this.
+    </p>
+
+    <div class="grid2 rv" style="margin-top:34px; align-items:start">
+      <div class="card">
+        <h3 style="font-size:17px">You need it if your app has…</h3>
+        <ul style="margin-top:10px; font-size:15px; line-height:1.9">
+          <li>A feed, a chat, or anything one person publishes and another reads</li>
+          <li>Permission rules deciding who may see what</li>
+          <li>Presence, read receipts, or realtime fan-out</li>
+          <li>Counters, memberships, or anything two people can write at once</li>
+          <li>An account-deletion path you have never really exercised</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px">You do not need it if…</h3>
+        <ul style="margin-top:10px; font-size:15px; line-height:1.9">
+          <li>Your product is single-player and always will be</li>
+          <li>You want a load test — this is a <em>correctness</em> tool, and says so</li>
+          <li>You want to know whether people <em>want</em> your product. It cannot tell you that,
+              and neither can any other tool</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 class="rv" style="margin-top:44px">Why not just write the scripts yourself?</h3>
+    <p class="rv" style="margin-top:10px; max-width:64ch">
+      You can, and for one flow you probably should. The difference shows up at the fourth flow:
+      a script asserts what you already suspected, whereas a population does what people do and
+      finds what you did not think to assert. <strong>Nobody told Populace where the bugs were.</strong>
+      It found an upsert that could not read its own column — three times, in three different
+      places, months apart — because six strangers signing up at once is a thing a test script
+      never does.
+    </p>
+
+    <div class="grid2 rv" style="margin-top:30px; align-items:start">
+      <div class="card">
+        <h3 style="font-size:17px">What it costs</h3>
+        <p style="font-size:15px; margin-top:8px">
+          <strong>Nothing.</strong> Free and open source under AGPL-3.0, on npm as
+          <code>@gigzen/populace</code>. No account, no telemetry, no paid tier.
+        </p>
+        <p style="font-size:14px; color:var(--muted); margin-top:10px">
+          AGPL means if you offer Populace itself as a hosted service, your version stays open.
+          Using it to test your own product — commercial or not — carries no such obligation.
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px">What it costs you in time</h3>
+        <p style="font-size:15px; margin-top:8px">
+          One adapter. Thirteen small methods, two of them required, each answering
+          &ldquo;how does this happen in my app?&rdquo;
+        </p>
+        <p style="font-size:14px; color:var(--muted); margin-top:10px">
+          <code>populace init</code> writes a working REST adapter with every line you need to
+          change marked <code>EDIT</code>. If your API speaks HTTP and JSON, that is an afternoon,
+          not a project.
+        </p>
+      </div>
+    </div>
+
+    <p class="rv" style="margin-top:34px">
+      <a class="btn btn-primary" href="#download">Install it</a>
+      <a class="btn btn-ghost" href="https://shakhtar-sankur.github.io/gigzen/test-report.html"
+         style="margin-left:10px">Read the full test report &rarr;</a>
+    </p>
+    <p class="rv" style="margin-top:14px; font-size:14px; color:var(--muted)">
+      That report lists what was <em>not</em> tested, too. If a tool&rsquo;s own evidence page has no
+      such section, ask why.
+    </p>
+  </div>
+</section>
+
 <section id="how">
   <div class="pop-field" aria-hidden="true"></div>
   <div class="aura" aria-hidden="true"></div>
