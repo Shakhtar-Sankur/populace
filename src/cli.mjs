@@ -269,7 +269,33 @@ function render(config, tickNo, totalTicks, world) {
 
 async function clean() {
   const { config, raw } = await open();
-  const count = Number(flag("agents", config.population.agents));
+
+  // The count must cover the LARGEST run this target has seen, not whatever
+  // the config happens to say now.
+  //
+  // `run --agents 10` against a config declaring 8 used to leave `clean` (with
+  // no flag) checking only 8 identities — and then printing an all-clear. If
+  // that run had died before its own cleanup, two real accounts would have
+  // survived a command whose entire job is to guarantee they had not. A
+  // cleanup that under-counts is worse than one that refuses, because it is
+  // believed.
+  //
+  // So the last report's agent count is taken into account. An explicit
+  // --agents still wins, and the maximum is used otherwise.
+  let lastRunAgents = 0;
+  try {
+    const reportPath = config.report?.path || "populace-report.json";
+    const prev = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+    lastRunAgents = Number(prev?.run?.population?.agents) || 0;
+  } catch {
+    // No previous report, or an unreadable one. Not a problem: the config
+    // count still applies, and this is only ever used to widen the sweep.
+  }
+
+  const explicit = flag("agents", null);
+  const count = explicit !== null && explicit !== undefined
+    ? Number(explicit)
+    : Math.max(Number(config.population.agents) || 0, lastRunAgents);
   // Identities are deterministic, so a fresh process can find the accounts an
   // earlier run created — including one that was killed mid-flight.
   const personas = buildPersonas(count, config.population.cities);
