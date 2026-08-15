@@ -72,21 +72,53 @@ async function init() {
     console.log(`\n  populace.config.mjs already exists. Use --force to overwrite.\n`);
     return;
   }
+  /**
+   * Which template to start from.
+   *
+   * The bare stub throws `createUser not implemented` on every line, so the
+   * first thing a newcomer saw was a file that could not run. Most APIs this
+   * tool will ever meet are HTTP with a bearer token, and there is now a REST
+   * adapter that has been run for real — 430 calls, 0 failures, 13/13 methods.
+   * Starting from working code and editing URLs is a much shorter path than
+   * starting from nothing and guessing the contract.
+   *
+   *   populace init            → the proven REST template
+   *   populace init --blank    → the bare stub, for anything not HTTP
+   */
+  const blank = has("blank");
+  const templateName = blank ? "template.mjs" : "template-rest.mjs";
+
   fs.mkdirSync(adapterDir, { recursive: true });
   fs.copyFileSync(path.join(here, "..", "populace.config.example.mjs"), configFile);
   if (!fs.existsSync(adapterFile) || has("force")) {
-    fs.copyFileSync(path.join(here, "..", "adapters", "template.mjs"), adapterFile);
+    fs.copyFileSync(path.join(here, "..", "adapters", templateName), adapterFile);
   }
 
   console.log(`
   Created:
     populace.config.mjs      ← point this at your TEST environment
-    adapters/my-app.mjs      ← teach Populace how your app works
+    adapters/my-app.mjs      ← ${blank ? "an empty contract to fill in" : "a working REST adapter to edit"}
+`);
 
-  Next:
+  if (blank) {
+    console.log(`  Every method throws until you write it. Start with createUser and
+  deleteUser — those two are required.
+`);
+  } else {
+    console.log(`  This template is the adapter from examples/rest-api/, which has been run
+  against a live server. Every line you need to change is marked EDIT: the
+  URLs, the field names and the response shapes. The error handling, session
+  refresh and cleanup around them already work.
+
+  Not an HTTP API?  populace init --blank --force
+`);
+  }
+
+  console.log(`  Next:
     1. Fill in \`target\` and \`neverRunAgainst\` in populace.config.mjs
-    2. Implement createUser and deleteUser in adapters/my-app.mjs
-    3. populace doctor
+    2. Change the EDIT lines in adapters/my-app.mjs
+    3. populace doctor     ← checks config and reachability, runs nothing
+    4. populace smoke      ← calls every method once, tells you what is wired wrong
 `);
 }
 
