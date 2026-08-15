@@ -11,6 +11,9 @@
  */
 
 export function createAdapter(target) {
+  if (!target?.url) {
+    throw new Error("No target URL. Set `target.url` in populace.config.mjs.");
+  }
   const base = target.url.replace(/\/$/, "");
 
   /**
