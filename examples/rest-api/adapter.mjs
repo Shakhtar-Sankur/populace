@@ -18,7 +18,7 @@ export function createAdapter(target) {
 
   /**
    * The contract hands an adapter a name, a phone and a persona — never a
-   * password. Choosing one is the adapter's job, exactly as the Buzz Buzz
+   * password. Choosing one is the adapter's job, exactly as the Buzz
    * reference adapter does, because only you know what your API will accept.
    *
    * A constant is right here: identities are deterministic so that a re-run
@@ -77,7 +77,7 @@ export function createAdapter(target) {
         body: { phone, password: PASSWORD, name },
       });
       // The handle is whatever later calls need. Here that is an integer id and
-      // a token; for Buzz Buzz it was a UUID and a client object. The engine
+      // a token; for Buzz it was a UUID and a client object. The engine
       // only ever reads `.id`.
       return { id: out.id, token: out.token };
     },

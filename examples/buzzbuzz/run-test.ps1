@@ -1,4 +1,4 @@
-# Run the Buzz Buzz simulation from Windows PowerShell.
+# Run the Buzz simulation from Windows PowerShell.
 #
 # Exists because the bash one-liner does not work here: PowerShell 5.1 has no
 # `&&` statement separator and no `VAR=value command` prefix, so pasting the
