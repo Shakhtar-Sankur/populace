@@ -1,4 +1,4 @@
-// Renders the 9 Aug 2026 Buzz Buzz run as a self-contained SVG.
+// Renders the 9 Aug 2026 Buzz run as a self-contained SVG.
 //
 // Every number below is the recorded output of that run. The run itself is not
 // repeatable: the project it ran against carried no data at the time and is
@@ -8,7 +8,7 @@
 import { writeFileSync } from "node:fs";
 
 const RUN = {
-  app: "Buzz Buzz",
+  app: "Buzz",
   date: "9 August 2026",
   agents: 6,
   cities: "Manila + Mumbai",
@@ -100,7 +100,7 @@ const stat = (x, value, label, color) => `
   <text x="${x}" y="342" fill="${C.muted}" font-family="${SANS}" font-size="14" letter-spacing="0.06em">${label}</text>`;
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
-  aria-label="Populace report for Buzz Buzz, 9 August 2026: no failures across 400 API calls from 6 simulated users across Manila and Mumbai.">
+  aria-label="Populace report for Buzz, 9 August 2026: no failures across 400 API calls from 6 simulated users across Manila and Mumbai.">
   <rect width="${W}" height="${H}" rx="16" fill="${C.bg}"/>
   <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="15" fill="none" stroke="${C.rule}"/>
 

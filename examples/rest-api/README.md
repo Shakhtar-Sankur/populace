@@ -29,9 +29,9 @@ test · 6 people · 124.7s
 
 ## Why this proves something
 
-The server disagrees with Buzz Buzz on every axis that could hide an assumption:
+The server disagrees with Buzz on every axis that could hide an assumption:
 
-| | Buzz Buzz | this server |
+| | Buzz | this server |
 |---|---|---|
 | transport | `supabase-js` client | plain `fetch` |
 | ids | UUID strings | **integers** |

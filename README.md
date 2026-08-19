@@ -27,13 +27,13 @@ applying**. Then it hands you a report on what broke.
 
 ## It has done this to a real, finished app
 
-![Populace report for Buzz Buzz, 9 August 2026 — no failures across 400 API calls](docs/buzzbuzz-run-2026-08-09.svg)
+![Populace report for Buzz, 9 August 2026 — no failures across 400 API calls](docs/buzzbuzz-run-2026-08-09.svg)
 
 That is the *second* run. The first one is the interesting one.
 
 ### What happened, in plain English
 
-On **9 August 2026** we pointed Populace at **Buzz Buzz** — a gig-worker platform
+On **9 August 2026** we pointed Populace at **Buzz** — a gig-worker platform
 on Android with a live Postgres backend, 17 tables and 48 row-level-security
 policies. It was finished. It was signed. It had been through a full manual test
 of every screen by the person who wrote it, and it had passed.

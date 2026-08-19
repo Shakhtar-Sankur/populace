@@ -1,4 +1,4 @@
-// Populace's first customer: Buzz Buzz, a gig-driver tracking app.
+// Populace's first customer: Buzz, a gig-driver tracking app.
 //
 // Run it — PowerShell (Windows):
 //   $env:BUZZBUZZ_TEST_URL="https://<your-TEST-project>.supabase.co"
@@ -17,7 +17,7 @@
 // otherwise nobody can sign in after signing up.
 
 export default {
-  app: "Buzz Buzz",
+  app: "Buzz",
   adapter: "../../adapters/buzzbuzz.mjs",
   environment: "test",
 
@@ -26,7 +26,7 @@ export default {
     key: process.env.BUZZBUZZ_TEST_KEY,
   },
 
-  // Buzz Buzz's LIVE project. If BUZZBUZZ_TEST_URL is ever set to this by
+  // Buzz's LIVE project. If BUZZBUZZ_TEST_URL is ever set to this by
   // accident, Populace refuses to start. Real drivers must never see invented
   // people on their map.
   // Both of these are real. rqzuuvlougzhynckvqzd is the original project, which

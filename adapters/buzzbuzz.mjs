@@ -1,4 +1,4 @@
-// Adapter: Buzz Buzz — a gig-driver tracking app on Supabase.
+// Adapter: Buzz — a gig-driver tracking app on Supabase.
 //
 // Populace's first customer, and the reference implementation. Read this
 // alongside contract.md to see what a complete adapter looks like: it is ~140

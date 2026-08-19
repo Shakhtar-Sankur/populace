@@ -6,9 +6,9 @@
  * real backend, and that backend was ours — a testing tool that has only tested
  * its author's own app has not been shown to be portable.
  *
- * So every architectural choice here disagrees with Buzz Buzz on purpose:
+ * So every architectural choice here disagrees with Buzz on purpose:
  *
- *   Buzz Buzz / Supabase          this server
+ *   Buzz / Supabase          this server
  *   ────────────────────          ───────────────────────────────
  *   supabase-js client            plain fetch over HTTP
  *   UUID string ids               INTEGER ids
@@ -18,7 +18,7 @@
  *   RLS refuses in the database   the handler refuses in application code
  *
  * The bare id arrays matter most: that shape is what caught the engine reading
- * `target.id` off a string. If this file agreed with Buzz Buzz it would prove
+ * `target.id` off a string. If this file agreed with Buzz it would prove
  * nothing.
  *
  * Zero dependencies, in-memory, and it binds to 127.0.0.1 only — it is a test
@@ -196,7 +196,7 @@ const routes = {
     const thread = db.threads.find((t) => t.id === Number(body.threadId));
     if (!thread) return [404, { error: "no such thread" }];
     // Refused in application code rather than by a database policy — a
-    // different enforcement point from Buzz Buzz, deliberately.
+    // different enforcement point from Buzz, deliberately.
     if (thread.a !== auth.user.id && thread.b !== auth.user.id) {
       return [403, { error: "not a participant in this thread" }];
     }
