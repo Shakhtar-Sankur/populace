@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 986" width="1200" height="986" role="img"
+  aria-label="Populace report for Buzz, 15 August 2026: no failures across 6539 API calls from 30 simulated users across Manila and Mumbai.">
+  <rect width="1200" height="986" rx="16" fill="#0B1014"/>
+  <rect x="1" y="1" width="1198" height="984" rx="15" fill="none" stroke="#233039"/>
+
+  <g transform="translate(48,40.5) scale(0.46875)" fill="#D3FF00"><path d="M33.19 2 L60.1 14.82 L48.54 20.68 L33.66 13.4 L16.25 23.06 L15.14 23.85 L15.14 40.15 L33.19 47.91 L49.02 39.84 L49.34 38.73 L48.54 38.25 L30.34 33.66 L30.5 30.97 L44.43 24.01 L61.05 29.86 L61.05 46.64 L33.5 62 L2.95 46.64 L2.95 17.51 L33.03 2.16 Z"/></g>
+  <text x="90" y="63" fill="#EAF1F6" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="21" font-weight="800" letter-spacing="0.14em">GIGZEN</text>
+  <text x="1152" y="63" fill="#6B7C89" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="15" letter-spacing="0.18em" text-anchor="end">POPULACE REPORT · 15 AUGUST 2026</text>
+  <line x1="48" y1="92" x2="1152" y2="92" stroke="#233039"/>
+
+  <text x="48" y="150" fill="#EAF1F6" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="40" font-weight="700" letter-spacing="-0.02em">Buzz</text>
+  <text x="48" y="182" fill="#9FB0BC" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="18">30 simulated drivers · Manila + Mumbai · live backend, real accounts</text>
+
+  <rect x="48" y="212" width="1104" height="60" rx="10" fill="#D3FF00"/>
+  <text x="74" y="251" fill="#0B1014" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="26" font-weight="800">✔  No failures across 6539 API calls</text>
+
+  
+  <text x="48" y="316" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="40" font-weight="700">6539</text>
+  <text x="48" y="342" fill="#6B7C89" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="14" letter-spacing="0.06em">API CALLS</text>
+  
+  <text x="268" y="316" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="40" font-weight="700">0</text>
+  <text x="268" y="342" fill="#6B7C89" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="14" letter-spacing="0.06em">FAILURES</text>
+  
+  <text x="488" y="316" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="40" font-weight="700">13 / 13</text>
+  <text x="488" y="342" fill="#6B7C89" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="14" letter-spacing="0.06em">METHODS COVERED</text>
+  
+  <text x="708" y="316" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="40" font-weight="700">30</text>
+  <text x="708" y="342" fill="#6B7C89" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="14" letter-spacing="0.06em">ACCOUNTS CREATED</text>
+  
+  <text x="928" y="316" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="40" font-weight="700">30</text>
+  <text x="928" y="342" fill="#6B7C89" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="14" letter-spacing="0.06em">ACCOUNTS REMOVED</text>
+
+  <line x1="48" y1="372" x2="1152" y2="372" stroke="#233039"/>
+  <text x="48" y="396" fill="#6B7C89" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="14" letter-spacing="0.14em">METHOD</text>
+  <text x="430" y="396" fill="#6B7C89" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="14" letter-spacing="0.14em" text-anchor="end">CALLS</text>
+  <text x="510" y="396" fill="#6B7C89" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="14" letter-spacing="0.14em" text-anchor="end">FAILS</text>
+  <text x="630" y="396" fill="#6B7C89" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="14" letter-spacing="0.14em" text-anchor="end">P50</text>
+  <text x="740" y="396" fill="#6B7C89" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="14" letter-spacing="0.14em" text-anchor="end">P95</text>
+  
+  <g>
+    
+    <text x="48" y="430" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">reportLocation</text>
+    <text x="430" y="430" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">2793</text>
+    <text x="510" y="430" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="430" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">799ms</text>
+    <text x="740" y="430" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">2.8s</text>
+    <rect x="790" y="418" width="362.0" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    <rect x="34" y="442" width="1132" height="34" rx="5" fill="#FFFFFF" opacity="0.022"/>
+    <text x="48" y="464" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">recentPostsByOthers</text>
+    <text x="430" y="464" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">984</text>
+    <text x="510" y="464" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="464" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">241ms</text>
+    <text x="740" y="464" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">387ms</text>
+    <rect x="790" y="452" width="50.0" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    
+    <text x="48" y="498" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">like</text>
+    <text x="430" y="498" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">984</text>
+    <text x="510" y="498" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="498" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">236ms</text>
+    <text x="740" y="498" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">330ms</text>
+    <rect x="790" y="486" width="42.7" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    <rect x="34" y="510" width="1132" height="34" rx="5" fill="#FFFFFF" opacity="0.022"/>
+    <text x="48" y="532" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">post</text>
+    <text x="430" y="532" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">403</text>
+    <text x="510" y="532" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="532" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">238ms</text>
+    <text x="740" y="532" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">401ms</text>
+    <rect x="790" y="520" width="51.8" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    
+    <text x="48" y="566" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">comment</text>
+    <text x="430" y="566" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">397</text>
+    <text x="510" y="566" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="566" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">240ms</text>
+    <text x="740" y="566" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">416ms</text>
+    <rect x="790" y="554" width="53.8" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    <rect x="34" y="578" width="1132" height="34" rx="5" fill="#FFFFFF" opacity="0.022"/>
+    <text x="48" y="600" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">openConversation</text>
+    <text x="430" y="600" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">389</text>
+    <text x="510" y="600" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="600" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">240ms</text>
+    <text x="740" y="600" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">381ms</text>
+    <rect x="790" y="588" width="49.3" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    
+    <text x="48" y="634" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">sendMessage</text>
+    <text x="430" y="634" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">389</text>
+    <text x="510" y="634" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="634" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">243ms</text>
+    <text x="740" y="634" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">395ms</text>
+    <rect x="790" y="622" width="51.1" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    <rect x="34" y="646" width="1132" height="34" rx="5" fill="#FFFFFF" opacity="0.022"/>
+    <text x="48" y="668" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">listGroups</text>
+    <text x="430" y="668" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">55</text>
+    <text x="510" y="668" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="668" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">242ms</text>
+    <text x="740" y="668" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">506ms</text>
+    <rect x="790" y="656" width="65.4" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    
+    <text x="48" y="702" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">joinGroup</text>
+    <text x="430" y="702" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">55</text>
+    <text x="510" y="702" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="702" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">241ms</text>
+    <text x="740" y="702" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">522ms</text>
+    <rect x="790" y="690" width="67.5" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    <rect x="34" y="714" width="1132" height="34" rx="5" fill="#FFFFFF" opacity="0.022"/>
+    <text x="48" y="736" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">createUser</text>
+    <text x="430" y="736" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">30</text>
+    <text x="510" y="736" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="736" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">701ms</text>
+    <text x="740" y="736" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">2.1s</text>
+    <rect x="790" y="724" width="271.5" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    
+    <text x="48" y="770" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">setProfile</text>
+    <text x="430" y="770" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">30</text>
+    <text x="510" y="770" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="770" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">254ms</text>
+    <text x="740" y="770" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">1.1s</text>
+    <rect x="790" y="758" width="142.2" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+  <g>
+    <rect x="34" y="782" width="1132" height="34" rx="5" fill="#FFFFFF" opacity="0.022"/>
+    <text x="48" y="804" fill="#EAF1F6" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17">deleteUser</text>
+    <text x="430" y="804" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">30</text>
+    <text x="510" y="804" fill="#63C48D" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">0</text>
+    <text x="630" y="804" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">302ms</text>
+    <text x="740" y="804" fill="#9FB0BC" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="17" text-anchor="end">464ms</text>
+    <rect x="790" y="792" width="60.0" height="12" rx="3" fill="#2C3B45"/>
+  </g>
+
+  <line x1="48" y1="878" x2="1152" y2="878" stroke="#233039"/>
+  <text x="48" y="912" fill="#9FB0BC" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="17">116.2 km driven · 403 posts · 984 likes · 397 comments · 389 messages · 55 group joins</text>
+  <text x="1152" y="912" fill="#6B7C89" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="13" text-anchor="end">Gigzen Private Limited · Bhubaneswar, India</text>
+  <text x="48" y="944" fill="#6B7C89" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="15">Six users for three minutes is a correctness run, not a load test. These are latencies under six concurrent users and nothing more.</text>
+</svg>

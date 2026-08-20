@@ -1,39 +1,43 @@
-// Renders the 9 Aug 2026 Buzz run as a self-contained SVG.
+// Renders the 15 Aug 2026 Buzz run as a self-contained SVG.
 //
-// Every number below is the recorded output of that run. The run itself is not
-// repeatable: the project it ran against carried no data at the time and is
-// production now, so it sits in `neverRunAgainst`. This file is the record.
+// Every number below is the recorded output of that run.
+//
+// This is the largest run that was clean end to end. A later one carried 36
+// concurrent users through 7,485 calls without an in-run failure, but it was
+// launched as fifty and fourteen accounts were refused at signup by a
+// provider quota — so a graphic of it headlining "0 failures" would need an
+// asterisk to be true. This one needs none.
 //
 //   node docs/build-run-graphic.mjs
 import { writeFileSync } from "node:fs";
 
 const RUN = {
   app: "Buzz",
-  date: "9 August 2026",
-  agents: 6,
+  date: "15 August 2026",
+  agents: 30,
   cities: "Manila + Mumbai",
-  calls: 400,
+  calls: 6539,
   failures: 0,
   coverage: "13 / 13",
-  created: 6,
-  removed: 6,
-  activity: "6.2 km driven · 22 posts · 59 likes · 22 comments · 21 messages · 2 group joins",
+  created: 30,
+  removed: 30,
+  activity: "116.2 km driven · 403 posts · 984 likes · 397 comments · 389 messages · 55 group joins",
 };
 
 // method, calls, failures, p50 ms, p95 ms. null = not recorded.
 const METHODS = [
-  ["reportLocation", 172, 0, 414, 571],
-  ["recentPostsByOthers", 61, 0, 112, 129],
-  ["like", 59, 0, 108, 133],
-  ["post", 22, 0, 109, 128],
-  ["comment", 22, 0, 114, 141],
-  ["openConversation", 21, 0, 115, 142],
-  ["sendMessage", 21, 0, 113, 142],
-  ["createUser", 6, 0, 436, 1600],
-  ["setProfile", 6, 0, 121, 305],
-  ["deleteUser", 6, 0, 130, 293],
-  ["listGroups", 2, 0, null, null],
-  ["joinGroup", 2, 0, null, null],
+  ["reportLocation", 2793, 0, 799, 2800],
+  ["recentPostsByOthers", 984, 0, 241, 387],
+  ["like", 984, 0, 236, 330],
+  ["post", 403, 0, 238, 401],
+  ["comment", 397, 0, 240, 416],
+  ["openConversation", 389, 0, 240, 381],
+  ["sendMessage", 389, 0, 243, 395],
+  ["listGroups", 55, 0, 242, 506],
+  ["joinGroup", 55, 0, 241, 522],
+  ["createUser", 30, 0, 701, 2100],
+  ["setProfile", 30, 0, 254, 1100],
+  ["deleteUser", 30, 0, 302, 464],
 ];
 
 const sum = METHODS.reduce((a, m) => a + m[1], 0);
@@ -100,7 +104,7 @@ const stat = (x, value, label, color) => `
   <text x="${x}" y="342" fill="${C.muted}" font-family="${SANS}" font-size="14" letter-spacing="0.06em">${label}</text>`;
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
-  aria-label="Populace report for Buzz, 9 August 2026: no failures across 400 API calls from 6 simulated users across Manila and Mumbai.">
+  aria-label="Populace report for ${RUN.app}, ${RUN.date}: no failures across ${RUN.calls} API calls from ${RUN.agents} simulated users across ${RUN.cities.replace(" + ", " and ")}.">
   <rect width="${W}" height="${H}" rx="16" fill="${C.bg}"/>
   <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="15" fill="none" stroke="${C.rule}"/>
 
@@ -165,8 +169,8 @@ for (const [y, items] of baselines) {
   }
 }
 
-writeFileSync(new URL("./buzzbuzz-run-2026-08-09.svg", import.meta.url), svg);
+writeFileSync(new URL("./buzz-run-2026-08-15.svg", import.meta.url), svg);
 console.log(
-  `wrote docs/buzzbuzz-run-2026-08-09.svg — ${METHODS.length} methods, ${sum} calls, ` +
+  `wrote docs/buzz-run-2026-08-15.svg — ${METHODS.length} methods, ${sum} calls, ` +
     `${baselines.size} baselines checked for collisions`,
 );
