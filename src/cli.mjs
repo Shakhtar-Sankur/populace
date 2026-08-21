@@ -49,6 +49,7 @@ function overridesFromFlags() {
   if (flag("minutes")) o.minutes = Number(flag("minutes"));
   if (flag("tick")) o.tickSeconds = Number(flag("tick"));
   if (flag("cities")) o.cities = String(flag("cities")).split(",").map((s) => s.trim()).filter(Boolean);
+  if (flag("engagement")) o.engagement = Number(flag("engagement"));
   if (flag("report")) o.reportPath = flag("report");
   return o;
 }
@@ -570,6 +571,7 @@ if (!commands[command]) {
     --agents <n>  --minutes <n>       override the config
     --tick <seconds>                  simulated seconds per step
     --cities <a,b>                    ${Object.keys(CITIES).join(", ")}
+    --engagement <x>                  how busy people are; 1 = normal, 5 = relentless
     --report <path>                   where to write the report
     --keep                            leave accounts in place after a run
     --file <path>                     which report to re-open (report)
