@@ -17,13 +17,13 @@ export class World {
   }
 
   static fromConfig(config, adapter, on) {
-    const { agents = 6, cities } = config.population;
+    const { agents = 6, cities, engagement = 1 } = config.population;
     const personas =
       typeof config.personas === "function"
-        ? config.personas(agents, cities)
+        ? config.personas(agents, cities, engagement)
         : Array.isArray(config.personas)
           ? config.personas
-          : buildPersonas(agents, cities);
+          : buildPersonas(agents, cities, engagement);
     const options = {
       ...(config.identity || {}),
       refreshEveryMs: (config.session?.refreshEveryMinutes ?? 30) * 60_000,
