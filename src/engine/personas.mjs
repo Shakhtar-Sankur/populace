@@ -32,6 +32,16 @@ export const CITIES = {
   colombo: { name: "Colombo", lat: 6.9271, lng: 79.8612, currency: "LKR", rate: 90 },
   kathmandu: { name: "Kathmandu", lat: 27.7172, lng: 85.324, currency: "NPR", rate: 35 },
   phnompenh: { name: "Phnom Penh", lat: 11.5564, lng: 104.9282, currency: "KHR", rate: 800 },
+  ahmedabad: { name: "Ahmedabad", lat: 23.0225, lng: 72.5714, currency: "INR", rate: 10 },
+  pune: { name: "Pune", lat: 18.5204, lng: 73.8567, currency: "INR", rate: 10 },
+  jaipur: { name: "Jaipur", lat: 26.9124, lng: 75.7873, currency: "INR", rate: 10 },
+  islamabad: { name: "Islamabad", lat: 33.6844, lng: 73.0479, currency: "PKR", rate: 55 },
+  chittagong: { name: "Chittagong", lat: 22.3569, lng: 91.7832, currency: "BDT", rate: 22 },
+  danang: { name: "Da Nang", lat: 16.0544, lng: 108.2022, currency: "VND", rate: 5000 },
+  bandung: { name: "Bandung", lat: -6.9175, lng: 107.6191, currency: "IDR", rate: 3000 },
+  davao: { name: "Davao", lat: 7.1907, lng: 125.4553, currency: "PHP", rate: 10 },
+  chiangmai: { name: "Chiang Mai", lat: 18.7883, lng: 98.9853, currency: "THB", rate: 6 },
+  yangon: { name: "Yangon", lat: 16.8409, lng: 96.1735, currency: "MMK", rate: 900 },
 };
 
 // Chatter is per-city so a feed reads like the right place.
@@ -176,6 +186,76 @@ const CHATTER = {
     "អ្នកណានៅចំការមនទេ? ការកម្ម៉ង់ច្រើនណាស់",
     "សម្រាកបន្តិច បើកបានប្រាំពីរម៉ោងហើយ",
   ],
+  ahmedabad: [
+    "એસ જી હાઈવે પર બહુ ટ્રાફિક છે, બીજો રસ્તો લો",
+    "અત્યારે સી જી રોડ પર સર્જ ચાલે છે",
+    "મણિનગરમાં પાણી ભરાયું છે, સાચવીને",
+    "કોઈ વસ્ત્રાપુરમાં છે? ઓર્ડર બહુ આવે છે",
+    "થોડો આરામ, સવારથી ૭૫ કિલોમીટર થયા",
+  ],
+  pune: [
+    "हिंजवडीला खूप ट्रॅफिक आहे, दुसऱ्या रस्त्याने जा",
+    "कोरेगाव पार्कला आत्ता सर्ज चालू आहे",
+    "कात्रजला पाणी साचलंय, जपून चला",
+    "कोणी विमाननगरला आहे का? ऑर्डर खूप येतायत",
+    "जरा आराम, सकाळपासून ८० किलोमीटर झाले",
+  ],
+  jaipur: [
+    "टोंक रोड पर बहुत जाम है, दूसरा रास्ता लो",
+    "एम आई रोड पर अभी सर्ज चल रहा है",
+    "मानसरोवर में पानी भर गया, संभल के",
+    "कोई वैशाली नगर में है? ऑर्डर बहुत आ रहे",
+    "थोड़ा आराम, सुबह से ७० किलोमीटर हो गए",
+  ],
+  islamabad: [
+    "سری نگر ہائی وے پر رش ہے، دوسرا راستہ لیں",
+    "بلیو ایریا میں ابھی سرج ہے",
+    "جی الیون میں پانی کھڑا ہے، احتیاط",
+    "کوئی ایف سیون میں ہے؟ آرڈر بہت ہیں",
+    "تھوڑا آرام، صبح سے پینسٹھ کلومیٹر",
+  ],
+  chittagong: [
+    "আগ্রাবাদে অনেক জ্যাম, অন্য রাস্তা ধরুন",
+    "জিইসি মোড়ে এখন সার্জ চলছে",
+    "চকবাজারে পানি জমেছে, সাবধানে",
+    "কেউ কি খুলশীতে আছেন? অর্ডার অনেক",
+    "একটু বিশ্রাম, সকাল থেকে ৭০ কিলোমিটার",
+  ],
+  danang: [
+    "Kẹt xe ở cầu Rồng, đi đường khác nhé",
+    "Đang có thưởng khu Hải Châu",
+    "Cẩn thận ngập ở Thanh Khê nha",
+    "Ai đang ở Sơn Trà không? Đơn nhiều lắm",
+    "Nghỉ chút, chạy từ sáng được 65 cây",
+  ],
+  bandung: [
+    "Macet di Pasteur, lewat jalan lain aja",
+    "Lagi surge di Dago, lumayan",
+    "Hati-hati genangan di Kiaracondong",
+    "Ada yang di Buah Batu? Orderan rame",
+    "Istirahat dulu, udah 7 jam narik",
+  ],
+  davao: [
+    "Grabe ang traffic sa Quimpo, lain dalan na lang",
+    "Naay surge karon sa Lanang",
+    "Bantay sa baha sa Matina, hinay lang",
+    "Kinsa naa sa Buhangin? Daghan booking",
+    "Pahulay sa, 7 oras na ko nagdrive",
+  ],
+  chiangmai: [
+    "รถติดแถวช้างเผือก ใช้ทางอื่นดีกว่า",
+    "ตอนนี้ราคาขึ้นแถวนิมมาน",
+    "ระวังน้ำท่วมแถวสันทราย",
+    "ใครอยู่แถวสันกำแพงบ้าง งานเยอะ",
+    "พักก่อน วิ่งมา 6 ชั่วโมงแล้ว",
+  ],
+  yangon: [
+    "ပြည်လမ်းမှာ ကားပိတ်နေတယ်၊ တခြားလမ်းသွားပါ",
+    "အခု ဗိုလ်ချုပ်လမ်းမှာ ဈေးတက်နေတယ်",
+    "လှိုင်မှာ ရေဝပ်နေတယ်၊ သတိထားပါ",
+    "ကမာရွတ်မှာ ဘယ်သူရှိလဲ။ အော်ဒါတွေများတယ်",
+    "ခဏနားလိုက်ဦးမယ်၊ မနက်ကတည်းက ၆၀ ကီလို",
+  ],
 };
 
 const REPLIES = [
@@ -208,6 +288,16 @@ const NAMES = {
   colombo: ["Nuwan Perera", "Chamari Silva", "Kasun Fernando", "Dilani Jayasuriya", "Sampath Ranasinghe"],
   kathmandu: ["Bikash Thapa", "Sunita Shrestha", "Ramesh Adhikari", "Anjali Gurung", "Prakash Tamang"],
   phnompenh: ["Sokha Chan", "Sreymom Kim", "Vuthy Sok", "Bopha Meas", "Dara Heng"],
+  ahmedabad: ["Jignesh Patel", "Hetal Shah", "Kalpesh Desai", "Bhavna Mehta", "Nilesh Trivedi"],
+  pune: ["Sachin Deshmukh", "Snehal Joshi", "Amol Kulkarni", "Manasi Pawar", "Nitin Jadhav"],
+  jaipur: ["Mahendra Meena", "Sunita Choudhary", "Dinesh Saini", "Rekha Sharma", "Vijay Rathore"],
+  islamabad: ["Kamran Abbasi", "Hina Shah", "Waqar Khattak", "Sana Gul", "Adnan Qureshi"],
+  chittagong: ["Mizanur Rahman", "Shirin Sultana", "Anwar Hossain", "Rumana Khatun", "Faisal Chowdhury"],
+  danang: ["Truong Van Nam", "Le Thi Hoa", "Phan Minh Khoa", "Nguyen Thuy Linh", "Huynh Tan Phat"],
+  bandung: ["Asep Suryadi", "Nining Herlina", "Dadang Hermawan", "Euis Rohaeti", "Yusuf Maulana"],
+  davao: ["Nonoy Bautista", "Cherry Lou Diaz", "Toto Mendoza", "Baby Jane Ong", "Jomar Alcantara"],
+  chiangmai: ["Anucha Pongsri", "Wilai Boonmee", "Somsak Inta", "Praewa Chaiyo", "Thanet Kaewta"],
+  yangon: ["Aung Ko Min", "Thida Win", "Zaw Lin Htet", "Nilar Aye", "Kyaw Soe Moe"],
 };
 
 const PLATFORMS = {
@@ -231,6 +321,16 @@ const PLATFORMS = {
   colombo: ["pickme", "uber", "ubereats", "kangaroo", "darazfood"],
   kathmandu: ["pathao", "indrive", "foodmandu", "tootle", "bhojdeals"],
   phnompenh: ["grab", "passapp", "nham24", "foodpanda", "wownow"],
+  ahmedabad: ["uber", "ola", "swiggy", "zomato", "rapido"],
+  pune: ["uber", "ola", "swiggy", "zomato", "rapido"],
+  jaipur: ["uber", "ola", "swiggy", "zomato", "rapido"],
+  islamabad: ["careem", "bykea", "indrive", "foodpanda", "yango"],
+  chittagong: ["pathao", "uber", "foodpanda", "shohoz", "chaldal"],
+  danang: ["grab", "be", "gojek", "shopeefood", "ahamove"],
+  bandung: ["gojek", "grab", "shopeefood", "maxim", "indrive"],
+  davao: ["grab", "angkas", "joyride", "foodpanda", "lalamove"],
+  chiangmai: ["grab", "foodpanda", "lalamove", "shopeefood", "bolt"],
+  yangon: ["grab", "oway", "foodpanda", "yangonD2D", "hlaw"],
 };
 
 const pick = (arr, i) => arr[i % arr.length];
