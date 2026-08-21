@@ -22,6 +22,16 @@ export const CITIES = {
   karachi: { name: "Karachi", lat: 24.8607, lng: 67.0011, currency: "PKR", rate: 55 },
   kualalumpur: { name: "Kuala Lumpur", lat: 3.139, lng: 101.6869, currency: "MYR", rate: 2 },
   bengaluru: { name: "Bengaluru", lat: 12.9716, lng: 77.5946, currency: "INR", rate: 10 },
+  lahore: { name: "Lahore", lat: 31.5204, lng: 74.3587, currency: "PKR", rate: 55 },
+  chennai: { name: "Chennai", lat: 13.0827, lng: 80.2707, currency: "INR", rate: 10 },
+  hyderabad: { name: "Hyderabad", lat: 17.385, lng: 78.4867, currency: "INR", rate: 10 },
+  kolkata: { name: "Kolkata", lat: 22.5726, lng: 88.3639, currency: "INR", rate: 10 },
+  hanoi: { name: "Hanoi", lat: 21.0278, lng: 105.8342, currency: "VND", rate: 5000 },
+  surabaya: { name: "Surabaya", lat: -7.2575, lng: 112.7521, currency: "IDR", rate: 3000 },
+  cebu: { name: "Cebu", lat: 10.3157, lng: 123.8854, currency: "PHP", rate: 10 },
+  colombo: { name: "Colombo", lat: 6.9271, lng: 79.8612, currency: "LKR", rate: 90 },
+  kathmandu: { name: "Kathmandu", lat: 27.7172, lng: 85.324, currency: "NPR", rate: 35 },
+  phnompenh: { name: "Phnom Penh", lat: 11.5564, lng: 104.9282, currency: "KHR", rate: 800 },
 };
 
 // Chatter is per-city so a feed reads like the right place.
@@ -96,6 +106,76 @@ const CHATTER = {
     "Yaaru Whitefield nalli iddira? Orders tumba bartaide",
     "Swalpa rest, belagininda 90 km aagide",
   ],
+  lahore: [
+    "فیروزپور روڈ پر بہت ٹریفک ہے، دوسرا راستہ لیں",
+    "گلبرگ میں ابھی سرج لگا ہوا ہے",
+    "ڈی ایچ اے میں پانی کھڑا ہے، دھیان سے",
+    "کوئی جوہر ٹاؤن میں ہے؟ آرڈر بہت ہیں",
+    "چائے کا وقفہ، صبح سے ستر کلومیٹر ہو گئے",
+  ],
+  chennai: [
+    "Anna Salai la romba traffic, vera route la ponga",
+    "T Nagar pakkam ippo surge irukku",
+    "Velachery la thanni thengi irukku, jaakirathai",
+    "Yaaru OMR la irukkeenga? Orders niraya varuthu",
+    "Konjam rest, kaalaila irunthu 80 km aachu",
+  ],
+  hyderabad: [
+    "Hitech City daggara traffic ekkuva undi, vere route veldam",
+    "Banjara Hills lo ippudu surge nadustondi",
+    "Kukatpally lo neellu nilichayi, jagratha",
+    "Evaraina Gachibowli lo unnara? Orders baaga vastunnayi",
+    "Konchem rest, udayam nunchi 85 km ayindi",
+  ],
+  kolkata: [
+    "ই এম বাইপাসে প্রচুর জ্যাম, অন্য রাস্তা ধরুন",
+    "পার্ক স্ট্রিটে এখন সার্জ চলছে",
+    "সল্টলেকে জল জমেছে, সাবধানে চালান",
+    "কেউ কি হাওড়ায় আছেন? অর্ডার প্রচুর আসছে",
+    "একটু চা খেয়ে নিই, সকাল থেকে ৭৫ কিলোমিটার",
+  ],
+  hanoi: [
+    "Tắc đường kinh khủng ở Trường Chinh, đi lối khác nhé",
+    "Đang có thưởng khu Hoàn Kiếm, tranh thủ đi",
+    "Cẩn thận ngập ở Thái Hà nhé anh em",
+    "Ai đang ở Cầu Giấy không? Đơn về nhiều lắm",
+    "Nghỉ tí đã, chạy từ sáng được 80 cây rồi",
+  ],
+  surabaya: [
+    "Macet parah di Ahmad Yani, lewat jalan lain aja",
+    "Lagi surge di Tunjungan, lumayan nih",
+    "Hati-hati genangan di Rungkut",
+    "Ada yang di Gubeng? Orderan rame banget",
+    "Istirahat dulu, udah 8 jam narik",
+  ],
+  cebu: [
+    "Grabe ang traffic sa Colon, lain dalan na lang",
+    "Naay surge karon sa IT Park, sulit",
+    "Bantay sa baha sa Mandaue, hinay-hinay",
+    "Kinsa naa sa Lahug? Daghan kaayo booking",
+    "Pahulay sa, 7 oras na ko nagdrive",
+  ],
+  colombo: [
+    "ගාලු පාරේ විශාල රථවාහන තදබදයක්, වෙන පාරකින් යන්න",
+    "දැන් කොල්ලුපිටියේ සර්ජ් එකක් තියෙනවා",
+    "දෙහිවලේ වතුර පිරිලා, පරිස්සමෙන්",
+    "නුගේගොඩ ඉන්නේ කවුද? ඕඩර් ගොඩක් එනවා",
+    "පොඩි විවේකයක්, උදේ ඉඳන් කිලෝමීටර් 70යි",
+  ],
+  kathmandu: [
+    "कोटेश्वरमा धेरै जाम छ, अर्को बाटो जानुहोस्",
+    "अहिले ठमेलमा सर्ज चलिरहेको छ",
+    "बल्खुमा पानी जमेको छ, ध्यान दिनुहोस्",
+    "कोही ललितपुरमा हुनुहुन्छ? अर्डर धेरै आइरहेको छ",
+    "अलिकति आराम, बिहानदेखि ६० किलोमिटर भयो",
+  ],
+  phnompenh: [
+    "ស្ទះចរាចរណ៍ខ្លាំងនៅមហាវិថីមុនីវង្ស សូមប្រើផ្លូវផ្សេង",
+    "ឥឡូវមានតម្លៃឡើងនៅបឹងកេងកង",
+    "ប្រយ័ត្នទឹកជន់នៅទួលគោក",
+    "អ្នកណានៅចំការមនទេ? ការកម្ម៉ង់ច្រើនណាស់",
+    "សម្រាកបន្តិច បើកបានប្រាំពីរម៉ោងហើយ",
+  ],
 };
 
 const REPLIES = [
@@ -118,6 +198,16 @@ const NAMES = {
   karachi: ["Asif Mehmood", "Ayesha Khan", "Bilal Ahmed", "Farah Siddiqui", "Usman Raza"],
   kualalumpur: ["Ahmad Faizal", "Nurul Aina", "Tan Wei Ming", "Siti Zubaidah", "Ravi Kumar"],
   bengaluru: ["Manjunath Rao", "Deepa Shetty", "Kiran Gowda", "Lakshmi Prasad", "Suresh Babu"],
+  lahore: ["Tariq Javed", "Sadia Malik", "Imran Butt", "Rabia Nawaz", "Zeeshan Iqbal"],
+  chennai: ["Murugan Selvam", "Kavitha Raman", "Arun Prakash", "Divya Krishnan", "Senthil Kumar"],
+  hyderabad: ["Venkatesh Reddy", "Swathi Rao", "Naveen Chandra", "Padma Latha", "Srinivas Goud"],
+  kolkata: ["Subhas Ghosh", "Ananya Das", "Bikash Mondal", "Rituparna Sen", "Debasish Roy"],
+  hanoi: ["Do Van Long", "Bui Thi Lan", "Hoang Minh Duc", "Ngo Thu Trang", "Dang Quoc Anh"],
+  surabaya: ["Slamet Wibowo", "Rina Kusuma", "Bambang Setiawan", "Endah Puspita", "Joko Susilo"],
+  cebu: ["Junjun Abella", "Rosalie Yap", "Boyet Villar", "Marites Go", "Dodong Lim"],
+  colombo: ["Nuwan Perera", "Chamari Silva", "Kasun Fernando", "Dilani Jayasuriya", "Sampath Ranasinghe"],
+  kathmandu: ["Bikash Thapa", "Sunita Shrestha", "Ramesh Adhikari", "Anjali Gurung", "Prakash Tamang"],
+  phnompenh: ["Sokha Chan", "Sreymom Kim", "Vuthy Sok", "Bopha Meas", "Dara Heng"],
 };
 
 const PLATFORMS = {
@@ -131,6 +221,16 @@ const PLATFORMS = {
   karachi: ["careem", "bykea", "indrive", "foodpanda", "yango"],
   kualalumpur: ["grab", "foodpanda", "lalamove", "shopeefood", "maxim"],
   bengaluru: ["uber", "ola", "swiggy", "zomato", "rapido"],
+  lahore: ["careem", "bykea", "indrive", "foodpanda", "yango"],
+  chennai: ["uber", "ola", "swiggy", "zomato", "rapido"],
+  hyderabad: ["uber", "ola", "swiggy", "zomato", "rapido"],
+  kolkata: ["uber", "ola", "swiggy", "zomato", "rapido"],
+  hanoi: ["grab", "be", "gojek", "shopeefood", "ahamove"],
+  surabaya: ["gojek", "grab", "shopeefood", "maxim", "indrive"],
+  cebu: ["grab", "angkas", "joyride", "foodpanda", "lalamove"],
+  colombo: ["pickme", "uber", "ubereats", "kangaroo", "darazfood"],
+  kathmandu: ["pathao", "indrive", "foodmandu", "tootle", "bhojdeals"],
+  phnompenh: ["grab", "passapp", "nham24", "foodpanda", "wownow"],
 };
 
 const pick = (arr, i) => arr[i % arr.length];
