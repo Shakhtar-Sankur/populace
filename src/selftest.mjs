@@ -9,6 +9,9 @@
 // that the failures are CAUGHT, grouped, and reflected in the verdict.
 
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { World } from "./engine/world.mjs";
 import { Agent } from "./engine/agent.mjs";
@@ -25,6 +28,7 @@ import {
 import { buildReport, renderReport } from "./report.mjs";
 import { canSignInOnly, CONTRACT_METHODS, coverageOf, isStub } from "./contract.mjs";
 import { diagnose } from "./diagnose.mjs";
+import { fill, match } from "./openapi.mjs";
 
 let failed = 0;
 const pending = [];
@@ -1354,6 +1358,94 @@ check("the report renders without throwing", () => {
     assert.ok(report.verdict.problems.some((p) => p.includes("inside Populace")));
   });
 }
+
+// --- 9. the OpenAPI adapter generator -------------------------------------
+//
+// The generator is a guess by design, so what has to hold is not "it is always
+// right" but "it never produces something broken that looks finished".
+
+const SPEC = {
+  openapi: "3.0.0",
+  paths: {
+    "/auth/signup": { post: { operationId: "registerUser", summary: "Register a new account" } },
+    "/auth/login": { post: { operationId: "login", summary: "Sign in" } },
+    "/auth/token/refresh": { post: { operationId: "refreshToken", summary: "Refresh the access token" } },
+    "/users/me": {
+      patch: { operationId: "updateProfile", summary: "Update profile" },
+      delete: { operationId: "deleteAccount", summary: "Delete account" },
+    },
+    "/locations": { post: { operationId: "reportPosition", summary: "Report current position" } },
+    "/posts": {
+      get: { operationId: "listFeed", summary: "Recent posts timeline" },
+      post: { operationId: "createPost", summary: "Create a post" },
+    },
+    "/posts/{postId}/likes": { post: { operationId: "likePost", summary: "Like a post" } },
+    "/posts/{postId}/comments": { post: { operationId: "addComment", summary: "Reply to a post" } },
+    "/conversations": { post: { operationId: "startConversation", summary: "Start a direct message thread" } },
+    "/conversations/{id}/messages": { post: { operationId: "sendMessage", summary: "Send a message" } },
+    "/groups": { get: { operationId: "listGroups", summary: "List groups" } },
+    "/groups/{id}/members": { post: { operationId: "joinGroup", summary: "Join a group" } },
+  },
+};
+
+check("the generator matches a conventional REST spec", () => {
+  const { results } = match(SPEC);
+  const expected = {
+    createUser: "POST /auth/signup",
+    refreshSession: "POST /auth/token/refresh",
+    setProfile: "PATCH /users/me",
+    deleteUser: "DELETE /users/me",
+    reportLocation: "POST /locations",
+    post: "POST /posts",
+    recentPostsByOthers: "GET /posts",
+    like: "POST /posts/{postId}/likes",
+    comment: "POST /posts/{postId}/comments",
+    openConversation: "POST /conversations",
+    sendMessage: "POST /conversations/{id}/messages",
+    listGroups: "GET /groups",
+    joinGroup: "POST /groups/{id}/members",
+  };
+  for (const [method, want] of Object.entries(expected)) {
+    const r = results[method];
+    const got = r.op ? `${r.op.verb.toUpperCase()} ${r.op.path}` : "no match";
+    if (got !== want) throw new Error(`${method}: matched ${got}, expected ${want}`);
+  }
+});
+
+check("a summary's own words never exclude the right endpoint", () => {
+  // POST /conversations is described as "start a direct message thread". An
+  // earlier version checked the `avoid` list against the summary as well as the
+  // path, so the word "message" rejected the one correct answer.
+  const { results } = match(SPEC);
+  if (results.openConversation.op?.path !== "/conversations") {
+    throw new Error("openConversation was excluded by a word in its own description");
+  }
+  // And sendMessage lives UNDER conversations, so "conversation" cannot exclude it.
+  if (results.sendMessage.op?.path !== "/conversations/{id}/messages") {
+    throw new Error("sendMessage was excluded by its parent resource's name");
+  }
+});
+
+check("a generated adapter never leaves a literal {param} in a call", () => {
+  // A path written in as a literal string would make the adapter request
+  // "/posts/{postId}/likes" verbatim: broken, and looking finished.
+  const template = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "adapters", "template-rest.mjs"),
+    "utf8",
+  );
+  const { source } = fill(template, match(SPEC).results);
+  const leftovers = source.match(/call\("[A-Z]+", "[^"]*\{[a-zA-Z_]+\}/g);
+  if (leftovers) throw new Error(`unfilled path parameters: ${leftovers.join(", ")}`);
+  if (!source.includes("`/posts/${postId}/likes`")) {
+    throw new Error("the path parameter was not turned into a template literal");
+  }
+});
+
+check("a spec with nothing recognisable produces no false matches", () => {
+  const { results } = match({ paths: { "/health": { get: { operationId: "health" } } } });
+  const matched = Object.values(results).filter((r) => r.op).length;
+  if (matched > 0) throw new Error(`${matched} method(s) matched a spec containing only /health`);
+});
 
 // Async checks must settle before the total is printed. Exiting synchronously
 // would report "all passed" while an async assertion was still in flight — a
