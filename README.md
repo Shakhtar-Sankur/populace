@@ -115,8 +115,7 @@ a verdict that is never withheld is worth nothing when it is given.
 **What this does not claim.** These runs are against a **local backend over
 loopback**, so no network is in the latencies — the same calls cost about 175 ms
 against a hosted project. Three hundred drivers is where throughput stops scaling,
-not where the app breaks; that is still unfound. And Populace has been pointed at
-two real backends so far, both of them ours — the next should be someone else's.
+not where the app breaks; that is still unfound.
 
 ---
 
@@ -180,6 +179,48 @@ any run longer than your token lifetime collapses at once and the report blames
 your API for what were really expired tokens — and the run cannot even delete
 its own accounts, stranding simulated users in your environment. See it happen:
 `node examples/token-expiry/expiry-demo.mjs`
+
+
+### And to an app we did not write
+
+Pointed at a local [Gitea](https://gitea.io) instance — a git forge, not a social
+app, and nobody here has touched its source:
+
+```
+POPULACE REPORT — Gitea
+✔ No failures across 1106 API calls.
+
+  recentPostsByOthers   382   0   364ms   879ms
+  like                  382   0   186ms   520ms
+  post                  173   0   575ms    1.2s
+  comment               139   0   405ms   771ms
+  createUser             10   0   116ms   183ms
+  setProfile             10   0    59ms    77ms
+  deleteUser             10   0   336ms   410ms
+
+  NOT TESTED — adapter implements 8/13
+✔ Cleanup complete — 10 accounts removed.
+```
+
+Gitea has no location tracking, no direct messages and no group joins, so five
+methods have no equivalent. They are **absent from the adapter rather than
+stubbed**, and the report says which and what each would have covered — because
+a stub returning a fake success turns "we did not test this" into "this works".
+Posting is opening an issue; the feed is listing other people's; liking is a
+reaction.
+
+Ten accounts created through Gitea's own signup, driven under Gitea's own
+permissions with per-user tokens, and ten removed — checked inside Gitea
+afterwards, not taken from this tool's own report.
+
+**It found five defects on the way in, all of them in Populace.** Gitea's OpenAPI
+description has 482 operations against the 18 in the fixture the adapter
+generator was built on, and at that scale it mismatched four methods whose
+correct endpoint was right there in the spec: it summed path-word hits instead of
+taking the best, penalised path depth too weakly, matched `"registration"` inside
+a CI-runner token endpoint, and — the good one — matched `"dm"` inside
+`"admin"`. All fixed; the confidence markers are what stopped the wrong guesses
+from looking finished.
 
 ## It tells you what to do about it
 
