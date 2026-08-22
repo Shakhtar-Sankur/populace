@@ -181,6 +181,53 @@ your API for what were really expired tokens — and the run cannot even delete
 its own accounts, stranding simulated users in your environment. See it happen:
 `node examples/token-expiry/expiry-demo.mjs`
 
+## Run it in CI
+
+Populace is a GitHub Action, so a population can run against your staging
+environment on every pull request:
+
+```yaml
+- uses: Shakhtar-Sankur/populace@v1
+  with:
+    agents: 30
+    minutes: 10
+  env:
+    MY_API_URL: ${{ secrets.STAGING_URL }}
+    MY_API_KEY: ${{ secrets.STAGING_KEY }}
+```
+
+Your credentials stay in your repository's secrets and are read by your own
+adapter. **Populace never sees them and nothing is sent anywhere** — the run
+happens on your runner, against your server.
+
+The job fails when the run is not clean, and the per-method table is written to
+the job summary, so the result is visible in the pull request without
+downloading an artifact.
+
+| input | default | |
+|---|---|---|
+| `config` | `populace.config.mjs` | path to your config |
+| `agents` `minutes` `tick` `engagement` `cities` | from the config | overrides |
+| `report` | `populace-report.json` | the HTML lands beside it |
+| `working-directory` | `.` | |
+| `fail-on-problems` | `true` | set `false` to record without breaking the build |
+
+Outputs `verdict`, `calls`, `api-failures`, `transport-failures`,
+`report-json` and `report-html` for later steps:
+
+```yaml
+- uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: populace-report
+    path: ${{ steps.populace.outputs.report-html }}
+```
+
+**`api-failures` is the number about your app.** `transport-failures` counts
+calls that never reached your API at all — a flaky runner, not your code — and
+Populace reports a run with any of those as *inconclusive* rather than clean,
+because it cannot vouch for a call it could not make.
+
 ## The safety guard
 
 Populace creates real accounts and writes real rows. Pointed at production it

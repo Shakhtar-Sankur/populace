@@ -1,0 +1,145 @@
+name: Populace
+description: Bring a population of simulated users to life against your app's own API, and report what broke.
+author: Gigzen
+
+branding:
+  icon: users
+  color: green
+
+# Why a composite action rather than a Docker or JavaScript one.
+#
+# Docker would add a build and a pull to every job, for a tool whose entire
+# claim is that it has nothing to install. A JavaScript action would need
+# `@actions/core` bundled in, which is a runtime dependency in a package that
+# advertises zero. Composite keeps the promise: this runs the same
+# `node src/cli.mjs` a person runs locally, and nothing else.
+
+inputs:
+  config:
+    description: Path to populace.config.mjs, relative to working-directory.
+    required: false
+    default: populace.config.mjs
+  agents:
+    description: How many simulated users. Overrides the config.
+    required: false
+  minutes:
+    description: How long the population runs for. Overrides the config.
+    required: false
+  tick:
+    description: Simulated seconds per step. Lower means each person decides more often.
+    required: false
+  engagement:
+    description: How busy people are. 1 is normal, 5 is relentless.
+    required: false
+  cities:
+    description: Comma-separated city keys. Overrides the config.
+    required: false
+  report:
+    description: Where to write the JSON report. The HTML lands beside it.
+    required: false
+    default: populace-report.json
+  working-directory:
+    description: Directory to run in. Defaults to the repository root.
+    required: false
+    default: "."
+  fail-on-problems:
+    description: >-
+      Fail the job when the run is not clean. Set to false to record the result
+      without breaking the build - useful while you are still wiring an adapter up.
+    required: false
+    default: "true"
+  summary:
+    description: Write the per-method table to the job summary page.
+    required: false
+    default: "true"
+
+outputs:
+  verdict:
+    description: clean, problems-found, or inconclusive.
+    value: ${{ steps.report.outputs.verdict }}
+  calls:
+    description: Total API calls made.
+    value: ${{ steps.report.outputs.calls }}
+  api-failures:
+    description: Calls your API answered with an error. This is the number about your app.
+    value: ${{ steps.report.outputs.api-failures }}
+  transport-failures:
+    description: Calls that never reached your API. These say nothing about your app.
+    value: ${{ steps.report.outputs.transport-failures }}
+  report-json:
+    description: Path to the JSON report.
+    value: ${{ steps.report.outputs.report-json }}
+  report-html:
+    description: Path to the self-contained HTML report.
+    value: ${{ steps.report.outputs.report-html }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run the population
+      id: run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        POPULACE_CONFIG: ${{ inputs.config }}
+        POPULACE_AGENTS: ${{ inputs.agents }}
+        POPULACE_MINUTES: ${{ inputs.minutes }}
+        POPULACE_TICK: ${{ inputs.tick }}
+        POPULACE_ENGAGEMENT: ${{ inputs.engagement }}
+        POPULACE_CITIES: ${{ inputs.cities }}
+        POPULACE_REPORT: ${{ inputs.report }}
+      run: |
+        # Inputs arrive through the environment rather than being interpolated
+        # into this script. A city list or a path is attacker-controllable in a
+        # fork PR, and ${{ }} pasted straight into bash is a shell injection.
+        args=(run --config "$POPULACE_CONFIG" --report "$POPULACE_REPORT")
+        [ -n "$POPULACE_AGENTS" ]     && args+=(--agents "$POPULACE_AGENTS")
+        [ -n "$POPULACE_MINUTES" ]    && args+=(--minutes "$POPULACE_MINUTES")
+        [ -n "$POPULACE_TICK" ]       && args+=(--tick "$POPULACE_TICK")
+        [ -n "$POPULACE_ENGAGEMENT" ] && args+=(--engagement "$POPULACE_ENGAGEMENT")
+        [ -n "$POPULACE_CITIES" ]     && args+=(--cities "$POPULACE_CITIES")
+
+        set +e
+        node "$GITHUB_ACTION_PATH/src/cli.mjs" "${args[@]}"
+        code=$?
+        set -e
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        echo "Populace exited $code"
+
+    - name: Read the report
+      id: report
+      if: always()
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        POPULACE_REPORT: ${{ inputs.report }}
+        POPULACE_SUMMARY: ${{ inputs.summary }}
+      run: node "$GITHUB_ACTION_PATH/src/github-summary.mjs"
+
+    - name: Decide the job
+      if: always()
+      shell: bash
+      env:
+        EXIT_CODE: ${{ steps.run.outputs.exit-code }}
+        VERDICT: ${{ steps.report.outputs.verdict }}
+        API_FAILURES: ${{ steps.report.outputs.api-failures }}
+        FAIL_ON_PROBLEMS: ${{ inputs.fail-on-problems }}
+      run: |
+        if [ "$EXIT_CODE" = "0" ]; then
+          echo "Clean run."
+          exit 0
+        fi
+        if [ "$FAIL_ON_PROBLEMS" != "true" ]; then
+          echo "::warning::Populace reported '$VERDICT' ($API_FAILURES API failures), but fail-on-problems is false."
+          exit 0
+        fi
+        # An inconclusive run is called out separately: it means Populace could
+        # not make every call, which is usually the runner's network rather than
+        # the app under test. Saying so here saves someone hunting a bug that is
+        # not in their code.
+        if [ "$VERDICT" = "inconclusive" ]; then
+          echo "::error::Populace could not complete the run: $API_FAILURES API failures, but some calls never reached your API. This is usually the network between the runner and your server, not your app. See the job summary."
+        else
+          echo "::error::Populace found problems: $API_FAILURES API failures. See the job summary."
+        fi
+        exit 1
