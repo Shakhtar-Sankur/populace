@@ -371,6 +371,22 @@ calls that never reached your API at all — a flaky runner, not your code — a
 Populace reports a run with any of those as *inconclusive* rather than clean,
 because it cannot vouch for a call it could not make.
 
+## Staying current
+
+```bash
+populace update
+```
+
+Checks the npm registry and tells you if there is a newer release. A run mentions
+it at most once a day, **after** the report rather than before it, and says
+nothing at all if the registry cannot be reached — a version check is never worth
+an error message at the end of a good run.
+
+It is a plain anonymous GET to the public registry: no identifiers, no telemetry,
+nothing about your app or your runs. Off entirely with `POPULACE_NO_UPDATE_CHECK=1`,
+and off by default under `CI`, because a build server should not make an outbound
+call nobody asked for.
+
 ## The safety guard
 
 Populace creates real accounts and writes real rows. Pointed at production it
