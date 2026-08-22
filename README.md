@@ -181,6 +181,43 @@ your API for what were really expired tokens — and the run cannot even delete
 its own accounts, stranding simulated users in your environment. See it happen:
 `node examples/token-expiry/expiry-demo.mjs`
 
+## Start from your API description
+
+Writing the adapter is the slow part: thirteen methods against your endpoints.
+If your API has an OpenAPI description, Populace can fill most of it in:
+
+```bash
+populace init --from-openapi openapi.json
+```
+
+It reads every operation, matches them against the thirteen contract methods by
+path, verb and description, and writes the adapter with each confidence marked:
+
+```
+  Read 18 operations from openapi.json and matched 13 of 13.
+
+    ✔ createUser            POST /auth/signup
+    ✔ like                  POST /posts/{postId}/likes
+    ? joinGroup             POST /groups/{id}/members
+        low confidence — check this one
+    ✖ reportLocation        left as the template default
+```
+
+Path parameters become real template literals — `` `/posts/${postId}/likes` ``,
+not the literal string — so the adapter runs rather than requesting a URL with
+braces in it.
+
+**This is a guess and the generated file says so.** Request bodies, field names
+and response shapes are still the template's defaults. It removes the half hour
+of looking endpoints up; it does not finish the job. Run `populace smoke` next —
+it calls every method once and names the first one that is wrong.
+
+A verb match alone is never enough to claim a method: a spec containing only
+`/health` matches nothing, rather than guessing that a lone `GET` is your feed.
+
+JSON only. A YAML parser would be Populace's first runtime dependency, and
+`npx js-yaml openapi.yaml > openapi.json` covers it.
+
 ## Run it in CI
 
 Populace is a GitHub Action, so a population can run against your staging

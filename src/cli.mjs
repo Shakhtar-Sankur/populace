@@ -19,6 +19,7 @@ import { renderSmoke, smoke, smokePersona } from "./smoke.mjs";
 import { PACKAGE_NAME, VERSION } from "./version.mjs";
 import { World } from "./engine/world.mjs";
 import { buildPersonas, CITIES } from "./engine/personas.mjs";
+import * as openapi from "./openapi.mjs";
 import { Agent } from "./engine/agent.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -91,7 +92,20 @@ async function init() {
 
   fs.mkdirSync(adapterDir, { recursive: true });
   fs.copyFileSync(path.join(here, "..", "populace.config.example.mjs"), configFile);
-  if (!fs.existsSync(adapterFile) || has("force")) {
+
+  // --from-openapi fills the template's paths in from an API description. The
+  // adapter is still a draft afterwards; the point is to remove the half hour
+  // of looking up thirteen endpoints by hand, not to finish the job.
+  const specPath = flag("from-openapi", null);
+  let matched = null;
+  if (specPath && !blank) {
+    const doc = openapi.load(specPath);
+    const { operationCount, results } = openapi.match(doc);
+    const template = fs.readFileSync(path.join(here, "..", "adapters", templateName), "utf8");
+    const { source, applied } = openapi.fill(template, results);
+    if (!fs.existsSync(adapterFile) || has("force")) fs.writeFileSync(adapterFile, source);
+    matched = { operationCount, results, applied };
+  } else if (!fs.existsSync(adapterFile) || has("force")) {
     fs.copyFileSync(path.join(here, "..", "adapters", templateName), adapterFile);
   }
 
@@ -100,6 +114,32 @@ async function init() {
     populace.config.mjs      ← point this at your TEST environment
     adapters/my-app.mjs      ← ${blank ? "an empty contract to fill in" : "a working REST adapter to edit"}
 `);
+
+  if (matched) {
+    const { operationCount, results } = matched;
+    const order = { high: 0, medium: 1, low: 2, none: 3 };
+    const rows = Object.entries(results).sort((a, b) => order[a[1].confidence] - order[b[1].confidence]);
+    const found = rows.filter(([, r]) => r.op).length;
+
+    console.log(`  Read ${operationCount} operations from ${path.basename(specPath)} and matched ${found} of 13.
+`);
+    for (const [method, r] of rows) {
+      const mark = { high: "✔", medium: "~", low: "?", none: "✖" }[r.confidence];
+      const where = r.op ? `${r.op.verb.toUpperCase()} ${r.op.path}` : "left as the template default";
+      console.log(`    ${mark} ${method.padEnd(21)} ${where}`);
+      if (r.confidence === "low" || r.confidence === "none") {
+        console.log(`        ${r.why[0]} — check this one`);
+      }
+    }
+    console.log(`
+  These are guesses from endpoint names. Request bodies and field names are
+  still the template's defaults, so the adapter is a draft, not finished.
+
+  Next:  populace smoke      ← exercises each method once and names the first
+                               one that is wrong
+`);
+    return;
+  }
 
   if (blank) {
     console.log(`  Every method throws until you write it. Start with createUser and
