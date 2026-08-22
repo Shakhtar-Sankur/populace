@@ -128,3 +128,51 @@ jobs:
         # A workflow input is attacker-controllable on a fork PR. Interpolating
         # one into a run block is a shell injection; this refuses that.
         run: node .github/check-action.mjs
+
+  # Uses the Action the way a stranger would, against the bundled demo app.
+  # Everything above tests the pieces; this is the only thing that proves the
+  # composite wiring, the outputs and the job summary work on a real runner.
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run the Action against the bundled demo
+        id: populace
+        uses: ./
+        with:
+          config: examples/demo/populace.config.mjs
+          # The demo app has a deliberate bug, so a non-clean verdict is the
+          # expected outcome here and must not fail this job.
+          fail-on-problems: "false"
+
+      - name: The Action found the demo's bug and said so in its outputs
+        env:
+          VERDICT: ${{ steps.populace.outputs.verdict }}
+          CALLS: ${{ steps.populace.outputs.calls }}
+          API_FAILURES: ${{ steps.populace.outputs.api-failures }}
+          REPORT_HTML: ${{ steps.populace.outputs.report-html }}
+        run: |
+          echo "verdict=$VERDICT calls=$CALLS api-failures=$API_FAILURES"
+
+          [ "$VERDICT" = "problems-found" ] || {
+            echo "::error::Expected problems-found from the demo app, got '$VERDICT'."
+            exit 1; }
+          [ "${CALLS:-0}" -gt 0 ] || {
+            echo "::error::The Action reported 0 calls."; exit 1; }
+          [ "${API_FAILURES:-0}" -gt 0 ] || {
+            echo "::error::The demo app has a known bug; the Action reported 0 API failures."
+            exit 1; }
+          [ -n "$REPORT_HTML" ] && [ -f "$REPORT_HTML" ] || {
+            echo "::error::report-html output did not point at a file."; exit 1; }
+          echo "The Action ran, found the bug, and exposed it through its outputs."
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: demo-report
+          path: ${{ steps.populace.outputs.report-html }}
+          if-no-files-found: warn
