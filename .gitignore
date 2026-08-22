@@ -13,3 +13,9 @@ populace-report.html
 .env
 .env.*
 !.env.example
+
+# Populace Studio — the desktop shell. Its dependency tree and build output
+# never ship to npm (see "files" in package.json) and never belong in git.
+studio/node_modules/
+studio/dist/
+studio/*.log

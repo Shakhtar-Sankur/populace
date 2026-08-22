@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Populace Studio.
+
+    Not the Gigzen mark. That one is a single figure; this is a population - the
+    whole point of the product is that it is many people at once, not one. The
+    lime is Gigzen's, so the two read as a family without the app pretending to
+    be the company.
+
+    One dot is brighter and larger: the run is watching all of them, but a report
+    is always about the one that broke.
+  -->
+  <rect width="512" height="512" rx="112" fill="#12171A"/>
+  <rect x="6" y="6" width="500" height="500" rx="108" fill="none" stroke="#D3FF00" stroke-opacity=".18" stroke-width="3"/>
+
+  <g fill="#D3FF00">
+    <!-- the population: a loose grid, deliberately uneven so it reads as people
+         rather than a spreadsheet -->
+    <circle cx="140" cy="132" r="26" fill-opacity=".38"/>
+    <circle cx="256" cy="118" r="30" fill-opacity=".55"/>
+    <circle cx="372" cy="140" r="24" fill-opacity=".32"/>
+
+    <circle cx="118" cy="252" r="30" fill-opacity=".52"/>
+    <circle cx="392" cy="248" r="28" fill-opacity=".45"/>
+
+    <circle cx="148" cy="372" r="24" fill-opacity=".3"/>
+    <circle cx="262" cy="396" r="28" fill-opacity=".48"/>
+    <circle cx="378" cy="366" r="26" fill-opacity=".36"/>
+
+    <!-- the one under the microscope -->
+    <circle cx="256" cy="256" r="54"/>
+  </g>
+
+  <!-- the ring: a run in progress, three quarters round -->
+  <circle cx="256" cy="256" r="86" fill="none" stroke="#D3FF00" stroke-opacity=".9"
+          stroke-width="12" stroke-linecap="round"
+          stroke-dasharray="405 135" transform="rotate(-90 256 256)"/>
+</svg>
