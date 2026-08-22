@@ -31,7 +31,7 @@ import fs from "node:fs";
 const SIGNALS = {
   createUser: {
     verb: "post",
-    path: ["signup", "sign-up", "register", "registration", "auth/users", "users", "accounts"],
+    path: ["signup", "sign-up", "admin/users", "register/", "auth/users", "users", "accounts"],
     words: ["signup", "register", "create user", "create account"],
     avoid: ["login", "signin", "sign-in", "refresh", "verify", "reset"],
   },
@@ -85,7 +85,9 @@ const SIGNALS = {
   },
   openConversation: {
     verb: "post",
-    path: ["conversations", "threads", "chats", "dm", "rooms"],
+    // "/dm" not "dm": as a bare substring it matches "admin", which is how
+    // openConversation ended up pointing at Gitea's POST /admin/cron/{task}.
+    path: ["conversations", "threads", "chats", "/dm", "/dms", "rooms"],
     words: ["conversation", "thread", "start chat", "direct message", "room"],
     avoid: ["/messages", "/send", "/read", "/typing"],
   },
@@ -97,8 +99,8 @@ const SIGNALS = {
   },
   listGroups: {
     verb: "get",
-    path: ["groups", "communities", "channels", "teams"],
-    words: ["list groups", "groups", "communities", "channels"],
+    path: ["groups", "orgs", "organizations", "communities", "channels", "teams"],
+    words: ["list groups", "groups", "organizations", "communities", "channels"],
     avoid: ["member", "join", "leave", "create"],
   },
   joinGroup: {
@@ -143,13 +145,21 @@ function score(op, sig) {
   }
 
   // Path is the strongest signal, and earlier entries are better matches.
+  //
+  // Take the BEST match, never the sum. Summing rewarded long paths that happen
+  // to contain several keywords: against Gitea's real spec,
+  // /pulls/{index}/comments/{id}/replies scored both "comments" and "replies"
+  // and beat /issues/{index}/comments, which is the endpoint a person wants.
+  let bestWord = null;
   sig.path.forEach((word, i) => {
-    if (path.includes(word)) {
-      const points = 10 - Math.min(i, 6);
-      n += points;
-      why.push(`path contains "${word}"`);
-    }
+    if (!path.includes(word)) return;
+    const points = 10 - Math.min(i, 6);
+    if (!bestWord || points > bestWord.points) bestWord = { word, points };
   });
+  if (bestWord) {
+    n += bestWord.points;
+    why.push(`path contains "${bestWord.word}"`);
+  }
 
   if (op.verb === sig.verb) { n += 4; why.push(`${op.verb.toUpperCase()} matches`); }
   // PUT and PATCH are used interchangeably for updates often enough to allow.
@@ -160,8 +170,10 @@ function score(op, sig) {
     if (text.includes(word)) { n += 3; why.push(`described as "${word}"`); }
   }
 
-  // A shallow path is likelier to be the main resource than a deep one.
-  n -= Math.max(0, op.path.split("/").filter(Boolean).length - 3);
+  // A shallow path is much likelier to be the main resource than a deep one.
+  // At -1 per segment this was too weak to stop a five-segment sub-resource
+  // outscoring the collection it hangs off.
+  n -= 2 * Math.max(0, op.path.split("/").filter(Boolean).length - 3);
 
   // Did anything about the URL itself suggest this method? A verb alone must
   // never be enough: with only that, every GET in a document matched
