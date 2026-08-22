@@ -6,6 +6,7 @@
 // only shows successes is worse than no report — it manufactures confidence.
 
 import fs from "node:fs";
+import { explainReport, verdictLine } from "./explain.mjs";
 import path from "node:path";
 import { summarise } from "./instrument.mjs";
 import { coverageOf } from "./contract.mjs";
@@ -14,6 +15,22 @@ import { VERSION } from "./version.mjs";
 
 const pct = (n) => `${(n * 100).toFixed(1)}%`;
 const ms = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}s` : `${Math.round(n)}ms`);
+
+/** Break a sentence onto lines of at most `width`, without splitting words. */
+function wrap(text, width) {
+  const lines = [];
+  let line = "";
+  for (const word of String(text).split(/\s+/).filter(Boolean)) {
+    if (line && line.length + 1 + word.length > width) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = line ? `${line} ${word}` : word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
 
 export function buildReport({ config, adapter, world, metrics, teardown, startedAt }) {
   const api = summarise(metrics);
@@ -218,6 +235,26 @@ export function renderReport(report) {
     }
   }
   L.push("");
+
+  // What broke, why, and the fix - the thing a report is actually for. Rules
+  // only; anything unrecognised says so rather than inventing a cause.
+  const explained = explainReport(report);
+  if (explained.length) {
+    L.push(`  WHAT TO DO`);
+    L.push(`    ${verdictLine(explained)}`);
+    L.push("");
+    const BLAME = { app: "YOUR APP", environment: "THE PLATFORM", harness: "THE TEST CLIENT", unknown: "UNKNOWN" };
+    for (const e of explained.slice(0, 4)) {
+      L.push(`    [${BLAME[e.blame]}]  ${e.method} × ${e.count}`);
+      L.push(`      ${e.headline}`);
+      for (const line of wrap(e.why, 72)) L.push(`      ${line}`);
+      if (e.fix) {
+        L.push(`      Fix:`);
+        for (const line of wrap(e.fix, 70)) L.push(`        ${line}`);
+      }
+      L.push("");
+    }
+  }
 
   if (report.coverage.notTested.length) {
     L.push(`  NOT TESTED — adapter implements ${report.coverage.label}`);

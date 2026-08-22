@@ -181,6 +181,41 @@ your API for what were really expired tokens — and the run cannot even delete
 its own accounts, stranding simulated users in your environment. See it happen:
 `node examples/token-expiry/expiry-demo.mjs`
 
+## It tells you what to do about it
+
+A report that says `duplicate key value violates unique constraint` has told you
+what happened and nothing about what to do. Every run now ends with the part
+that matters:
+
+```
+  WHAT TO DO
+    12 failures in the application.
+
+    [YOUR APP]  like × 12
+      The database refused the write on permissions, not on data.
+      A row-level-security policy rejected this call for the signed-in role.
+      The request was well formed; the policy did not allow it. This is
+      invisible to whoever wrote the policy, because their own account
+      usually satisfies it.
+      Fix:
+        Check the policy for this table against the role the app
+        authenticates as, and confirm there is a policy for this specific
+        command — a table with only a SELECT policy refuses every INSERT.
+```
+
+**The first judgement is the one that matters: was this your application at
+all?** A socket that never opened and a 500 look equally red in a terminal and
+mean completely different things. Every failure is attributed to your app, the
+platform, or the test client, and the summary line says so before any detail:
+
+```
+No application failures — 21 never reached the server.
+```
+
+A failure Populace cannot recognise is reported as unrecognised. It is never
+counted as "not your app", because that would turn *we could not tell* into an
+all-clear.
+
 ## Start from your API description
 
 Writing the adapter is the slow part: thirteen methods against your endpoints.
