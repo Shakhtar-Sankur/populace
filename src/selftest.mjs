@@ -29,6 +29,7 @@ import { buildReport, renderReport } from "./report.mjs";
 import { canSignInOnly, CONTRACT_METHODS, coverageOf, isStub } from "./contract.mjs";
 import { diagnose } from "./diagnose.mjs";
 import { fill, match } from "./openapi.mjs";
+import { explain, explainReport, verdictLine } from "./explain.mjs";
 
 let failed = 0;
 const pending = [];
@@ -1445,6 +1446,72 @@ check("a spec with nothing recognisable produces no false matches", () => {
   const { results } = match({ paths: { "/health": { get: { operationId: "health" } } } });
   const matched = Object.values(results).filter((r) => r.op).length;
   if (matched > 0) throw new Error(`${matched} method(s) matched a spec containing only /health`);
+});
+
+// --- 10. failure explanation ----------------------------------------------
+//
+// The judgement that matters is the first one: was this the application at all?
+// Getting that wrong in either direction is worse than saying nothing.
+
+check("a transport failure is never blamed on the application", () => {
+  for (const msg of ["TypeError: fetch failed", "socket hang up", "ECONNRESET", "UND_ERR_CONNECT_TIMEOUT"]) {
+    const e = explain(msg);
+    if (e.blame !== "harness") throw new Error(`"${msg}" was blamed on ${e.blame}, not the harness`);
+  }
+});
+
+check("a provider quota is not the app's fault", () => {
+  const e = explain("Invalid login credentials (signup first failed: Request rate limit reached)");
+  if (e.blame !== "environment") throw new Error(`rate limit blamed on ${e.blame}`);
+});
+
+check("permission and constraint failures are the app's", () => {
+  for (const [msg, rule] of [
+    ["permission denied for table profiles", "rls-denied"],
+    ["duplicate key value violates unique constraint \"post_likes_pkey\"", "duplicate-key"],
+    ["insert violates foreign key constraint", "foreign-key"],
+  ]) {
+    const e = explain(msg);
+    if (e.blame !== "app") throw new Error(`"${msg}" blamed on ${e.blame}`);
+    if (e.rule !== rule) throw new Error(`"${msg}" matched ${e.rule}, expected ${rule}`);
+  }
+});
+
+check("the upsert-under-RLS bug gets its own explanation", () => {
+  // The specific mistake behind five of the first defects Populace ever found.
+  // Plain "permission denied" is true but useless; this names the cause.
+  const e = explain("permission denied for table profiles (upsert / ON CONFLICT DO UPDATE)");
+  if (e.rule !== "rls-upsert") throw new Error(`matched ${e.rule}, expected the upsert-specific rule`);
+  if (!/cannot upsert a column you cannot select/i.test(e.fix)) {
+    throw new Error("the fix does not state the actual rule");
+  }
+});
+
+check("an unrecognised failure says so rather than inventing a cause", () => {
+  const e = explain("Xyzzy plugh 42 frobnicated");
+  if (e.rule !== "none") throw new Error(`invented rule ${e.rule}`);
+  if (e.blame !== "unknown") throw new Error(`claimed blame "${e.blame}" for an unknown error`);
+});
+
+check("unclassified failures are never counted as 'not the app'", () => {
+  // The dangerous rounding: reporting "no application failures" when some
+  // failures were simply not understood turns "we cannot tell" into an
+  // all-clear.
+  const line = verdictLine([{ blame: "harness", count: 5 }, { blame: "unknown", count: 3 }]);
+  if (/^No application failures/.test(line)) {
+    throw new Error(`claimed a clean app while 3 failures were unclassified: "${line}"`);
+  }
+  if (!/could not be classified/.test(line)) throw new Error(`unclassified failures not mentioned: "${line}"`);
+});
+
+check("explanations are ordered by how much they happened", () => {
+  const ex = explainReport({
+    api: { methods: [
+      { method: "a", errors: [{ message: "fetch failed", count: 2 }] },
+      { method: "b", errors: [{ message: "fetch failed", count: 90 }] },
+    ] },
+  });
+  if (ex[0].method !== "b") throw new Error("the 90-count failure was not listed first");
 });
 
 // Async checks must settle before the total is printed. Exiting synchronously

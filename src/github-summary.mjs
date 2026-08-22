@@ -15,6 +15,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { explainReport, verdictLine } from "./explain.mjs";
 
 const reportPath = process.env.POPULACE_REPORT || "populace-report.json";
 const wantSummary = process.env.POPULACE_SUMMARY !== "false";
@@ -108,13 +109,24 @@ if (methods.length) {
   lines.push("");
 }
 
-for (const m of methods) {
-  for (const e of m.errors || []) {
-    const text = typeof e === "string" ? e : e.message || JSON.stringify(e);
-    lines.push(`- \`${m.method}\` — ${text}`);
+// What broke, why and the fix - not just the raw message. A reviewer reading a
+// pull request should not have to know what 23503 means.
+const explained = explainReport(report);
+if (explained.length) {
+  const BLAME = { app: "your app", environment: "the platform", harness: "the test client", unknown: "unclassified" };
+  lines.push(`**${verdictLine(explained)}**`);
+  lines.push("");
+  for (const e of explained.slice(0, 5)) {
+    lines.push(`<details><summary><b>${e.method}</b> × ${e.count} — ${e.headline} <em>(${BLAME[e.blame]})</em></summary>`);
+    lines.push("");
+    lines.push(e.why);
+    if (e.fix) { lines.push(""); lines.push(`**Fix.** ${e.fix}`); }
+    lines.push("");
+    lines.push(`<sub><code>${e.message}</code></sub>`);
+    lines.push("</details>");
   }
+  lines.push("");
 }
-if (methods.some((m) => (m.errors || []).length)) lines.push("");
 
 const a = report.activity;
 if (a) {
