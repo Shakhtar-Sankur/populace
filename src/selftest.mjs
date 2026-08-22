@@ -31,6 +31,7 @@ import { diagnose } from "./diagnose.mjs";
 import { fill, match } from "./openapi.mjs";
 import { explain, explainReport, verdictLine } from "./explain.mjs";
 import { explainWithAI, isConfigured } from "./ai.mjs";
+import { checksDisabled, compare, latestVersion } from "./update.mjs";
 
 let failed = 0;
 const pending = [];
@@ -1556,6 +1557,53 @@ check("rule explanations are never labelled as coming from the model", () => {
   const e = explain("permission denied for table profiles");
   if (e.source === "model") throw new Error("a rule explanation claimed to be from the model");
   if (e.rule === "model") throw new Error("a rule explanation used the model's rule name");
+});
+
+// --- 12. the update check ------------------------------------------------
+
+check("version comparison orders releases correctly", () => {
+  const cases = [
+    ["1.0.0", "1.0.0", 0], ["1.0.1", "1.0.0", 1], ["1.0.0", "1.0.1", -1],
+    ["1.10.0", "1.9.0", 1], ["2.0.0", "1.99.99", 1], ["1.0.0", "0.1.0", 1],
+    ["1.0.0-beta.1", "1.0.0", 0],   // pre-release tags are ignored, not parsed
+  ];
+  for (const [a, b, want] of cases) {
+    const got = compare(a, b);
+    if (got !== want) throw new Error(`compare("${a}","${b}") = ${got}, expected ${want}`);
+  }
+});
+
+check("10.0.0 is newer than 9.0.0, not older", () => {
+  // String comparison would say "10" < "9". Numeric parsing is the whole point.
+  if (compare("10.0.0", "9.0.0") !== 1) throw new Error("compared version parts as strings");
+});
+
+check("CI switches the update check off without being asked", async () => {
+  // A build server should not make an outbound call nobody requested, and its
+  // logs should not carry an upgrade nag.
+  const beforeCI = process.env.CI;
+  process.env.CI = "true";
+  try {
+    if (!checksDisabled()) throw new Error("update checks stayed on under CI");
+    const v = await latestVersion();
+    if (v !== null) throw new Error("a request was made under CI");
+  } finally {
+    if (beforeCI === undefined) delete process.env.CI; else process.env.CI = beforeCI;
+  }
+});
+
+check("POPULACE_NO_UPDATE_CHECK switches it off", () => {
+  const before = process.env.POPULACE_NO_UPDATE_CHECK;
+  const beforeCI = process.env.CI;
+  delete process.env.CI;
+  process.env.POPULACE_NO_UPDATE_CHECK = "1";
+  try {
+    if (!checksDisabled()) throw new Error("the opt-out was ignored");
+  } finally {
+    if (before === undefined) delete process.env.POPULACE_NO_UPDATE_CHECK;
+    else process.env.POPULACE_NO_UPDATE_CHECK = before;
+    if (beforeCI !== undefined) process.env.CI = beforeCI;
+  }
 });
 
 // Async checks must settle before the total is printed. Exiting synchronously

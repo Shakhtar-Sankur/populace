@@ -22,6 +22,7 @@ import { buildPersonas, CITIES } from "./engine/personas.mjs";
 import * as openapi from "./openapi.mjs";
 import { explainReport, verdictLine } from "./explain.mjs";
 import { explainWithAI, isConfigured } from "./ai.mjs";
+import { updateCommand, updateNotice } from "./update.mjs";
 import { Agent } from "./engine/agent.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -283,6 +284,12 @@ async function run() {
   console.log(renderReport(report));
   console.log(`  Report:  ${displayPath(files.json)}`);
   console.log(`  Shareable page:  ${displayPath(files.html)}\n`);
+
+  // After the report a person is already reading, never before it, and at most
+  // once a day. Silent if the registry cannot be reached — a version check is
+  // never worth an error message at the end of a successful run.
+  const notice = await updateNotice();
+  if (notice) console.log(`${notice}\n`);
 
   if (report.verdict.status !== "clean") process.exitCode = 1;
 }
@@ -671,7 +678,7 @@ async function explainCmd() {
   console.log("");
 }
 
-const commands = { init, doctor, run, clean, demo, report, version, smoke: smokeCmd, explain: explainCmd };
+const commands = { init, doctor, run, clean, demo, report, version, smoke: smokeCmd, explain: explainCmd, update: updateCommand };
 
 // `--version` and `-v` are what people actually type.
 if (has("version") || argv[0] === "-v") {
@@ -691,6 +698,7 @@ if (!commands[command]) {
     populace clean                    delete accounts a run created
     populace report                   re-open the report from an earlier run
     populace explain                  say what each failure means and how to fix it
+    populace update                   check whether a newer Populace is out
     populace version                  print version and environment
 
   Options
