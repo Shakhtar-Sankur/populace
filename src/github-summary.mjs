@@ -128,11 +128,23 @@ if (explained.length) {
   lines.push("");
 }
 
+// What the population did, and the only removal claim that is ours to make.
+//
+// This used to say the activity itself was "all removed afterwards". Populace
+// removes accounts; what happens to the rows they wrote is the application's
+// decision. Gitea proved the difference - every simulated account was purged,
+// and all 337 issues stayed in the repository reattributed to a ghost user. A
+// tool whose whole argument is that it says only what it verified cannot make
+// a cleanup claim it never checked.
 const a = report.activity;
 if (a) {
+  const removed = report.cleanup?.removed ?? 0;
+  const made = report.population?.signedIn ?? 0;
   lines.push(
     `<sub>${n(a.posts)} posts · ${n(a.likes)} likes · ${n(a.comments)} comments · ` +
-    `${n(a.messages)} messages · ${Number(a.distanceKm ?? 0).toFixed(1)} km — all removed afterwards.</sub>`,
+    `${n(a.messages)} messages · ${Number(a.distanceKm ?? 0).toFixed(1)} km — from ` +
+    `${n(removed)} of ${n(made)} accounts since removed. Whether your app keeps what ` +
+    `a deleted account wrote is your app's behaviour, not something Populace changes.</sub>`,
   );
 }
 
