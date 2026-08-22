@@ -20,6 +20,8 @@ import { PACKAGE_NAME, VERSION } from "./version.mjs";
 import { World } from "./engine/world.mjs";
 import { buildPersonas, CITIES } from "./engine/personas.mjs";
 import * as openapi from "./openapi.mjs";
+import { explainReport, verdictLine } from "./explain.mjs";
+import { explainWithAI, isConfigured } from "./ai.mjs";
 import { Agent } from "./engine/agent.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -585,7 +587,91 @@ async function version() {
   console.log(`${PACKAGE_NAME} ${VERSION}  ·  node ${process.version}  ·  ${process.platform}`);
 }
 
-const commands = { init, doctor, run, clean, demo, report, version, smoke: smokeCmd };
+
+// ---------------------------------------------------------------- explain
+
+/**
+ * Explain a report's failures: rules first, then the model for the remainder.
+ *
+ * A separate command rather than part of `run` on purpose. A run should not
+ * wait on a network call to something else, and it should never fail because
+ * an API key was wrong. The report is complete without this.
+ */
+async function explainCmd() {
+  const reportPath = flag("file", flag("report", "populace-report.json"));
+  let report;
+  try {
+    report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  } catch (error) {
+    console.log(`
+  No readable report at ${displayPath(reportPath)} — ${error.message}
+`);
+    process.exit(1);
+  }
+
+  const explained = explainReport(report);
+  if (!explained.length) {
+    console.log(`
+  Nothing failed in ${displayPath(reportPath)}. Nothing to explain.
+`);
+    return;
+  }
+
+  const BLAME = { app: "YOUR APP", environment: "THE PLATFORM", harness: "THE TEST CLIENT", unknown: "UNKNOWN" };
+  const show = (e) => {
+    const tag = e.source === "model" ? "  ·  explained by the model" : "";
+    console.log(`
+  [${BLAME[e.blame]}]  ${e.method} × ${e.count ?? 1}${tag}`);
+    console.log(`    ${e.headline}`);
+    console.log(`    ${e.why}`);
+    if (e.fix) console.log(`    Fix: ${e.fix}`);
+  };
+
+  console.log(`
+  ${verdictLine(explained)}`);
+  const named = explained.filter((e) => e.rule !== "none");
+  const unnamed = explained.filter((e) => e.rule === "none");
+  for (const e of named) show(e);
+
+  if (!unnamed.length) {
+    console.log(`
+  Every failure matched a rule. The model was not needed.
+`);
+    return;
+  }
+
+  console.log(`
+  ${unnamed.length} failure${unnamed.length === 1 ? "" : "s"} matched no rule.`);
+
+  const { config } = await open().catch(() => ({ config: null }));
+  if (!isConfigured(config)) {
+    console.log(`
+  Set ANTHROPIC_API_KEY to have the model explain these. It is sent the method
+  name, the error text, how many times it happened and that method's latency —
+  and nothing else. Run with --verbose to see exactly what leaves the machine.
+`);
+    for (const e of unnamed) show(e);
+    return;
+  }
+
+  console.log(`  Asking the model…`);
+  const ai = await explainWithAI(
+    unnamed.map((e) => {
+      const m = (report.api?.methods || []).find((x) => x.method === e.method);
+      return { ...e, p50: m?.latencyMs?.p50, p95: m?.latencyMs?.p95 };
+    }),
+    { config, verbose: has("verbose") },
+  );
+
+  const byMethod = new Map(ai.map((e) => [e.method, e]));
+  for (const e of unnamed) {
+    const better = byMethod.get(e.method);
+    show(better ? { ...e, ...better } : e);
+  }
+  console.log("");
+}
+
+const commands = { init, doctor, run, clean, demo, report, version, smoke: smokeCmd, explain: explainCmd };
 
 // `--version` and `-v` are what people actually type.
 if (has("version") || argv[0] === "-v") {
@@ -604,6 +690,7 @@ if (!commands[command]) {
     populace run                      bring the population to life
     populace clean                    delete accounts a run created
     populace report                   re-open the report from an earlier run
+    populace explain                  say what each failure means and how to fix it
     populace version                  print version and environment
 
   Options

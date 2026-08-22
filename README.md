@@ -216,6 +216,36 @@ A failure Populace cannot recognise is reported as unrecognised. It is never
 counted as "not your app", because that would turn *we could not tell* into an
 all-clear.
 
+### When no rule fits
+
+Rules cover the shapes a simulated population usually provokes. For anything
+else, `populace explain` can ask a model:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+populace explain
+```
+
+Rules run first and the model only ever sees what they could not name — so most
+runs never call it at all, and the ones that do send a handful of short strings.
+Explanations that came from the model are labelled as such.
+
+**What is sent, exactly:** the method name, the error text, how many times it
+happened, and that method's p50/p95. Nothing else — no target URL, no keys, no
+tokens, no request bodies, no simulated users' content. Run with `--verbose` to
+print it before it leaves.
+
+```
+  Sending to the model — this is everything, nothing else leaves this machine:
+    [ { "method": "post", "error": "quorum lost on shard 3 …",
+        "occurrences": 9, "p50ms": 40, "p95ms": 120 } ]
+```
+
+The model layer can never break a run. No key, a rejected key, a rate limit, a
+refusal, a malformed reply — each prints one line and falls back to the rule
+output. `populace explain` is a separate command for the same reason: a run
+should not wait on somebody else's network, and a report is complete without it.
+
 ## Start from your API description
 
 Writing the adapter is the slow part: thirteen methods against your endpoints.

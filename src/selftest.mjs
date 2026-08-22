@@ -30,6 +30,7 @@ import { canSignInOnly, CONTRACT_METHODS, coverageOf, isStub } from "./contract.
 import { diagnose } from "./diagnose.mjs";
 import { fill, match } from "./openapi.mjs";
 import { explain, explainReport, verdictLine } from "./explain.mjs";
+import { explainWithAI, isConfigured } from "./ai.mjs";
 
 let failed = 0;
 const pending = [];
@@ -1512,6 +1513,49 @@ check("explanations are ordered by how much they happened", () => {
     ] },
   });
   if (ex[0].method !== "b") throw new Error("the 90-count failure was not listed first");
+});
+
+// --- 11. the model layer is an enhancement, never a dependency ------------
+//
+// A report is complete and useful without it. Everything here is about the
+// model layer being unable to make things worse.
+
+check("without a key, the model layer returns nothing and says nothing", async () => {
+  const before = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  try {
+    if (isConfigured({})) throw new Error("reported configured with no key anywhere");
+    const out = await explainWithAI([{ method: "post", message: "something odd", count: 1 }], { config: {} });
+    if (out.length) throw new Error("returned explanations without a key");
+  } finally {
+    if (before !== undefined) process.env.ANTHROPIC_API_KEY = before;
+  }
+});
+
+check("nothing to explain means no request is made", async () => {
+  // Guards against a run with zero failures still costing an API call.
+  const out = await explainWithAI([], { config: { ai: { apiKey: "sk-ant-would-be-wrong-to-use" } } });
+  if (out.length) throw new Error("returned explanations for an empty list");
+});
+
+check("a key in config is found as well as one in the environment", () => {
+  const before = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  try {
+    if (!isConfigured({ ai: { apiKey: "sk-ant-test" } })) {
+      throw new Error("a key in populace.config.mjs was not found");
+    }
+  } finally {
+    if (before !== undefined) process.env.ANTHROPIC_API_KEY = before;
+  }
+});
+
+check("rule explanations are never labelled as coming from the model", () => {
+  // The provenance has to survive, or a reader cannot tell which explanations
+  // were deterministic and which were generated.
+  const e = explain("permission denied for table profiles");
+  if (e.source === "model") throw new Error("a rule explanation claimed to be from the model");
+  if (e.rule === "model") throw new Error("a rule explanation used the model's rule name");
 });
 
 // Async checks must settle before the total is printed. Exiting synchronously
