@@ -70,7 +70,9 @@ body {
 .by:hover { color: #b9c4bd; }
 .by:hover b { color: #d3ff00; }
 .by:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
-#engine-state { font-family: var(--mono); font-size: 11px; line-height: 1.45; word-break: break-all; }
+/* pre-line, because the status is two lines — "engine ready" and the path —
+   and without it they run together and the path breaks mid-word. */
+#engine-state { font-family: var(--mono); font-size: 11px; line-height: 1.45; white-space: pre-line; word-break: break-all; }
 #rail .muted { color: #7d8a83; }
 
 /* ── screens ──────────────────────────────────────────────────────── */
