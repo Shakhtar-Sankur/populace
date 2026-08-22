@@ -293,6 +293,14 @@ section{padding:clamp(64px,9vw,116px) 0; position:relative}
 .card:hover::before{opacity:1}
 .card h3{margin-bottom:9px}
 .card p:last-child{margin-bottom:0}
+
+/* A picture of the application, since the whole claim of the desktop build is
+   that there is something to look at. width/height are on the tag so the row
+   does not jump when it loads. */
+.shot{
+  display:block; width:100%; height:auto; border-radius:12px;
+  border:1px solid var(--rule); box-shadow:0 28px 64px -36px #000;
+}
 .card .num{font-family:var(--mono); font-size:12px; color:var(--amber); letter-spacing:.12em; display:block; margin-bottom:12px}
 
 .stat{
@@ -1116,11 +1124,88 @@ section > .wrap > .eyebrow::before {
     <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Get it</p>
     <h2 class="rv grad">Download Populace</h2>
     <p class="lede rv" style="margin-top:16px">
-      Node 18 or newer. <strong>Zero runtime dependencies</strong> — adapters bring their
-      own, and the engine brings none. Nothing to install beyond the source itself.
+      Two ways in, one engine. The <strong>desktop application</strong> installs like any
+      other Windows program and needs nothing else on the machine — no Node, no npm, no
+      terminal. The <strong>command line</strong> is the same code for people who would
+      rather type.
     </p>
 
-    <div class="grid2 rv" style="margin-top:38px; align-items:start">
+    <!-- ---------------------------------------------------------- the app -->
+    <div class="grid2 rv" style="margin-top:40px; align-items:center">
+      <div>
+        <h3 style="font-size:22px; margin-bottom:12px">Populace Studio for Windows</h3>
+        <p style="margin-bottom:18px">
+          Five screens over the engine: start a run, watch the population work, read the
+          verdict, ask what a failure means, check for updates. It runs the same
+          <code>populace</code> command a terminal would and shows you the command it ran,
+          so the window can never claim something the command line would not.
+        </p>
+
+        <div class="hero-cta" style="margin-top:0">
+          <a class="btn btn-primary"
+             href="https://github.com/Shakhtar-Sankur/populace/releases/latest/download/PopulaceStudio-Setup-x64.exe">
+            Download for Windows
+          </a>
+          <a class="btn btn-ghost"
+             href="https://github.com/Shakhtar-Sankur/populace/releases/latest/download/PopulaceStudio-Portable-x64.exe">
+            Portable — no install
+          </a>
+        </div>
+
+        <div class="trust" style="margin-top:22px">
+          <span><b>1.0.0</b> current version</span>
+          <span><b>102</b> MB installer</span>
+          <span><b>Windows 10/11</b> 64-bit</span>
+          <span><b>No</b> Node required</span>
+        </div>
+      </div>
+
+      <div>
+        <img class="shot" src="studio-report.png" width="1459" height="974" loading="lazy"
+             alt="Populace Studio showing a finished run: a clean verdict, 797 API calls, no failures,
+                  and a table of every method with its latency.">
+        <p style="font-size:13.5px; color:var(--muted); margin-top:10px; text-align:center">
+          A real run against <a href="https://about.gitea.com/">Gitea</a> — an application
+          we did not write.
+        </p>
+      </div>
+    </div>
+
+    <!-- The two things somebody downloading an unsigned binary needs told, said
+         plainly rather than buried. Hiding the SmartScreen warning would only
+         mean meeting it alone, which is when people abandon a download. -->
+    <div class="grid2 rv" style="margin-top:34px; align-items:start">
+      <div class="card">
+        <h3 style="font-size:17px">Windows will warn you, and it is right to</h3>
+        <p style="font-size:15px">
+          Populace Studio is <strong>not code-signed yet</strong> — a certificate is bought
+          annually and we have not bought one. So Windows shows
+          <em>“Windows protected your PC.”</em> Choose <strong>More info → Run anyway</strong>,
+          or don't: an unsigned binary from a stranger deserves the suspicion. Which is why
+          the checksums are here.
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px">Check what you downloaded</h3>
+        <pre style="margin:0 0 10px"><span class="cm"># PowerShell</span>
+Get-FileHash .\PopulaceStudio-Setup-x64.exe</pre>
+        <p style="font-size:13.5px; font-family:var(--mono); color:var(--muted); word-break:break-all">
+          Setup <b style="color:var(--ink)">7583595375c2aec9fa3dfddf2a1704872c7c0c3271e206ea525f96730cad7bdc</b><br>
+          Portable <b style="color:var(--ink)">2ca9832f665ef85ffd2ba81b499f0e2a31257c006d2ccf787cdbebf271e6952b</b>
+        </p>
+      </div>
+    </div>
+
+    <div class="rule rv" style="margin:44px 0"></div>
+
+    <!-- ------------------------------------------------------ command line -->
+    <p class="rv" style="margin-bottom:6px">
+      <strong>Or use the command line.</strong> Node 18 or newer, and
+      <strong>zero runtime dependencies</strong> — adapters bring their own, the engine
+      brings none. It runs on macOS and Linux too; the desktop build is Windows-only for now.
+    </p>
+
+    <div class="grid2 rv" style="margin-top:24px; align-items:start">
       <div>
         <h3 style="margin-bottom:14px">Install it</h3>
         <pre><span class="cm"># from npm</span>
