@@ -27,7 +27,7 @@ applying**. Then it hands you a report on what broke.
 
 ## It has done this to a real, finished app
 
-![Populace report for Buzz, 9 August 2026 — no failures across 400 API calls](docs/buzzbuzz-run-2026-08-09.svg)
+![Populace report for Buzz, 21 August 2026 — no failures across 932,455 API calls from 200 simulated drivers across 20 cities in 11 countries](docs/buzz-run-2026-08-21.svg)
 
 That is the *second* run. The first one is the interesting one.
 
@@ -102,15 +102,21 @@ within seconds to six users signing up at once.
 
 ### After the fixes
 
-All five were fixed and the run repeated: the report at the top of this page.
-**No failures across 400 API calls.** Six accounts created, six accounts deleted,
-nothing left behind.
+All five were fixed, and the runs since have grown by three orders of magnitude.
+The report at the top of this page is the largest that was **clean end to end**:
+**no failures across 932,455 API calls**, 200 concurrent drivers over 20 cities in
+11 countries, 200 accounts created and 200 removed.
 
-**What this does not claim.** Six users for three minutes is a **correctness run,
-not a load test**, and it ran against that project while it was still empty. The
-latencies above are what six concurrent users saw and nothing more. Populace has
-been pointed at exactly one real backend so far, and that backend was ours — the
-next one should be someone else's.
+A later run put **300 drivers through 1,401,435 calls with zero API failures** — but
+one call never reached the server, a socket exhausted on the test machine, so
+Populace marked it *inconclusive* rather than clean. That distinction is the point:
+a verdict that is never withheld is worth nothing when it is given.
+
+**What this does not claim.** These runs are against a **local backend over
+loopback**, so no network is in the latencies — the same calls cost about 175 ms
+against a hosted project. Three hundred drivers is where throughput stops scaling,
+not where the app breaks; that is still unfound. And Populace has been pointed at
+two real backends so far, both of them ours — the next should be someone else's.
 
 ---
 

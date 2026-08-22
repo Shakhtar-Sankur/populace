@@ -1,43 +1,45 @@
-// Renders the 15 Aug 2026 Buzz run as a self-contained SVG.
+// Renders the 21 Aug 2026 Buzz run as a self-contained SVG.
 //
 // Every number below is the recorded output of that run.
 //
-// This is the largest run that was clean end to end. A later one carried 36
-// concurrent users through 7,485 calls without an in-run failure, but it was
-// launched as fifty and fourteen accounts were refused at signup by a
-// provider quota — so a graphic of it headlining "0 failures" would need an
-// asterisk to be true. This one needs none.
+// This is the largest run that was clean end to end, and the choice is
+// deliberate. A later run put 300 drivers through 1,401,435 calls with zero API
+// failures, but one call never reached the server — a socket exhausted on the
+// test machine — so Populace marked it inconclusive. A graphic of that run
+// headlining "0 failures" would need an asterisk to be true. This one needs
+// none: 0 API failures, 0 transport failures, 0 retries, verdict clean.
 //
 //   node docs/build-run-graphic.mjs
 import { writeFileSync } from "node:fs";
 
 const RUN = {
   app: "Buzz",
-  date: "15 August 2026",
-  agents: 30,
-  cities: "Manila + Mumbai",
-  calls: 6539,
+  date: "21 August 2026",
+  agents: 200,
+  cities: "20 cities in 11 countries",
+  calls: 932455,
   failures: 0,
   coverage: "13 / 13",
-  created: 30,
-  removed: 30,
-  activity: "116.2 km driven · 403 posts · 984 likes · 397 comments · 389 messages · 55 group joins",
+  created: 200,
+  removed: 200,
+  activity: "2,271 km · 81,672 posts · 172,660 likes · 76,034 messages",
 };
 
 // method, calls, failures, p50 ms, p95 ms. null = not recorded.
 const METHODS = [
-  ["reportLocation", 2793, 0, 799, 2800],
-  ["recentPostsByOthers", 984, 0, 241, 387],
-  ["like", 984, 0, 236, 330],
-  ["post", 403, 0, 238, 401],
-  ["comment", 397, 0, 240, 416],
-  ["openConversation", 389, 0, 240, 381],
-  ["sendMessage", 389, 0, 243, 395],
-  ["listGroups", 55, 0, 242, 506],
-  ["joinGroup", 55, 0, 241, 522],
-  ["createUser", 30, 0, 701, 2100],
-  ["setProfile", 30, 0, 254, 1100],
-  ["deleteUser", 30, 0, 302, 464],
+  ["reportLocation", 272553, 0, 369, 868],
+  ["recentPostsByOthers", 172660, 0, 152, 455],
+  ["like", 172660, 0, 122, 359],
+  ["post", 81672, 0, 165, 476],
+  ["openConversation", 76034, 0, 93, 348],
+  ["sendMessage", 76034, 0, 62, 269],
+  ["comment", 69064, 0, 85, 277],
+  ["listGroups", 5389, 0, 71, 307],
+  ["joinGroup", 5389, 0, 42, 243],
+  ["refreshSession", 400, 0, 224, 305],
+  ["createUser", 200, 0, 153, 177],
+  ["setProfile", 200, 0, 16, 22],
+  ["deleteUser", 200, 0, 41, 70],
 ];
 
 const sum = METHODS.reduce((a, m) => a + m[1], 0);
@@ -52,6 +54,7 @@ const C = {
 const MONO = "ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace";
 const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
 
+const n = (v) => v.toLocaleString("en-US");
 const ms = (v) => (v === null ? "—" : v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${v}ms`);
 
 // The Gigzen mark, same single path as the app (src/components/GigzenMark.tsx)
@@ -104,7 +107,7 @@ const stat = (x, value, label, color) => `
   <text x="${x}" y="342" fill="${C.muted}" font-family="${SANS}" font-size="14" letter-spacing="0.06em">${label}</text>`;
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
-  aria-label="Populace report for ${RUN.app}, ${RUN.date}: no failures across ${RUN.calls} API calls from ${RUN.agents} simulated users across ${RUN.cities.replace(" + ", " and ")}.">
+  aria-label="Populace report for ${RUN.app}, ${RUN.date}: no failures across ${n(RUN.calls)} API calls from ${RUN.agents} simulated users across ${RUN.cities.replace(" + ", " and ")}.">
   <rect width="${W}" height="${H}" rx="16" fill="${C.bg}"/>
   <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="15" fill="none" stroke="${C.rule}"/>
 
@@ -117,9 +120,9 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
   <text x="${PAD}" y="182" fill="${C.body}" font-family="${SANS}" font-size="18">${RUN.agents} simulated drivers · ${RUN.cities} · live backend, real accounts</text>
 
   <rect x="${PAD}" y="212" width="${W - 2 * PAD}" height="60" rx="10" fill="${C.lime}"/>
-  <text x="${PAD + 26}" y="251" fill="#0B1014" font-family="${SANS}" font-size="26" font-weight="800">✔  No failures across ${RUN.calls} API calls</text>
+  <text x="${PAD + 26}" y="251" fill="#0B1014" font-family="${SANS}" font-size="26" font-weight="800">✔  No failures across ${n(RUN.calls)} API calls</text>
 
-  ${stat(PAD, RUN.calls, "API CALLS", C.ink)}
+  ${stat(PAD, n(RUN.calls), "API CALLS", C.ink)}
   ${stat(268, RUN.failures, "FAILURES", C.ok)}
   ${stat(488, RUN.coverage, "METHODS COVERED", C.ink)}
   ${stat(708, RUN.created, "ACCOUNTS CREATED", C.ink)}
@@ -136,7 +139,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
   <line x1="${PAD}" y1="${H - 108}" x2="${W - PAD}" y2="${H - 108}" stroke="${C.rule}"/>
   <text x="${PAD}" y="${H - 74}" fill="${C.body}" font-family="${SANS}" font-size="17">${RUN.activity}</text>
   <text x="${W - PAD}" y="${H - 74}" fill="${C.muted}" font-family="${MONO}" font-size="13" text-anchor="end">Gigzen Private Limited · Bhubaneswar, India</text>
-  <text x="${PAD}" y="${H - 42}" fill="${C.muted}" font-family="${SANS}" font-size="15">Six users for three minutes is a correctness run, not a load test. These are latencies under six concurrent users and nothing more.</text>
+  <text x="${PAD}" y="${H - 42}" fill="${C.muted}" font-family="${SANS}" font-size="15">Two hundred concurrent drivers over a local backend. Loopback, so no network is included: the same calls cost about 175 ms against the hosted project.</text>
 </svg>
 `;
 
@@ -169,8 +172,8 @@ for (const [y, items] of baselines) {
   }
 }
 
-writeFileSync(new URL("./buzz-run-2026-08-15.svg", import.meta.url), svg);
+writeFileSync(new URL("./buzz-run-2026-08-21.svg", import.meta.url), svg);
 console.log(
-  `wrote docs/buzz-run-2026-08-15.svg — ${METHODS.length} methods, ${sum} calls, ` +
+  `wrote docs/buzz-run-2026-08-21.svg — ${METHODS.length} methods, ${sum} calls, ` +
     `${baselines.size} baselines checked for collisions`,
 );
