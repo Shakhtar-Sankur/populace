@@ -9,8 +9,9 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --publish never",
-    "dist:portable": "electron-builder --win portable --publish never"
+    "dist": "npm run icon && electron-builder --win --publish never",
+    "dist:portable": "npm run icon && electron-builder --win portable --publish never",
+    "icon": "node build/make-ico.mjs"
   },
   "devDependencies": {
     "electron": "^43.4.1",
@@ -62,7 +63,7 @@
         }
       ],
       "artifactName": "PopulaceStudio-${version}-${arch}.${ext}",
-      "icon": "build/icon.png",
+      "icon": "build/icon.ico",
       "signAndEditExecutable": false
     },
     "nsis": {
@@ -70,9 +71,13 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "shortcutName": "Populace Studio",
-      "installerIcon": "build/icon.png",
-      "uninstallerIcon": "build/icon.png"
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "PopulaceStudio-Setup-${arch}.${ext}"
     },
-    "copyright": "Copyright \u00a9 2026 Gigzen Private Limited"
+    "portable": {
+      "artifactName": "PopulaceStudio-Portable-${arch}.${ext}"
+    },
+    "copyright": "Copyright © 2026 Gigzen Private Limited"
   }
 }
