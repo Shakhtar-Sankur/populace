@@ -73,6 +73,18 @@ export const CITIES = {
   almaty: { name: "Almaty", lat: 43.222, lng: 76.8512, country: "Kazakhstan", currency: "KZT", rate: 250 },
   tashkent: { name: "Tashkent", lat: 41.2995, lng: 69.2401, country: "Uzbekistan", currency: "UZS", rate: 6000 },
   baku: { name: "Baku", lat: 40.4093, lng: 49.8671, country: "Azerbaijan", currency: "AZN", rate: 1 },
+
+  // Nine more, chosen for their scripts as much as their markets: Japanese,
+  // Korean, Georgian and Serbian Cyrillic are new to the corpus.
+  singapore: { name: "Singapore", lat: 1.3521, lng: 103.8198, country: "Singapore", currency: "SGD", rate: 1 },
+  tokyo: { name: "Tokyo", lat: 35.6762, lng: 139.6503, country: "Japan", currency: "JPY", rate: 250 },
+  seoul: { name: "Seoul", lat: 37.5665, lng: 126.978, country: "South Korea", currency: "KRW", rate: 1500 },
+  tbilisi: { name: "Tbilisi", lat: 41.7151, lng: 44.8271, country: "Georgia", currency: "GEL", rate: 2 },
+  belgrade: { name: "Belgrade", lat: 44.7866, lng: 20.4489, country: "Serbia", currency: "RSD", rate: 90 },
+  lisbon: { name: "Lisbon", lat: 38.7223, lng: -9.1393, country: "Portugal", currency: "EUR", rate: 1 },
+  milan: { name: "Milan", lat: 45.4642, lng: 9.19, country: "Italy", currency: "EUR", rate: 1 },
+  dakar: { name: "Dakar", lat: 14.7167, lng: -17.4677, country: "Senegal", currency: "XOF", rate: 400 },
+  quito: { name: "Quito", lat: -0.1807, lng: -78.4678, country: "Ecuador", currency: "USD", rate: 1 },
 };
 
 // Chatter is per-city so a feed reads like the right place.
@@ -483,6 +495,69 @@ const CHATTER = {
     "Yasamalda kim var? Sifariş çox gəlir",
     "Bir az dincələcəm, yeddi saatdır sürürəm",
   ],
+  singapore: [
+    "Jam quite bad along PIE, take CTE instead",
+    "Surge at Orchard now, worth queueing",
+    "Careful, flash flood at Bukit Timah",
+    "Anyone at Tampines? Orders coming in fast",
+    "Taking a break lah, 7 hours already",
+  ],
+  tokyo: [
+    "環七が渋滞してます、別ルートで",
+    "今、渋谷エリアは料金アップ中です",
+    "品川あたり冠水注意してください",
+    "新宿にいる人いますか？注文が多いです",
+    "少し休憩します、7時間走りました",
+  ],
+  seoul: [
+    "강변북로 정체 심해요, 다른 길로 가세요",
+    "지금 강남 할증 붙었습니다",
+    "여의도 물 고였어요, 조심하세요",
+    "홍대 근처 계신 분? 콜 엄청 많아요",
+    "잠깐 쉬겠습니다, 7시간 됐네요",
+  ],
+  tbilisi: [
+    "დიდი საცობია რუსთაველზე, სხვა გზით წადით",
+    "ახლა ვაკეში ფასი აწეულია",
+    "საბურთალოზე წყალი დგას, ფრთხილად",
+    "ვინმე ვარკეთილში ხართ? შეკვეთები ბევრია",
+    "ცოტა დავისვენებ, შვიდი საათია",
+  ],
+  belgrade: [
+    "Велика гужва на Аутокоманди, идите другим путем",
+    "Сада је виша цена на Врачару",
+    "Пажљиво, вода на Новом Београду",
+    "Има ли неко на Дорћолу? Много поруџбина",
+    "Одмарам мало, седам сати већ",
+  ],
+  lisbon: [
+    "Trânsito parado na Segunda Circular, vão por outro lado",
+    "Está com tarifa alta no Chiado agora",
+    "Cuidado com a água em Alcântara",
+    "Alguém em Benfica? Estão a entrar muitos pedidos",
+    "Vou parar um bocado, sete horas já",
+  ],
+  milan: [
+    "Traffico bloccato sulla Tangenziale, prendete un'altra strada",
+    "Adesso c'è tariffa alta in Porta Nuova",
+    "Attenzione all'acqua in Navigli",
+    "C'è qualcuno a Lambrate? Arrivano tanti ordini",
+    "Faccio una pausa, sono sette ore",
+  ],
+  dakar: [
+    "Gros embouteillage sur la VDN, prenez une autre route",
+    "Il y a une majoration aux Almadies maintenant",
+    "Attention à l'eau à Pikine",
+    "Quelqu'un à Ouakam ? Les commandes arrivent beaucoup",
+    "Je fais une pause, ça fait sept heures",
+  ],
+  quito: [
+    "Tráfico pesado en la Simón Bolívar, cojan otra ruta",
+    "Está con tarifa alta La Carolina ahorita",
+    "Ojo con el agua en el Centro Histórico",
+    "¿Alguien por Cumbayá? Están entrando hartos pedidos",
+    "Paro un rato, llevo siete horas",
+  ],
 };
 
 const REPLIES = [
@@ -553,6 +628,15 @@ const NAMES = {
   almaty: ["Nurlan Abenov", "Aigul Serikova", "Yerlan Kassymov", "Dana Nurpeisova", "Timur Zhaksybek"],
   tashkent: ["Aziz Karimov", "Nilufar Rashidova", "Bekzod Tursunov", "Malika Yusupova", "Sardor Ergashev"],
   baku: ["Elvin Mammadov", "Leyla Aliyeva", "Rashad Huseynov", "Nigar Guliyeva", "Orkhan Ismayilov"],
+  singapore: ["Tan Wei Jie", "Siti Nurhaliza", "Ravi Subramaniam", "Lim Mei Ling", "Muhammad Faizal"],
+  tokyo: ["Hiroshi Tanaka", "Yuki Sato", "Kenji Suzuki", "Aiko Watanabe", "Takeshi Yamamoto"],
+  seoul: ["Kim Min-jun", "Lee Ji-woo", "Park Seo-yun", "Choi Dong-hyun", "Jung Ha-eun"],
+  tbilisi: ["Giorgi Beridze", "Nino Kapanadze", "Levan Gogoladze", "Tamar Chkheidze", "Davit Maisuradze"],
+  belgrade: ["Marko Petrović", "Jelena Nikolić", "Stefan Jovanović", "Ana Đorđević", "Nikola Ilić"],
+  lisbon: ["João Silva", "Maria Santos", "Pedro Ferreira", "Ana Costa", "Tiago Oliveira"],
+  milan: ["Marco Rossi", "Giulia Bianchi", "Luca Ferrari", "Sofia Romano", "Alessandro Conti"],
+  dakar: ["Moussa Diop", "Aminata Ndiaye", "Cheikh Fall", "Fatou Sarr", "Ibrahima Sow"],
+  quito: ["Carlos Andrade", "María Guerrero", "Luis Paredes", "Gabriela Vaca", "Diego Chávez"],
 };
 
 const PLATFORMS = {
@@ -614,6 +698,15 @@ const PLATFORMS = {
   almaty: ["yandexgo", "indrive", "wolt", "glovo", "chocofood"],
   tashkent: ["yandexgo", "mytaxi", "express24", "uzum", "wolt"],
   baku: ["bolt", "uber", "wolt", "yango", "aznaxis"],
+  singapore: ["grab", "gojek", "foodpanda", "deliveroo", "ryde"],
+  tokyo: ["ubereats", "demaecan", "wolt", "menu", "gotaxi"],
+  seoul: ["baemin", "coupangeats", "kakaot", "yogiyo", "tada"],
+  tbilisi: ["bolt", "yandexgo", "wolt", "glovo", "maxim"],
+  belgrade: ["wolt", "glovo", "cargo", "yandexgo", "donesi"],
+  lisbon: ["uber", "bolt", "glovo", "ubereats", "freenow"],
+  milan: ["glovo", "deliveroo", "justeat", "ubereats", "freenow"],
+  dakar: ["yango", "heetch", "yassir", "jumiafood", "kai"],
+  quito: ["uber", "cabify", "rappi", "pedidosya", "indrive"],
 };
 
 const pick = (arr, i) => arr[i % arr.length];
