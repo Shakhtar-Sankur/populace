@@ -97,3 +97,34 @@ jobs:
             exit 1
           }
           echo "init scaffolded the working template."
+
+      - name: The Action's summary handles every verdict, including no report
+        # github-summary.mjs runs with `if: always()` after a run that may have
+        # died. If it throws, it replaces the real failure with a confusing one,
+        # so the missing-report path is asserted rather than assumed.
+        run: |
+          export GITHUB_OUTPUT=/tmp/gh_out
+          export GITHUB_STEP_SUMMARY=/tmp/gh_sum
+          : > "$GITHUB_OUTPUT"
+          : > "$GITHUB_STEP_SUMMARY"
+
+          POPULACE_REPORT=populace-report.json node src/github-summary.mjs
+          grep -q "^verdict<<" "$GITHUB_OUTPUT" || {
+            echo "::error::No verdict output was emitted."; exit 1; }
+          grep -q "API calls" "$GITHUB_STEP_SUMMARY" || {
+            echo "::error::The job summary has no headline."; exit 1; }
+          grep -q "| Method | Calls |" "$GITHUB_STEP_SUMMARY" || {
+            echo "::error::The job summary has no per-method table."; exit 1; }
+
+          if ! POPULACE_REPORT=/tmp/does-not-exist.json node src/github-summary.mjs; then
+            echo "::error::The summary threw on a missing report. It runs with if:always() and must not."
+            exit 1
+          fi
+          grep -q "no-report" "$GITHUB_OUTPUT" || {
+            echo "::error::A missing report did not produce the no-report verdict."; exit 1; }
+          echo "The Action's summary handles a real report and a missing one."
+
+      - name: action.yml is well formed and passes inputs through env
+        # A workflow input is attacker-controllable on a fork PR. Interpolating
+        # one into a run block is a shell injection; this refuses that.
+        run: node .github/check-action.mjs
