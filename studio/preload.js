@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld("populace", {
   readReport: (file) => ipcRenderer.invoke("report:read", file),
   cli: (args, cwd, env) => ipcRenderer.invoke("cli:run", { args, cwd, env }),
 
+  appVersion: () => ipcRenderer.invoke("app:version"),
+  checkAppUpdate: () => ipcRenderer.invoke("app:checkUpdate"),
+
   showItem: (file) => ipcRenderer.invoke("shell:showItem", file),
   openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),
 
@@ -26,6 +29,12 @@ contextBridge.exposeInMainWorld("populace", {
     const h = (_e, text) => fn(text);
     ipcRenderer.on("run:stdout", h);
     return () => ipcRenderer.off("run:stdout", h);
+  },
+  // One structured event per tick: every person, every method, the totals.
+  onProgress: (fn) => {
+    const h = (_e, event) => fn(event);
+    ipcRenderer.on("run:progress", h);
+    return () => ipcRenderer.off("run:progress", h);
   },
   onStderr: (fn) => {
     const h = (_e, text) => fn(text);

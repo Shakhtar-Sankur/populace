@@ -31,6 +31,7 @@
   <button class="tab"       data-screen="report"  type="button"><span class="k">3</span> Report</button>
   <button class="tab"       data-screen="explain" type="button"><span class="k">4</span> Explain</button>
   <button class="tab"       data-screen="updates" type="button"><span class="k">5</span> Updates</button>
+  <button class="tab"       data-screen="about"   type="button"><span class="k">6</span> About</button>
 
   <div class="rail-foot">
     <div id="engine-state" class="muted">checking engine…</div>
@@ -87,23 +88,90 @@
 
   <!-- ─────────────────────────── 2 · LIVE ─────────────────────────── -->
   <section id="screen-live" class="screen">
-    <header class="head">
-      <h1>Live</h1>
-      <p>What the population is doing, as it happens.</p>
-    </header>
+      <header class="head live-head">
+        <div>
+          <h1>Live</h1>
+          <p id="live-sub">Nothing running yet. Start a run from the Run screen.</p>
+        </div>
+        <div class="clock">
+          <span id="pill" class="pill idle">idle</span>
+          <b id="s-elapsed">0:00</b>
+          <span id="s-remaining">&mdash;</span>
+        </div>
+      </header>
 
-    <div class="stats">
-      <div class="stat"><b id="s-tick">—</b><span>tick</span></div>
-      <div class="stat"><b id="s-people">—</b><span>people</span></div>
-      <div class="stat"><b id="s-posts">—</b><span>posts</span></div>
-      <div class="stat"><b id="s-likes">—</b><span>likes</span></div>
-      <div class="stat"><b id="s-msgs">—</b><span>messages</span></div>
-      <div class="stat"><b id="s-err" class="ok">0</b><span>errors</span></div>
-    </div>
+      <!-- Driven by elapsed time rather than by tick lines: the bar has to move
+           between ticks, or a long run looks frozen. -->
+      <div class="progress"><div id="bar"></div></div>
 
-    <div class="progress"><div id="bar"></div></div>
-    <pre id="log" class="log" aria-live="polite">Nothing running yet. Start a run from the Run screen.</pre>
-  </section>
+      <div class="stats">
+        <div class="stat"><b id="s-calls">0</b><span>API calls</span></div>
+        <div class="stat"><b id="s-rate">0</b><span>calls / sec</span></div>
+        <div class="stat"><b id="s-fails" class="ok">0</b><span>API failures</span></div>
+        <div class="stat"><b id="s-people">0</b><span>people</span></div>
+        <div class="stat"><b id="s-km">0</b><span>km driven</span></div>
+        <div class="stat"><b id="s-tick">0/0</b><span>tick</span></div>
+      </div>
+
+      <div class="live-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Where they are</h2>
+            <span class="muted"><span id="zoom-note">fit</span> &middot; scroll to zoom &middot; <span id="map-note">&mdash;</span></span>
+          </div>
+          <div class="mapwrap">
+            <svg id="map" viewBox="0 0 720 320" preserveAspectRatio="xMidYMid meet"
+                 aria-label="Position of every simulated person"></svg>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Throughput</h2>
+            <span class="muted">calls per second</span>
+          </div>
+          <svg id="spark" viewBox="0 0 320 96" preserveAspectRatio="none"
+               aria-label="Calls per second over the run"></svg>
+          <div class="mini">
+            <div><b id="s-posts">0</b><span>posts</span></div>
+            <div><b id="s-likes">0</b><span>likes</span></div>
+            <div><b id="s-comments">0</b><span>comments</span></div>
+            <div><b id="s-msgs">0</b><span>messages</span></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Every method</h2>
+          <span class="muted">calls, failures and latency, per contract method</span>
+        </div>
+        <div id="methods" class="methods"><p class="empty">Waiting for the first tick&hellip;</p></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Every person</h2>
+          <span id="people-note" class="muted">&mdash;</span>
+        </div>
+        <div class="tablewrap">
+          <table id="people" class="people">
+            <thead><tr>
+              <th data-sort="n">Name</th><th data-sort="c">City</th><th data-sort="p">Platform</th>
+              <th class="r" data-sort="k">km</th><th class="r" data-sort="o">posts</th>
+              <th class="r" data-sort="l">likes</th><th class="r" data-sort="m">msgs</th>
+              <th class="r" data-sort="e">err</th><th>state</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <details class="logbox">
+        <summary>Raw output from the engine</summary>
+        <pre id="log" class="log" aria-live="polite">Nothing running yet.</pre>
+      </details>
+    </section>
 
   <!-- ─────────────────────────── 3 · REPORT ─────────────────────────── -->
   <section id="screen-report" class="screen">
@@ -136,14 +204,26 @@
       <p>Whether a newer Populace is out.</p>
     </header>
     <div class="card compact">
+      <h2 class="sub">This application</h2>
+      <p class="muted">Populace Studio <b id="app-version">&mdash;</b> &mdash; the window and the engine inside it.</p>
       <div class="actions">
-        <button id="do-update" class="btn primary" type="button">Check now</button>
-        <span class="muted">An anonymous request to the public npm registry. Nothing about your app or your runs is sent.</span>
+        <button id="do-app-update" class="btn primary" type="button">Check for a newer Studio</button>
+        <a id="get-update" class="btn" href="#" hidden>Download it</a>
+        <span id="app-update-note" class="muted">One anonymous request to GitHub. Nothing about your app or your runs is sent.</span>
       </div>
+      <pre id="app-update-out" class="log">Not checked yet.</pre>
     </div>
-    <pre id="update-out" class="log">Not checked yet.</pre>
 
-    <div class="card compact" style="margin-top:14px">
+    <div class="card compact spaced">
+      <h2 class="sub">The engine on npm</h2>
+      <p class="muted">For anyone who installed <code>@gigzen/populace</code> with npm rather than through this app.</p>
+      <div class="actions">
+        <button id="do-update" class="btn" type="button">Check the registry</button>
+      </div>
+      <pre id="update-out" class="log">Not checked yet.</pre>
+    </div>
+
+    <div class="card compact spaced">
       <h2 class="sub">Start an adapter from an OpenAPI description</h2>
       <p class="muted">Reads your API description and fills in what it can. The result is a draft — it prints a confidence per method and marks what to check.</p>
       <div class="actions">
@@ -154,8 +234,112 @@
     <pre id="spec-out" class="log"></pre>
   </section>
 
+
+  <section id="screen-about" class="screen">
+    <header class="head">
+      <h1>About Populace</h1>
+      <p>What it is for, how to use it, and what it will never do.</p>
+    </header>
+
+    <div class="panel hero-about">
+      <div class="hero-marks">
+        <svg class="mark mark-lg" viewBox="0 0 512 512" aria-hidden="true">
+          <rect width="512" height="512" rx="112" fill="#12171A"/>
+          <g fill="#D3FF00">
+            <circle cx="140" cy="132" r="26" fill-opacity=".38"/><circle cx="256" cy="118" r="30" fill-opacity=".55"/>
+            <circle cx="372" cy="140" r="24" fill-opacity=".32"/><circle cx="118" cy="252" r="30" fill-opacity=".52"/>
+            <circle cx="392" cy="248" r="28" fill-opacity=".45"/><circle cx="148" cy="372" r="24" fill-opacity=".3"/>
+            <circle cx="262" cy="396" r="28" fill-opacity=".48"/><circle cx="378" cy="366" r="26" fill-opacity=".36"/>
+            <circle cx="256" cy="256" r="54"/>
+          </g>
+          <circle cx="256" cy="256" r="86" fill="none" stroke="#D3FF00" stroke-opacity=".9" stroke-width="12"
+                  stroke-linecap="round" stroke-dasharray="405 135" transform="rotate(-90 256 256)"/>
+        </svg>
+        <div>
+          <p class="eyebrow"><svg class="gz" viewBox="0 0 64 64" aria-hidden="true"><path d="M33.19 2 L60.1 14.82 L48.54 20.68 L33.66 13.4 L16.25 23.06 L15.14 23.85 L15.14 40.15 L33.19 47.91 L49.02 39.84 L49.34 38.73 L48.54 38.25 L30.34 33.66 L30.5 30.97 L44.43 24.01 L61.05 29.86 L61.05 46.64 L33.5 62 L2.95 46.64 L2.95 17.51 L33.03 2.16 Z" fill="#D3FF00"/></svg> A <b>Gigzen</b> product</p>
+          <h2 class="vision-title">Your app, used by people who don&rsquo;t exist.</h2>
+        </div>
+      </div>
+
+      <p class="vision">
+        Software breaks in front of people, not in front of tests. It breaks when two
+        strangers touch the same row at the same second, when a policy quietly refuses a
+        write, when a token expires halfway through an afternoon. None of that shows up
+        when one developer clicks through one screen.
+      </p>
+      <p class="vision">
+        So Populace brings a <b>population</b> to life inside your application. Each person
+        has a name, a city, a language and a job, and they use your real API the way people
+        do &mdash; signing up, moving, posting, arguing, going quiet, coming back. Then they
+        delete themselves and hand you a report that says what broke, <b>why</b>, and what to
+        do about it. Nothing it cannot prove goes in that report.
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>How to use it</h2><span class="muted">five steps, about ten minutes</span></div>
+      <ol class="steps">
+        <li>
+          <b>Point it at a test environment.</b>
+          A <code>populace.config.mjs</code> names your app, your adapter and the URL to run
+          against. Every host you list under <code>neverRunAgainst</code> is refused before a
+          single account is made.
+        </li>
+        <li>
+          <b>Write an adapter, or start from one.</b>
+          Thirteen methods &mdash; sign up, sign in, post, read the feed, like, comment,
+          message, report a location, join a group, delete the account. Each one maps onto
+          whatever your app actually calls those things. <code>populace init --from-openapi</code>
+          drafts it from an API description.
+        </li>
+        <li>
+          <b>Choose the population.</b>
+          How many people, for how long, in which cities, and how hard they use it.
+          Engagement multiplies how often each person acts &mdash; the same hundred people at
+          three times the appetite is a very different load.
+        </li>
+        <li>
+          <b>Watch it happen.</b>
+          The Live screen shows every person, every method, and the throughput as it moves.
+          The map is where they are; scroll to zoom into a city.
+        </li>
+        <li>
+          <b>Read the verdict, then ask why.</b>
+          Report gives the numbers per method. Explain turns a failure into a cause and a
+          fix &mdash; a permission policy, a missing column, a token that expired &mdash;
+          rather than an error string to search for.
+        </li>
+      </ol>
+    </div>
+
+    <div class="grid2-about">
+      <div class="panel">
+        <div class="panel-head"><h2>What it refuses to do</h2></div>
+        <ul class="ticks">
+          <li>Run against a host in <code>neverRunAgainst</code> &mdash; production is denied before startup.</li>
+          <li>Leave accounts behind. Every person it creates, it deletes.</li>
+          <li>Call a run clean when it could not make every call.</li>
+          <li>Send anything about your app, your credentials or your runs anywhere.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Where things are</h2></div>
+        <ul class="links">
+          <li><a href="https://shakhtar-sankur.github.io/populace/">The Populace website</a></li>
+          <li><a href="https://github.com/Shakhtar-Sankur/populace">Source and releases on GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/@gigzen/populace">The engine on npm</a></li>
+          <li><a href="https://shakhtar-sankur.github.io/gigzen/">Gigzen</a></li>
+        </ul>
+        <p class="muted spaced">
+          Populace Studio <b id="about-version">&mdash;</b> &middot; MIT licensed &middot;
+          &copy; 2026 Gigzen Private Limited
+        </p>
+      </div>
+    </div>
+  </section>
 </main>
 
+<script src="world.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

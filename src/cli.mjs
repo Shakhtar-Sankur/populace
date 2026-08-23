@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import { ConfigError, loadAdapter, loadConfig } from "./config.mjs";
 import { createMetrics, instrument } from "./instrument.mjs";
 import { buildReport, renderReport, writeReport } from "./report.mjs";
+import { createProgress } from "./progress.mjs";
 import { canSignInOnly } from "./contract.mjs";
 import { isTransportError } from "./net.mjs";
 import { diagnose } from "./diagnose.mjs";
@@ -231,6 +232,13 @@ async function run() {
   const startedAt = Date.now();
 
   const { agents, cities, minutes, tickSeconds } = config.population;
+
+  // Anything watching this run rather than reading it - the desktop app today,
+  // a dashboard tomorrow - gets the same numbers the terminal table shows,
+  // every tick, as JSON. Off unless asked, so ordinary output is untouched.
+  const progress = createProgress({ enabled: flag("progress") === "json" });
+  progress.start(config);
+
   console.log(`\n  Bringing ${agents} people to life across ${cities.join(", ")}…\n`);
 
   const world = World.fromConfig(config, adapter, {
@@ -238,6 +246,7 @@ async function run() {
     joinFailed: (p, e) => console.log(`   ✖ ${p.name}: ${e.message}`),
     tick: (n, total, w) => {
       render(config, n, total, w);
+      progress.tick(n, total, w, metrics);
       // Stop as soon as the target is judged gone. Grinding out the remaining
       // ticks against a dead host wastes the operator's time and adds nothing
       // to the report.
@@ -280,6 +289,7 @@ async function run() {
 
   metrics.endedAt = Date.now();
   const report = buildReport({ config, adapter: raw, world, metrics, teardown, startedAt });
+  progress.done(report);
   const files = writeReport(report, config);
   console.log(renderReport(report));
   console.log(`  Report:  ${displayPath(files.json)}`);

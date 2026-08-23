@@ -51,23 +51,458 @@ const log = (text) => {
   el.scrollTop = el.scrollHeight;
 };
 
-function readTick(line) {
-  // tick 360/1800 · 30 people · 682.2km · 48053p 67604l 27254c 45134m · 2 errors
-  const m = line.match(/tick (\d+)\/(\d+).*?(\d+) people.*?(\d+)p (\d+)l (\d+)c (\d+)m(?:.*?(\d+) errors)?/);
-  if (!m) return;
-  const [, at, total, people, posts, likes, , msgs, errors] = m;
-  $("s-tick").textContent = `${at}/${total}`;
-  $("s-people").textContent = people;
-  $("s-posts").textContent = Number(posts).toLocaleString();
-  $("s-likes").textContent = Number(likes).toLocaleString();
-  $("s-msgs").textContent = Number(msgs).toLocaleString();
-  const err = Number(errors || 0);
-  $("s-err").textContent = err;
-  $("s-err").className = err ? "warn" : "ok";
-  $("bar").style.width = `${Math.min(100, (Number(at) / Number(total)) * 100)}%`;
+/* -- the live screen -------------------------------------------------
+   Every number here comes from the engine's own progress stream, one
+   event per tick, carrying exactly what the terminal table shows. The
+   window computes nothing the engine did not already know, so it still
+   cannot disagree with the command line. */
+
+const live = {
+  startedAt: 0,
+  totalMs: 0,
+  timer: null,
+  lastCalls: 0,
+  lastAt: 0,
+  rates: [],       // calls per second, one per tick, for the sparkline
+  latency: {},     // last known p50/p95 per method, refreshed every few ticks
+  rows: new Map(), // person name -> <tr>, so scroll position survives a tick
+  dots: new Map(),   // person name -> <circle>
+  trails: new Map(), // person name -> { points: [[x,y]...], el: <polyline> }
+  sort: { key: null, dir: -1 },
+  people: [],        // the latest tick's rows, for re-sorting on click
+};
+
+const fmt = (n) => Number(n || 0).toLocaleString("en-US");
+const clockText = (ms) => {
+  const t = Math.max(0, Math.round(ms / 1000));
+  return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0");
+};
+
+/** Set a counter, and lift it briefly when it actually changed. */
+function put(id, text) {
+  const el = $(id);
+  if (!el || el.textContent === text) return;
+  el.textContent = text;
+  el.classList.remove("tickup");
+  void el.offsetWidth;            // restart the animation
+  el.classList.add("tickup");
 }
 
-api.onStdout((text) => { log(text); for (const line of text.split("\n")) readTick(line); });
+/* The clock and the bar run off wall time, not off ticks. The engine emits a
+   tick only every simulated step, and at a one-second tick over fifteen
+   minutes the old screen sat at zero for three minutes and looked frozen. */
+function startClock(totalMs) {
+  live.startedAt = Date.now();
+  live.totalMs = totalMs;
+  clearInterval(live.timer);
+  live.timer = setInterval(() => {
+    const elapsed = Date.now() - live.startedAt;
+    $("s-elapsed").textContent = clockText(elapsed);
+    if (live.totalMs) {
+      $("s-remaining").textContent = clockText(Math.max(0, live.totalMs - elapsed)) + " left";
+      $("bar").style.width = Math.min(100, (elapsed / live.totalMs) * 100) + "%";
+    }
+  }, 1000);
+}
+function stopClock() { clearInterval(live.timer); live.timer = null; }
+
+/* -- the map ---------------------------------------------------------
+   Equirectangular, drawn from each person's real coordinates. No
+   coastlines: a graticule and the cities they are actually in is honest
+   about what the data contains. */
+// Cropped to the latitudes people are simulated in. A full -90..90 map spends
+// half its height on Antarctica and empty Arctic, which is why the panel looked
+// mostly like nothing. These must match build/make-world.mjs, which projects
+// the coastline with the same numbers.
+const MAP_W = 720, MAP_H = 320, LAT_MAX = 78, LAT_MIN = -58;
+const projX = (lng) => ((Number(lng) + 180) / 360) * MAP_W;
+const projY = (lat) => ((LAT_MAX - Number(lat)) / (LAT_MAX - LAT_MIN)) * MAP_H;
+const svgEl = (name, attrs) => {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", name);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+};
+
+function drawBase(svg) {
+  // Natural Earth's land outline, generated into world.js at build time. The
+  // window has no network at runtime by design, so there are no map tiles to
+  // fetch and nothing leaves the machine.
+  if (typeof WORLD_PATH === "string") {
+    svg.appendChild(svgEl("path", { class: "land", d: WORLD_PATH }));
+  }
+
+  for (let lng = -180; lng <= 180; lng += 30) {
+    svg.appendChild(svgEl("line", { class: "grat", x1: projX(lng), y1: 0, x2: projX(lng), y2: MAP_H }));
+  }
+  for (let lat = -60; lat <= 60; lat += 30) {
+    svg.appendChild(svgEl("line", {
+      class: lat === 0 ? "equator" : "grat", x1: 0, y1: projY(lat), x2: MAP_W, y2: projY(lat),
+    }));
+  }
+}
+
+/* -- zoom and pan ----------------------------------------------------
+   Twelve cities on a world map are three-pixel dots, and everyone in one
+   city sits on one pixel. The projection is exact - every city lands
+   within a tenth of a pixel of its real coordinates - but you cannot see
+   that without getting closer. Wheel to zoom, drag to pan, double-click
+   to fit. */
+const view = { x: 0, y: 0, w: MAP_W, h: MAP_H };
+
+function applyView() {
+  const svg = $("map");
+  svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
+
+  // Dots and labels are in map units, so they would balloon as we zoom in.
+  // Scaling them back keeps them the same size on screen at any zoom.
+  const k = view.w / MAP_W;
+  for (const dot of live.dots.values()) dot.setAttribute("r", Math.max(0.35, 2.6 * k));
+  for (const t of live.trails.values()) t.el.setAttribute("stroke-width", Math.max(0.08, 0.6 * k));
+  for (const t of svg.querySelectorAll(".label")) t.setAttribute("font-size", (8 * k).toFixed(3));
+  for (const h of svg.querySelectorAll(".halo")) h.setAttribute("r", Math.max(1.2, 9 * k));
+  const note = $("zoom-note");
+  if (note) note.textContent = k < 0.999 ? (1 / k).toFixed(1) + "\u00d7" : "fit";
+}
+
+function zoomAt(px, py, factor) {
+  const next = Math.min(MAP_W, Math.max(MAP_W / 60, view.w * factor));
+  const k = next / view.w;
+  // Keep whatever is under the pointer under the pointer.
+  view.x = px - (px - view.x) * k;
+  view.y = py - (py - view.y) * k;
+  view.w = next;
+  view.h = MAP_H * (next / MAP_W);
+  clampView();
+  applyView();
+}
+
+function clampView() {
+  view.x = Math.min(Math.max(view.x, -view.w * 0.15), MAP_W - view.w * 0.85);
+  view.y = Math.min(Math.max(view.y, -view.h * 0.15), MAP_H - view.h * 0.85);
+}
+
+/** Pointer position in map units. */
+function atPointer(e) {
+  const r = $("map").getBoundingClientRect();
+  return {
+    x: view.x + ((e.clientX - r.left) / r.width) * view.w,
+    y: view.y + ((e.clientY - r.top) / r.height) * view.h,
+  };
+}
+
+function wireMap() {
+  const svg = $("map");
+  if (svg.dataset.wired) return;
+  svg.dataset.wired = "1";
+
+  svg.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const p = atPointer(e);
+    zoomAt(p.x, p.y, e.deltaY > 0 ? 1.18 : 1 / 1.18);
+  }, { passive: false });
+
+  let drag = null;
+  svg.addEventListener("pointerdown", (e) => {
+    drag = { ...atPointer(e) };
+    svg.setPointerCapture(e.pointerId);
+    svg.classList.add("grabbing");
+  });
+  svg.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    const p = atPointer(e);
+    view.x -= p.x - drag.x;
+    view.y -= p.y - drag.y;
+    clampView();
+    applyView();
+  });
+  const release = (e) => {
+    drag = null;
+    svg.classList.remove("grabbing");
+    if (e.pointerId != null && svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId);
+  };
+  svg.addEventListener("pointerup", release);
+  svg.addEventListener("pointercancel", release);
+
+  svg.addEventListener("dblclick", () => {
+    view.x = 0; view.y = 0; view.w = MAP_W; view.h = MAP_H;
+    applyView();
+  });
+}
+
+function paintMap(people) {
+  const svg = $("map");
+  if (!svg.dataset.ready) { drawBase(svg); wireMap(); svg.dataset.ready = "1"; }
+
+  const cities = new Map();
+  for (const p of people) {
+    if (!cities.has(p.c)) cities.set(p.c, { lat: p.la, lng: p.lo, n: 0 });
+    cities.get(p.c).n++;
+
+    // The trail goes in before the dot so the dot always sits on top of it.
+    let trail = live.trails.get(p.n);
+    if (!trail) {
+      trail = { points: [], el: svgEl("polyline", { class: "trail" }) };
+      svg.appendChild(trail.el);
+      live.trails.set(p.n, trail);
+    }
+    // Every tick, without a "has it moved enough" guard. At world scale a
+    // driver covers about a hundredth of a pixel per tick, so any such guard
+    // discards the entire trail; zoomed in twenty times it is a real path.
+    // Three decimals of coordinate is roughly 100 m, which is the resolution
+    // the engine reports, so this is as fine as the data honestly goes.
+    const here = [projX(p.lo), projY(p.la)];
+    trail.points.push(here);
+    if (trail.points.length > 240) trail.points.shift();
+    trail.el.setAttribute("points", trail.points.map((q) => q[0].toFixed(3) + "," + q[1].toFixed(3)).join(" "));
+
+    let dot = live.dots.get(p.n);
+    if (!dot) {
+      dot = svgEl("circle", { class: "dot", r: 2.6 });
+      svg.appendChild(dot);
+      live.dots.set(p.n, dot);
+    }
+    dot.setAttribute("cx", projX(p.lo).toFixed(1));
+    dot.setAttribute("cy", projY(p.la).toFixed(1));
+    dot.setAttribute("fill", p.e ? "var(--crit)" : p.b ? "var(--amber)" : "var(--accent)");
+    dot.setAttribute("opacity", p.b ? 0.5 : 0.95);
+  }
+
+  // Labels are drawn once. A city does not move; only the people in it do.
+  if (!svg.dataset.labelled && cities.size) {
+    for (const [name, c] of cities) {
+      svg.appendChild(svgEl("circle", { class: "halo", cx: projX(c.lng), cy: projY(c.lat), r: 9 }));
+      const label = svgEl("text", { class: "label", x: projX(c.lng) + 11, y: projY(c.lat) + 3 });
+      label.textContent = name;
+      svg.appendChild(label);
+    }
+    svg.dataset.labelled = "1";
+  }
+  applyView();
+  $("map-note").textContent = people.length + " people \u00b7 " + cities.size + " cities";
+}
+
+/* -- throughput ----------------------------------------------------- */
+function paintSpark() {
+  const svg = $("spark");
+  const W = 320, H = 96;
+  svg.textContent = "";
+  if (live.rates.length < 2) return;
+
+  const data = live.rates.slice(-120);
+  const max = Math.max(1, ...data);
+  const now = data[data.length - 1];
+  const x = (i) => (i / (data.length - 1)) * W;
+  const y = (v) => H - (v / max) * (H - 16) - 4;
+  const line = data.map((v, i) => x(i).toFixed(1) + "," + y(v).toFixed(1)).join(" ");
+
+  // A gradient needs a definition; there is nowhere else to put it.
+  const defs = svgEl("defs", {});
+  const grad = svgEl("linearGradient", { id: "sparkfill", x1: "0", y1: "0", x2: "0", y2: "1" });
+  grad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "var(--accent)", "stop-opacity": ".38" }));
+  grad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "var(--accent)", "stop-opacity": "0" }));
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+
+  svg.appendChild(svgEl("polygon", { class: "fill", points: "0," + H + " " + line + " " + W + "," + H }));
+  svg.appendChild(svgEl("polyline", { class: "line", points: line }));
+
+  // The peak, so the shape has a scale rather than being a pretty squiggle.
+  svg.appendChild(svgEl("line", { class: "peak", x1: 0, y1: y(max), x2: W, y2: y(max) }));
+  const peak = svgEl("text", { class: "peaklabel", x: 3, y: Math.max(9, y(max) - 3) });
+  peak.textContent = "peak " + Math.round(max) + "/s";
+  svg.appendChild(peak);
+
+  const dot = svgEl("circle", { cx: x(data.length - 1), cy: y(now), r: 2.2, fill: "var(--accent)" });
+  svg.appendChild(dot);
+}
+
+/* -- one box per method ---------------------------------------------
+   Cards are built once and updated in place. Bar widths are set as JS
+   properties, never as style attributes in an HTML string: this window
+   runs under `style-src 'self'`, which leaves such an attribute sitting
+   in the DOM unapplied - the bars were there all along, at zero width. */
+const mcards = new Map();
+
+function paintMethods(methods) {
+  const host = $("methods");
+  if (!methods.length) return;
+  if (host.dataset.empty !== "no") { host.textContent = ""; host.dataset.empty = "no"; }
+
+  const max = Math.max.apply(null, methods.map((m) => m.calls).concat([1]));
+  const sorted = methods.slice().sort((a, b) => b.apiFailures - a.apiFailures || b.calls - a.calls);
+
+  sorted.forEach((m, order) => {
+    let card = mcards.get(m.method);
+    if (!card) {
+      const el = document.createElement("div");
+      el.className = "mcard";
+      const head = document.createElement("div");
+      head.className = "m-head";
+      const name = document.createElement("span");
+      name.className = "m-name";
+      name.textContent = m.method;
+      const calls = document.createElement("span");
+      calls.className = "m-calls";
+      head.append(name, calls);
+      const track = document.createElement("div");
+      track.className = "m-track";
+      const bar = document.createElement("span");
+      bar.className = "m-bar";
+      track.appendChild(bar);
+      const foot = document.createElement("div");
+      foot.className = "m-foot";
+      const fail = document.createElement("span");
+      const lat = document.createElement("span");
+      foot.append(fail, lat);
+      el.append(head, track, foot);
+      host.appendChild(el);
+      card = { el, calls, bar, fail, lat };
+      mcards.set(m.method, card);
+    }
+
+    const bad = m.apiFailures > 0;
+    card.el.classList.toggle("bad", bad);
+    card.el.style.order = String(order);          // failures float to the front
+    card.calls.textContent = fmt(m.calls);
+    card.bar.style.width = ((m.calls / max) * 100).toFixed(1) + "%";
+    card.fail.textContent = bad ? fmt(m.apiFailures) + " failed" : "no failures";
+    card.fail.className = bad ? "fail" : "";
+    const l = live.latency[m.method];
+    card.lat.textContent = l ? "p50 " + l.p50 + "ms \u00b7 p95 " + l.p95 + "ms" : "\u2014";
+  });
+}
+
+/* -- one row per person ---------------------------------------------
+   Rows are created once and their cells updated in place. Rebuilding the
+   table each tick would reset the scroll position every second, which
+   makes it impossible to read. */
+function paintPeople(people) {
+  const body = $("people").querySelector("tbody");
+  for (const p of people) {
+    let tr = live.rows.get(p.n);
+    if (!tr) {
+      tr = document.createElement("tr");
+      for (let i = 0; i < 9; i++) {
+        const td = document.createElement("td");
+        if (i >= 3 && i <= 7) td.className = "r";
+        tr.appendChild(td);
+      }
+      body.appendChild(tr);
+      live.rows.set(p.n, tr);
+    }
+    const c = tr.children;
+    c[0].textContent = p.n;
+    c[1].textContent = p.y ? p.c + ", " + p.y : p.c;
+    c[2].textContent = p.p;
+    c[3].textContent = Number(p.k).toFixed(1);
+    c[4].textContent = fmt(p.o);
+    c[5].textContent = fmt(p.l);
+    c[6].textContent = fmt(p.m);
+    c[7].textContent = p.e ? fmt(p.e) : "";
+    c[7].className = p.e ? "r err" : "r";
+    c[8].innerHTML = '<span class="state' + (p.b ? " break" : "") + '">' + (p.b ? "on break" : "driving") + "</span>";
+  }
+  // Re-appending moves existing rows rather than rebuilding them, so cell
+  // updates and the scroll container both survive a sort.
+  if (live.sort.key) {
+    const k = live.sort.key, dir = live.sort.dir;
+    const ordered = people.slice().sort((a, b) => {
+      const x = a[k], y = b[k];
+      const cmp = typeof x === "number" && typeof y === "number"
+        ? x - y
+        : String(x).localeCompare(String(y));
+      return cmp * dir;
+    });
+    for (const q of ordered) body.appendChild(live.rows.get(q.n));
+  }
+  $("people-note").textContent = people.length + " rows, updated every tick";
+}
+
+for (const th of document.querySelectorAll("#people thead th[data-sort]")) {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sort;
+    live.sort = { key, dir: live.sort.key === key ? -live.sort.dir : -1 };
+    for (const other of document.querySelectorAll("#people thead th")) other.classList.remove("sorted", "asc");
+    th.classList.add("sorted");
+    th.classList.toggle("asc", live.sort.dir === 1);
+    if (live.people.length) paintPeople(live.people);
+  });
+}
+
+function resetLive() {
+  live.rates = []; live.latency = {}; live.lastCalls = 0; live.lastAt = 0;
+  live.rows.clear(); live.dots.clear(); live.trails.clear(); mcards.clear();
+  view.x = 0; view.y = 0; view.w = MAP_W; view.h = MAP_H;
+  const map = $("map");
+  map.textContent = ""; delete map.dataset.ready; delete map.dataset.labelled;
+  $("spark").textContent = "";
+  $("people").querySelector("tbody").textContent = "";
+  $("methods").textContent = "Waiting for the first tick\u2026";
+  $("methods").dataset.empty = "yes";
+  const zeros = [["s-calls", "0"], ["s-rate", "0"], ["s-fails", "0"], ["s-people", "0"],
+                 ["s-km", "0"], ["s-tick", "0/0"], ["s-posts", "0"], ["s-likes", "0"],
+                 ["s-comments", "0"], ["s-msgs", "0"]];
+  for (const pair of zeros) $(pair[0]).textContent = pair[1];
+  $("s-fails").className = "ok";
+  $("s-elapsed").textContent = "0:00";
+  $("s-remaining").textContent = "\u2014";
+  $("bar").style.width = "0";
+}
+
+api.onProgress((e) => {
+  if (e.type === "start") {
+    resetLive();
+    startClock(Number(e.minutes) * 60000);
+    $("pill").textContent = "running";
+    $("pill").className = "pill running";
+    $("live-sub").textContent = e.app + " \u00b7 " + e.environment + " \u00b7 " + e.agents
+      + " people \u00b7 " + e.cities.length + " cities \u00b7 engagement " + e.engagement + "\u00d7";
+    return;
+  }
+  if (e.type === "done") {
+    stopClock();
+    const pill = $("pill");
+    pill.textContent = e.verdict === "clean" ? "clean" : e.verdict;
+    pill.className = "pill " + (e.verdict === "clean" ? "clean" : "trouble");
+    return;
+  }
+  if (e.type !== "tick") return;
+
+  const calls = e.methods.reduce((n, m) => n + m.calls, 0);
+  const fails = e.methods.reduce((n, m) => n + m.apiFailures, 0);
+
+  // Rate is measured between events rather than assumed from the tick length,
+  // because a tick takes as long as the calls inside it take.
+  const dt = (e.elapsedMs - live.lastAt) / 1000;
+  if (dt > 0) live.rates.push(Math.max(0, (calls - live.lastCalls) / dt));
+  live.lastCalls = calls;
+  live.lastAt = e.elapsedMs;
+
+  if (e.latency) live.latency = e.latency;
+
+  put("s-calls", fmt(calls));
+  put("s-rate", String(Math.round(live.rates[live.rates.length - 1] || 0)));
+  put("s-people", String(e.people.length));
+  put("s-km", fmt(Math.round(e.totals.km)));
+  put("s-tick", e.tick + "/" + e.totalTicks);
+  put("s-posts", fmt(e.totals.posts));
+  put("s-likes", fmt(e.totals.likes));
+  put("s-comments", fmt(e.totals.comments));
+  put("s-msgs", fmt(e.totals.messages));
+
+  const f = $("s-fails");
+  f.textContent = fmt(fails);
+  f.className = fails ? "bad" : "ok";
+  if (fails) { $("pill").textContent = fails + " failing"; $("pill").className = "pill trouble"; }
+
+  live.people = e.people;
+  paintMap(e.people);
+  paintSpark();
+  paintMethods(e.methods);
+  paintPeople(e.people);
+});
+
+api.onStdout((text) => log(text));
 api.onStderr((text) => log(text));
 
 api.onDone(async ({ code, report, error }) => {
@@ -84,8 +519,8 @@ $("start").addEventListener("click", async () => {
   $("log").textContent = "";
   $("bar").style.width = "0";
   $("run-note").textContent = "";
-  for (const id of ["s-tick", "s-people", "s-posts", "s-likes", "s-msgs"]) $(id).textContent = "—";
-  $("s-err").textContent = "0"; $("s-err").className = "ok";
+  // resetLive() clears the whole screen when the start event arrives; this
+  // only blanks the log so the previous run does not linger while it starts.
 
   const res = await api.startRun({
     config: lastConfig,
@@ -148,8 +583,8 @@ async function renderReport(file) {
       <thead><tr><th>Method</th><th>Calls</th><th>API fails</th><th>Network</th><th>p50</th><th>p95</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    ${notTested ? `<p class="muted" style="margin-top:14px"><b>Not tested</b> — the adapter implements ${esc(r.coverage.label)}:</p><ul class="muted">${notTested}</ul>` : ""}
-    <div class="actions" style="margin-top:16px">
+    ${notTested ? `<p class="muted spaced"><b>Not tested</b> — the adapter implements ${esc(r.coverage.label)}:</p><ul class="muted">${notTested}</ul>` : ""}
+    <div class="actions spaced-lg">
       <button id="open-html" class="btn" type="button">Open the shareable page</button>
       <button id="go-explain" class="btn" type="button">Explain the failures</button>
     </div>`;
@@ -167,6 +602,47 @@ $("do-explain").addEventListener("click", async () => {
 });
 
 // ── updates ─────────────────────────────────────────────────────────
+
+// ── this application's own version ──────────────────────────────────
+(async () => {
+  try {
+    const v = await api.appVersion();
+    $("app-version").textContent = v;
+    $("about-version").textContent = v;
+  } catch { /* both stay as a dash */ }
+})();
+
+$("do-app-update").addEventListener("click", async () => {
+  const out = $("app-update-out");
+  const link = $("get-update");
+  link.hidden = true;
+  out.textContent = "Asking GitHub\u2026";
+
+  const r = await api.checkAppUpdate();
+  if (!r.ok) {
+    // Not "up to date": the check did not happen, and saying otherwise would
+    // be a claim we did not earn.
+    out.textContent = `Could not check \u2014 ${r.error}.\nYou are running ${r.current}. Nothing is wrong with this install.`;
+    return;
+  }
+  if (!r.latest) { out.textContent = `You are running ${r.current}. No published Studio release was found.`; return; }
+
+  if (r.newer) {
+    out.textContent = `${r.current} \u2192 ${r.latest} is available.\n\n${r.notes}`.trim();
+    link.hidden = false;
+    link.dataset.url = r.url;
+    $("app-update-note").textContent = "Downloads from the release page. Windows will warn about the unsigned installer.";
+  } else {
+    out.textContent = `Up to date \u2014 ${r.current} is the newest release.`;
+    $("app-update-note").textContent = "Checked against the public release list.";
+  }
+});
+
+$("get-update").addEventListener("click", (e) => {
+  e.preventDefault();
+  if (e.currentTarget.dataset.url) api.openExternal(e.currentTarget.dataset.url);
+});
+
 $("do-update").addEventListener("click", async () => {
   $("update-out").textContent = "Asking the registry…";
   const res = await api.cli(["update"]);
