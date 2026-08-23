@@ -105,6 +105,34 @@ ipcMain.handle("report:read", (_e, file) => {
  * lines the CLI already prints, so the live view cannot drift from what the
  * terminal shows.
  */
+/**
+ * Where this run's report can actually be written.
+ *
+ * Next to the config, which is what somebody expects, unless that folder is not
+ * writable - and the first thing a new user does is Choose... into the examples
+ * shipped inside the app, which live under Program Files. The run then did all
+ * its work and died on the last line with a raw EPERM stack trace.
+ *
+ * Writability is tested by writing, not by asking. fs.accessSync(W_OK) reports
+ * success on Windows directories it cannot actually be written to, because the
+ * permission model it maps onto is not the one Windows uses.
+ */
+function reportPathFor(configPath) {
+  const beside = path.dirname(configPath);
+  const probe = path.join(beside, `.populace-write-test-${process.pid}`);
+  try {
+    fs.writeFileSync(probe, "");
+    fs.unlinkSync(probe);
+    return { file: path.join(beside, "populace-report.json"), fellBack: false };
+  } catch {
+    // Named after the config's folder, so runs from different projects do not
+    // overwrite each other in the fallback location.
+    const dir = path.join(app.getPath("documents"), "Populace", path.basename(beside));
+    fs.mkdirSync(dir, { recursive: true });
+    return { file: path.join(dir, "populace-report.json"), fellBack: true, beside };
+  }
+}
+
 ipcMain.handle("run:start", (_e, opts) => {
   if (current) return { ok: false, error: "A run is already going." };
 
@@ -119,11 +147,23 @@ ipcMain.handle("run:start", (_e, opts) => {
   ]) if (value) args.push(`--${flag}`, String(value));
   if (opts.cities) args.push("--cities", opts.cities);
 
-  const report = path.join(path.dirname(opts.config), "populace-report.json");
+  let target;
+  try {
+    target = reportPathFor(opts.config);
+  } catch (error) {
+    return { ok: false, error: `Nowhere to write the report: ${error.message}` };
+  }
+  const report = target.file;
   args.push("--report", report);
 
+  // The moment the run began. Anything at the report path older than this
+  // belongs to somebody else's run - the examples folder ships a report from
+  // ours - and showing it as this run's result would be the one lie this
+  // product exists to avoid.
+  const startedAt = Date.now();
+
   const child = spawn(process.execPath, [cli, ...args], {
-    cwd: path.dirname(opts.config),
+    cwd: path.dirname(report),
     // ELECTRON_RUN_AS_NODE makes the bundled Electron binary behave as plain
     // Node, so the app has no separate Node requirement on the user's machine.
     env: { ...process.env, ELECTRON_RUN_AS_NODE: "1", ...(opts.env || {}) },
@@ -135,14 +175,20 @@ ipcMain.handle("run:start", (_e, opts) => {
   child.stderr.on("data", (d) => send("run:stderr", d.toString()));
   child.on("close", (code) => {
     current = null;
-    send("run:done", { code, report: fs.existsSync(report) ? report : null });
+    let fresh = null;
+    try {
+      if (fs.statSync(report).mtimeMs >= startedAt - 1000) fresh = report;
+    } catch {
+      // No report written at all, which the exit code already explains.
+    }
+    send("run:done", { code, report: fresh });
   });
   child.on("error", (error) => {
     current = null;
     send("run:done", { code: -1, error: error.message, report: null });
   });
 
-  return { ok: true, report, command: `populace ${args.join(" ")}` };
+  return { ok: true, report, fellBack: target.fellBack, beside: target.beside, command: `populace ${args.join(" ")}` };
 });
 
 function stopRun() {

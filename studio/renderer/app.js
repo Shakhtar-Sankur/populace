@@ -100,6 +100,11 @@ $("start").addEventListener("click", async () => {
   $("start").disabled = true;
   $("stop").disabled = false;
   log(`$ ${res.command}\n\n`);
+  // Said out loud rather than silently: a report that is not where somebody
+  // expects it is a report they will not find.
+  if (res.fellBack) {
+    log(`  ${res.beside} cannot be written to, so the report goes to\n  ${res.report}\n\n`);
+  }
   show("live");
 });
 
