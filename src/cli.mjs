@@ -188,6 +188,28 @@ async function doctor() {
 
   const d = diagnose({ config, adapter: raw, reachable });
 
+  // --json for anything that has to describe a config without printing it -
+  // the desktop app shows this on the Run screen, so you can see what you are
+  // about to point a population at before you start one.
+  if (has("json")) {
+    console.log(JSON.stringify({
+      app: config.app || null,
+      environment: config.environment,
+      adapter: config.adapter,
+      target: config.target?.url || null,
+      coverage: d.coverage,
+      guarded: d.guarded,
+      cleanup: d.cleanup,
+      reachable,
+      reachError: reachable === false ? reachError : null,
+      ready: d.ready,
+      blockers: d.blockers,
+      population: config.population,
+    }));
+    if (!d.ready) process.exitCode = 1;
+    return;
+  }
+
   console.log(`
   Config    ${path.basename(config._file)}`);
   console.log(`  App       ${config.app || raw.name || "(unnamed)"}`);

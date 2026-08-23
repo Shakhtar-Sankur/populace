@@ -41,7 +41,78 @@ $("pick-cfg").addEventListener("click", async () => {
   if (!file) return;
   lastConfig = file;
   $("cfg").value = file;
+  inspectConfig(file);
 });
+
+
+
+/**
+ * Describe the chosen config: what it targets, and whether that is somewhere a
+ * population belongs. This runs `populace doctor`, so the window cannot claim a
+ * config is ready when the command line would say otherwise.
+ */
+async function inspectConfig(file) {
+  const box = $("target-box");
+  const res = await api.cli(["doctor", "--config", file, "--json"]);
+  let d = null;
+  try { d = JSON.parse((res.out || "").split("\n").filter((l) => l.startsWith("{")).pop()); } catch { /* below */ }
+  if (!d) { box.hidden = true; return; }
+
+  box.hidden = false;
+  $("t-app").textContent = d.app || "unnamed";
+  $("t-url").textContent = d.target || "not set";
+  $("t-cov").textContent = `${d.coverage?.implemented?.length ?? 0}/13 methods`;
+
+  // The environment is the field worth colouring. Anything not declared a test
+  // environment is where invented people meet real ones.
+  const env = $("t-env");
+  env.textContent = d.environment || "not declared";
+  env.className = d.environment === "test" ? "good" : "risky";
+
+  const reach = $("t-reach");
+  reach.textContent = d.reachable === null ? "not checked"
+    : d.reachable ? "yes" : (d.reachError || "no");
+  reach.className = d.reachable === false ? "risky" : d.reachable ? "good" : "";
+
+  $("run-note").textContent = d.ready ? "" : `Not ready — ${(d.blockers || []).join("; ")}`;
+}
+
+// ── run: presets and the summary ────────────────────────────────────
+function describeRun() {
+  const n = (id) => Number($(id).value) || 0;
+  const people = n("agents"), minutes = n("minutes"), tick = n("tick") || 1;
+  const cities = $("cities").value.split(",").map((c) => c.trim()).filter(Boolean);
+  const moments = Math.round(people * ((minutes * 60) / tick));
+
+  $("sum-people").textContent = people.toLocaleString();
+  $("sum-minutes").textContent = String(minutes);
+  $("sum-tick").textContent = String(tick);
+  $("sum-cities").textContent = cities.length
+    ? `${cities.length} ${cities.length === 1 ? "city" : "cities"}`
+    : "the config\u2019s cities";
+  $("sum-moments").textContent = moments.toLocaleString();
+
+  // A preset stays lit only while the numbers still match it.
+  for (const b of document.querySelectorAll(".preset")) {
+    b.classList.toggle("is-on",
+      Number(b.dataset.people) === people && Number(b.dataset.minutes) === minutes
+      && Number(b.dataset.tick) === tick && Number(b.dataset.engagement) === n("engagement"));
+  }
+}
+
+for (const b of document.querySelectorAll(".preset")) {
+  b.addEventListener("click", () => {
+    $("agents").value = b.dataset.people;
+    $("minutes").value = b.dataset.minutes;
+    $("tick").value = b.dataset.tick;
+    $("engagement").value = b.dataset.engagement;
+    describeRun();
+  });
+}
+for (const id of ["agents", "minutes", "tick", "engagement", "cities"]) {
+  $(id).addEventListener("input", describeRun);
+}
+describeRun();
 
 const log = (text) => {
   const el = $("log");
@@ -78,14 +149,43 @@ const clockText = (ms) => {
   return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0");
 };
 
-/** Set a counter, and lift it briefly when it actually changed. */
+/**
+ * Set a counter.
+ *
+ * Numbers count to their new value rather than snapping to it. A tick can add
+ * a thousand calls, and a figure that jumps reads as a redraw while one that
+ * travels reads as a measurement. Only numeric values are animated; anything
+ * with other characters in it - "46/300" - is set directly.
+ */
+const tweens = new Map();
+
 function put(id, text) {
   const el = $(id);
   if (!el || el.textContent === text) return;
-  el.textContent = text;
+
+  const target = Number(String(text).replace(/,/g, ""));
+  const from = Number(String(el.textContent).replace(/,/g, ""));
+
   el.classList.remove("tickup");
-  void el.offsetWidth;            // restart the animation
+  void el.offsetWidth;            // restart the lift
   el.classList.add("tickup");
+
+  const canCount = Number.isFinite(target) && Number.isFinite(from) && target !== from
+    && Math.abs(target - from) > 1 && !/[^\d,]/.test(String(text));
+  if (!canCount) { el.textContent = text; return; }
+
+  cancelAnimationFrame(tweens.get(id));
+  const started = performance.now();
+  const DURATION = 420;
+  const step = (now) => {
+    const t = Math.min(1, (now - started) / DURATION);
+    // The same easing curve the rest of the interface uses.
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + (target - from) * eased).toLocaleString("en-US");
+    if (t < 1) tweens.set(id, requestAnimationFrame(step));
+    else { tweens.delete(id); el.textContent = text; }
+  };
+  tweens.set(id, requestAnimationFrame(step));
 }
 
 /* The clock and the bar run off wall time, not off ticks. The engine emits a
@@ -292,14 +392,16 @@ function paintSpark() {
   const max = Math.max(1, ...data);
   const now = data[data.length - 1];
   const x = (i) => (i / (data.length - 1)) * W;
-  const y = (v) => H - (v / max) * (H - 16) - 4;
+  const y = (v) => H - (v / max) * (H - 26) - 4;
   const line = data.map((v, i) => x(i).toFixed(1) + "," + y(v).toFixed(1)).join(" ");
 
   // A gradient needs a definition; there is nowhere else to put it.
   const defs = svgEl("defs", {});
   const grad = svgEl("linearGradient", { id: "sparkfill", x1: "0", y1: "0", x2: "0", y2: "1" });
-  grad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "var(--accent)", "stop-opacity": ".38" }));
-  grad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "var(--accent)", "stop-opacity": "0" }));
+  // Faint. The line carries the information; the fill only gives it a body,
+  // and at full strength it reads as a solid block of colour instead.
+  grad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "var(--lime)", "stop-opacity": ".22" }));
+  grad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "var(--lime)", "stop-opacity": "0" }));
   defs.appendChild(grad);
   svg.appendChild(defs);
 
@@ -372,6 +474,45 @@ function paintMethods(methods) {
   });
 }
 
+
+/* -- what is failing, while it is failing ---------------------------- */
+function paintFailures(methods) {
+  const panel = $("failures");
+  const failing = methods.filter((m) => (m.apiFailures || 0) + (m.transportFailures || 0) > 0);
+  if (!failing.length) { panel.hidden = true; return; }
+
+  panel.hidden = false;
+  failing.sort((a, b) => (b.apiFailures + b.transportFailures) - (a.apiFailures + a.transportFailures));
+
+  const total = failing.reduce((n, m) => n + m.apiFailures + m.transportFailures, 0);
+  $("fail-note").textContent =
+    `${total.toLocaleString()} across ${failing.length} ${failing.length === 1 ? "method" : "methods"}`;
+
+  const body = $("fail-body");
+  body.textContent = "";
+  for (const m of failing) {
+    const row = document.createElement("div");
+    row.className = "fail-row";
+
+    const name = document.createElement("span");
+    name.className = "fm";
+    name.textContent = m.method;
+
+    const count = document.createElement("span");
+    count.className = "fc";
+    const api = m.apiFailures || 0, net = m.transportFailures || 0;
+    count.textContent = net && api ? `${api} + ${net} net` : net ? `${net} network` : String(api);
+
+    const msg = document.createElement("span");
+    msg.className = "fx";
+    // The message the engine recorded, not a paraphrase of it.
+    msg.textContent = m.error ? m.error.message : "no message recorded yet";
+
+    row.append(name, count, msg);
+    body.appendChild(row);
+  }
+}
+
 /* -- one row per person ---------------------------------------------
    Rows are created once and their cells updated in place. Rebuilding the
    table each tick would reset the scroll position every second, which
@@ -437,6 +578,7 @@ function resetLive() {
   map.textContent = ""; delete map.dataset.ready; delete map.dataset.labelled;
   $("spark").textContent = "";
   $("people").querySelector("tbody").textContent = "";
+  $("failures").hidden = true;
   $("methods").textContent = "Waiting for the first tick\u2026";
   $("methods").dataset.empty = "yes";
   const zeros = [["s-calls", "0"], ["s-rate", "0"], ["s-fails", "0"], ["s-people", "0"],
@@ -467,6 +609,25 @@ api.onProgress((e) => {
     return;
   }
   if (e.type !== "tick") return;
+
+  // Reloaded mid-run, or attached late: there was no start event to set these
+  // up, and a clock stuck at zero beside a rising call count is a lie about
+  // what the window knows.
+  if (!live.startedAt) {
+    live.startedAt = Date.now() - e.elapsedMs;
+    live.totalMs = (e.totalTicks / e.tick) * e.elapsedMs || 0;
+    clearInterval(live.timer);
+    live.timer = setInterval(() => {
+      const elapsed = Date.now() - live.startedAt;
+      $("s-elapsed").textContent = clockText(elapsed);
+      if (live.totalMs) {
+        $("s-remaining").textContent = clockText(Math.max(0, live.totalMs - elapsed)) + " left";
+        $("bar").style.width = Math.min(100, (elapsed / live.totalMs) * 100) + "%";
+      }
+    }, 1000);
+    $("pill").textContent = "running";
+    $("pill").className = "pill running";
+  }
 
   const calls = e.methods.reduce((n, m) => n + m.calls, 0);
   const fails = e.methods.reduce((n, m) => n + m.apiFailures, 0);
@@ -499,6 +660,7 @@ api.onProgress((e) => {
   paintMap(e.people);
   paintSpark();
   paintMethods(e.methods);
+  paintFailures(e.methods);
   paintPeople(e.people);
 });
 

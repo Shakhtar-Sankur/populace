@@ -26,15 +26,30 @@
 
 export const PROGRESS_PREFIX = "@@populace@@";
 
-/** Cheap per-method counters, straight off the metrics map - no sorting. */
+/**
+ * Cheap per-method counters, straight off the metrics map - no sorting.
+ *
+ * The most common error message travels with them when there is one. A count
+ * of failures tells a watcher that something is wrong; only the message tells
+ * them what, and waiting for the report to find out is a long time to sit in
+ * front of a run that is already broken.
+ */
 function counters(metrics) {
-  return [...metrics.methods.values()].map((e) => ({
-    method: e.method,
-    calls: e.calls,
-    apiFailures: e.apiFailures,
-    transportFailures: e.transportFailures,
-    retries: e.retries,
-  }));
+  return [...metrics.methods.values()].map((e) => {
+    const row = {
+      method: e.method,
+      calls: e.calls,
+      apiFailures: e.apiFailures,
+      transportFailures: e.transportFailures,
+      retries: e.retries,
+    };
+    if (e.failures && e.errors?.size) {
+      let top = null;
+      for (const [message, count] of e.errors) if (!top || count > top.count) top = { message, count };
+      if (top) row.error = { message: top.message.slice(0, 300), count: top.count };
+    }
+    return row;
+  });
 }
 
 /** p50 and p95 per method. Costs a sort per method, so it runs rarely. */
