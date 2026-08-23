@@ -27,11 +27,34 @@ only Partner Center can give you, and one command.
 
 ## What you have to do
 
-### 1. Install the Windows SDK
+### 1. Install the Windows SDK — done
 
 `makeappx.exe` is what electron-builder shells out to, and it does not ship
 with electron-builder. The Windows App Certification Kit comes with it, which
-is worth running before submitting — it catches most rejections locally.
+is worth running before submitting: it catches most rejections locally.
+
+**`npm run dist:store` already works and has produced a package.** Two
+obstacles are handled in `build/make-appx.mjs`, and both are written down
+because neither is guessable from the error electron-builder prints, which is
+`spawn UNKNOWN`:
+
+- **Its bundled packaging tools are from 2018.** On Windows 11 the bundled
+  `makepri` crashes with an access violation, and the bundled `makeappx`
+  cannot be started by Node at all. The script stages the SDK's copies
+  instead, taking the whole folder — these tools resolve private
+  side-by-side assemblies from subdirectories beside them, so copying only the
+  executables is not enough.
+- **Those tools will not run from `%LOCALAPPDATA%`.** The identical binary,
+  same SHA-256, starts from `C:\ebcache` and fails under `AppData\Local`
+  with *"the application has failed to start because its side-by-side
+  configuration is incorrect"*. Something on this machine blocks side-by-side
+  loading from the user cache, so electron-builder's cache root is moved
+  somewhere execution is allowed.
+
+The package is **unsigned on purpose** — the Store signs it on submission
+— and carries version `1.0.7.0`, the `runFullTrust` capability and the
+fifteen generated assets. Verified by unpacking it and reading the manifest,
+rather than by trusting the build log.
 
 ### 2. Register on Partner Center
 

@@ -19,3 +19,6 @@ populace-report.html
 studio/node_modules/
 studio/dist/
 studio/*.log
+
+# The Store package. 149 MB, and rebuilt by `npm run dist:store`.
+studio/dist/
