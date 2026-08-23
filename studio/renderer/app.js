@@ -973,7 +973,20 @@ $("do-explain").addEventListener("click", async () => {
     const v = await api.appVersion();
     $("app-version").textContent = v;
     $("about-version").textContent = v;
+    $("privacy-version").textContent = v;
   } catch { /* both stay as a dash */ }
+
+  // A Store copy updates through the Store. Offering a second way would be
+  // both against Store policy and a good way to end up with two versions of
+  // the same program on one machine.
+  try {
+    if ((await api.distribution()) === "store") {
+      $("do-app-update").hidden = true;
+      $("app-update-note").textContent = "Updates arrive through the Microsoft Store.";
+      $("app-update-out").textContent =
+        "This copy was installed from the Microsoft Store, so Windows keeps it up to date.";
+    }
+  } catch { /* a standalone build answers normally */ }
 })();
 
 $("do-app-update").addEventListener("click", async () => {
@@ -987,6 +1000,10 @@ $("do-app-update").addEventListener("click", async () => {
     // Not "up to date": the check did not happen, and saying otherwise would
     // be a claim we did not earn.
     out.textContent = `Could not check \u2014 ${r.error}.\nYou are running ${r.current}. Nothing is wrong with this install.`;
+    return;
+  }
+  if (r.managed === "store") {
+    out.textContent = "This copy was installed from the Microsoft Store, so Windows keeps it up to date.";
     return;
   }
   if (!r.latest) { out.textContent = `You are running ${r.current}. No published Studio release was found.`; return; }

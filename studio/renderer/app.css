@@ -492,3 +492,20 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .target-row b.mono-b { font-family: var(--mono); font-weight: 400; font-size: 11.5px; }
 .target-row b.good { color: var(--lime); }
 .target-row b.risky { color: var(--bad); }
+
+/* ── privacy ─────────────────────────────────────────────────────────── */
+#screen-privacy { max-width: 1020px; }
+.privacy-lead { margin-top: 0; border-left: 2px solid var(--lime); }
+.keeps li::before { content: "\2713"; color: var(--lime); }
+.keeps li, .fields li { color: var(--muted); }
+.keeps li b, .leave p b { color: var(--ink); }
+.leave { padding: 14px 0; border-top: 1px solid var(--line); }
+.leave:first-of-type { border-top: 0; padding-top: 0; }
+.leave h3 { margin: 0 0 7px; font-size: 14.5px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
+.leave p { margin: 0 0 9px; color: var(--muted); font-size: 13.5px; line-height: 1.65; max-width: 86ch; }
+.leave p:last-child { margin-bottom: 0; }
+.fields { margin: 0 0 10px; padding: 0; list-style: none; }
+.fields li { position: relative; padding: 0 0 6px 18px; font-size: 13px; line-height: 1.55; }
+.fields li::before { content: "\2022"; position: absolute; left: 4px; color: var(--faint); }
+.warnline { border-left: 2px solid var(--warn); padding-left: 12px; }
+.warnline b { color: var(--warn); }

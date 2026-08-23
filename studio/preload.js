@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld("populace", {
 
   appVersion: () => ipcRenderer.invoke("app:version"),
   checkAppUpdate: () => ipcRenderer.invoke("app:checkUpdate"),
+  distribution: () => ipcRenderer.invoke("app:distribution"),
 
   showItem: (file) => ipcRenderer.invoke("shell:showItem", file),
   openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),

@@ -32,6 +32,7 @@
   <button class="tab"       data-screen="explain" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.4 2.5c-.6.2-.9.8-.9 1.4v.4"/><path d="M12 17.2v.1"/></svg>Explain<span class="k">4</span></button>
   <button class="tab"       data-screen="updates" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M4 18.5h16"/></svg>Updates<span class="k">5</span></button>
   <button class="tab"       data-screen="about"   type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.6v.1"/></svg>About<span class="k">6</span></button>
+  <button class="tab"       data-screen="privacy" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.4c0 4.3-3 8.3-7.5 9.6-4.5-1.3-7.5-5.3-7.5-9.6V6z"/><path d="M9.2 12.2l2 2 3.6-3.9"/></svg>Privacy<span class="k">7</span></button>
 
   <div class="rail-foot">
     <div id="engine-state" class="muted">checking engine…</div>
@@ -381,6 +382,94 @@
           Populace Studio <b id="about-version">&mdash;</b> &middot; MIT licensed &middot;
           &copy; 2026 Gigzen Private Limited
         </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-privacy" class="screen">
+    <header class="head">
+      <h1>Privacy</h1>
+      <p>What this software does with your data. Every line of it was checked against the code.</p>
+    </header>
+
+    <div class="panel privacy-lead">
+      <p class="vision"><b>Populace collects nothing about you.</b> There is no account, no telemetry,
+        no analytics, no crash reporting and no identifier of any kind. Nobody at Gigzen can tell that
+        you ran it, what you ran it against, or what it found.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>What stays on this machine</h2></div>
+      <ul class="ticks keeps">
+        <li><b>Your configuration and credentials.</b> The URL, keys and environment variables a run
+          needs are read on this machine and used only to call the target you named. They are never
+          transmitted anywhere else and never written into a report.</li>
+        <li><b>Your reports.</b> Written beside your config, or to
+          <code>Documents\Populace\</code> when that folder cannot be written to. They stay there
+          until you delete them.</li>
+        <li><b>Everything the simulated people do.</b> That traffic goes from this machine to the
+          target in your configuration and nowhere else.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>What leaves this machine</h2><span class="muted">three requests, all optional</span></div>
+
+      <div class="leave">
+        <h3>1. The version check</h3>
+        <p>An anonymous <code>GET</code> to <code>api.github.com</code> when you press
+          <b>Check for a newer Studio</b>, and to <code>registry.npmjs.org</code> when the engine
+          checks itself. No identifier is sent, and the engine's check is off entirely when
+          <code>POPULACE_NO_UPDATE_CHECK=1</code> or <code>CI</code> is set.</p>
+      </div>
+
+      <div class="leave">
+        <h3>2. Model explanations &mdash; only if you set a key</h3>
+        <p>If, and only if, <code>ANTHROPIC_API_KEY</code> is set, failures that no built-in rule
+          could name are sent to <code>api.anthropic.com</code>. Exactly four fields go with each
+          one:</p>
+        <ul class="fields">
+          <li><code>method</code> &mdash; the contract method name, such as <code>like</code></li>
+          <li><code>error</code> &mdash; the error message, truncated to 500 characters</li>
+          <li><code>occurrences</code> &mdash; how many times it happened</li>
+          <li><code>p50ms</code> and <code>p95ms</code> &mdash; two latency numbers</li>
+        </ul>
+        <p class="warnline"><b>Read this one carefully.</b> The error message is your application&rsquo;s
+          own text, so it can contain a table or column name &mdash; for example
+          <code>new row violates row-level security policy "post_likes_insert"</code>. No URL, no
+          credential, no persona and nothing about your configuration is included. If that trade is
+          not one you want, leave the key unset: the rules still run, and most runs never need the
+          model at all.</p>
+      </div>
+
+      <div class="leave">
+        <h3>3. Links you click</h3>
+        <p>Opening a link from this window hands it to your browser. Nothing is sent with it.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>The accounts it creates</h2></div>
+      <p class="vision">A run signs up people <b>in your application</b>, on the target you named.
+        Every one of them is deleted when the run ends, and the report states how many were removed
+        of how many were made. What your application keeps of what a deleted account wrote is your
+        application&rsquo;s behaviour, not something Populace changes.</p>
+    </div>
+
+    <div class="grid2-about">
+      <div class="panel">
+        <div class="panel-head"><h2>Children</h2></div>
+        <p class="vision">This is a developer tool. It is not directed at children and collects
+          nothing from anyone, including them.</p>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Questions</h2></div>
+        <ul class="links">
+          <li><a href="https://shakhtar-sankur.github.io/gigzen/privacy.html">The full Gigzen privacy policy</a></li>
+          <li><a href="https://github.com/Shakhtar-Sankur/populace">Read the source that this describes</a></li>
+        </ul>
+        <p class="muted spaced">Populace Studio <b id="privacy-version">&mdash;</b> &middot;
+          &copy; 2026 Gigzen Private Limited</p>
       </div>
     </div>
   </section>
