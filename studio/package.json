@@ -1,7 +1,7 @@
 {
   "name": "populace-studio",
   "productName": "Populace Studio",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Bring a population of simulated users to life against your app, and watch what breaks.",
   "author": "Gigzen Private Limited",
   "license": "MIT",
@@ -9,12 +9,14 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "npm run icon && node build/make-installers.mjs",
-    "icon": "node build/make-ico.mjs"
+    "dist": "npm run icon && npm run world && node build/make-installers.mjs",
+    "icon": "node build/make-ico.mjs",
+    "world": "node build/make-world.mjs"
   },
   "devDependencies": {
     "electron": "^43.4.1",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "world-atlas": "^2.0.2"
   },
   "build": {
     "appId": "com.gigzen.populace.studio",

@@ -5,3 +5,6 @@ dist/
 # Generated from icon.png by build/make-ico.mjs at build time. NSIS needs a
 # real .ico with uncompressed bitmaps; the generator is the source of truth.
 build/icon.ico
+
+# Generated from Natural Earth data by build/make-world.mjs at build time.
+renderer/world.js

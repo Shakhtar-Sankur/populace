@@ -13,6 +13,10 @@ const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
+// Must match src/progress.mjs. Duplicated rather than imported because the
+// engine is ESM and loaded as a child process, never linked into this one.
+const PROGRESS_PREFIX = "@@populace@@";
+
 let win = null;
 let current = null; // the running child, so it can be stopped
 
@@ -93,6 +97,63 @@ ipcMain.handle("dialog:pickSpec", async () => {
 ipcMain.handle("shell:showItem", (_e, file) => { if (file) shell.showItemInFolder(file); });
 ipcMain.handle("shell:openExternal", (_e, url) => { if (/^https?:/.test(url)) shell.openExternal(url); });
 
+
+/**
+ * Is there a newer Populace Studio?
+ *
+ * One anonymous GET to the public releases API. Nothing about the machine, the
+ * app under test or any run is sent, and a failure is reported as a failure
+ * rather than as "up to date" - claiming to be current when the check never
+ * happened is the kind of small lie this product exists to avoid.
+ */
+ipcMain.handle("app:checkUpdate", async () => {
+  const current = app.getVersion();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    const res = await fetch("https://api.github.com/repos/Shakhtar-Sankur/populace/releases?per_page=30", {
+      signal: controller.signal,
+      headers: { accept: "application/vnd.github+json", "user-agent": `populace-studio/${current}` },
+    });
+    if (!res.ok) return { ok: false, current, error: `GitHub answered ${res.status}` };
+
+    const releases = await res.json();
+    const studio = releases
+      .filter((r) => !r.draft && typeof r.tag_name === "string" && r.tag_name.startsWith("studio-v"))
+      .map((r) => ({ version: r.tag_name.replace(/^studio-v/, ""), url: r.html_url, notes: r.body || "", at: r.published_at }))
+      .sort((a, b) => compareVersions(b.version, a.version));
+
+    if (!studio.length) return { ok: true, current, latest: null };
+    const newest = studio[0];
+    return {
+      ok: true,
+      current,
+      latest: newest.version,
+      newer: compareVersions(newest.version, current) > 0,
+      url: newest.url,
+      notes: newest.notes.split("\n").slice(0, 6).join("\n"),
+      at: newest.at,
+    };
+  } catch (error) {
+    return { ok: false, current, error: error.name === "AbortError" ? "the request timed out" : error.message };
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
+/** Plain numeric semver. Pre-release tags are ignored; we do not publish them. */
+function compareVersions(a, b) {
+  const parts = (v) => String(v).split("-")[0].split(".").map((n) => parseInt(n, 10) || 0);
+  const [x, y] = [parts(a), parts(b)];
+  for (let i = 0; i < 3; i++) {
+    if ((x[i] || 0) > (y[i] || 0)) return 1;
+    if ((x[i] || 0) < (y[i] || 0)) return -1;
+  }
+  return 0;
+}
+
+ipcMain.handle("app:version", () => app.getVersion());
+
 ipcMain.handle("report:read", (_e, file) => {
   try { return { ok: true, report: JSON.parse(fs.readFileSync(file, "utf8")) }; }
   catch (error) { return { ok: false, error: error.message }; }
@@ -155,6 +216,7 @@ ipcMain.handle("run:start", (_e, opts) => {
   }
   const report = target.file;
   args.push("--report", report);
+  args.push("--progress", "json");
 
   // The moment the run began. Anything at the report path older than this
   // belongs to somebody else's run - the examples folder ships a report from
@@ -171,7 +233,30 @@ ipcMain.handle("run:start", (_e, opts) => {
   current = child;
 
   const send = (channel, payload) => { if (win && !win.isDestroyed()) win.webContents.send(channel, payload); };
-  child.stdout.on("data", (d) => send("run:stdout", d.toString()));
+
+  // Progress events arrive interleaved with ordinary output on the same stream,
+  // one JSON object per line behind a prefix. They are split out here so the
+  // log stays readable and the window gets structured data.
+  //
+  // Buffered by line rather than by chunk: a 100-person tick is several
+  // kilobytes and arrives split across reads, so parsing whatever a chunk
+  // happens to contain would throw on most of them.
+  let pending = "";
+  child.stdout.on("data", (d) => {
+    pending += d.toString();
+    const lines = pending.split("\n");
+    pending = lines.pop() ?? "";     // keep the unterminated remainder
+    let text = "";
+    for (const line of lines) {
+      if (line.startsWith(PROGRESS_PREFIX)) {
+        try { send("run:progress", JSON.parse(line.slice(PROGRESS_PREFIX.length))); }
+        catch { /* a truncated event is not worth interrupting a run over */ }
+      } else {
+        text += `${line}\n`;
+      }
+    }
+    if (text) send("run:stdout", text);
+  });
   child.stderr.on("data", (d) => send("run:stderr", d.toString()));
   child.on("close", (code) => {
     current = null;
