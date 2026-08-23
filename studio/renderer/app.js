@@ -555,53 +555,234 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 async function renderReport(file) {
   const res = await api.readReport(file);
   const body = $("report-body");
-  if (!res.ok) { body.innerHTML = `<div class="empty">Could not read the report — ${esc(res.error)}</div>`; return; }
+  if (!res.ok) {
+    body.textContent = "";
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = "Could not read the report \u2014 " + res.error;
+    body.appendChild(e);
+    return;
+  }
 
   const r = res.report;
   const clean = r.verdict?.status === "clean";
-  const rows = (r.api?.methods || []).map((m) => `
+  const methods = (r.api?.methods || []).slice();
+  const cov = r.coverage || {};
+  const implemented = cov.implemented || [];
+  const notTested = cov.notTested || [];
+  const made = r.population?.signedIn ?? 0;
+  const removed = r.cleanup?.removed ?? 0;
+  const mins = Math.round((r.run?.durationMs ?? 0) / 60000);
+
+  // Latency is the one thing a table hides. p95 sorted descending says, at a
+  // glance, which call would be the first to hurt under more load.
+  const byP95 = methods.slice().sort((a, b) => (b.latencyMs?.p95 ?? 0) - (a.latencyMs?.p95 ?? 0));
+  const worst = Math.max(1, ...byP95.map((m) => m.latencyMs?.p95 ?? 0));
+
+  const bars = byP95.map((m) => {
+    const p50 = m.latencyMs?.p50 ?? 0, p95 = m.latencyMs?.p95 ?? 0;
+    return `<div class="lat">
+      <span class="lat-name">${esc(m.method)}</span>
+      <span class="lat-track">
+        <span class="lat-p95" data-w="${((p95 / worst) * 100).toFixed(1)}"></span>
+        <span class="lat-p50" data-w="${((p50 / worst) * 100).toFixed(1)}"></span>
+      </span>
+      <span class="lat-val">${ms(p50)} <i>/</i> ${ms(p95)}</span>
+    </div>`;
+  }).join("");
+
+  const rows = methods.map((m) => `
     <tr>
-      <td>${esc(m.method)}</td>
-      <td>${Number(m.calls).toLocaleString()}</td>
-      <td class="${m.apiFailures ? "bad" : "ok"}">${m.apiFailures ?? 0}</td>
-      <td class="${m.transportFailures ? "warn" : ""}">${m.transportFailures ?? 0}</td>
-      <td>${ms(m.latencyMs?.p50)}</td>
-      <td>${ms(m.latencyMs?.p95)}</td>
+      <td class="mono">${esc(m.method)}</td>
+      <td class="r">${Number(m.calls).toLocaleString()}</td>
+      <td class="r ${m.apiFailures ? "err" : ""}">${m.apiFailures ?? 0}</td>
+      <td class="r ${m.transportFailures ? "warn" : ""}">${m.transportFailures ?? 0}</td>
+      <td class="r">${ms(m.latencyMs?.p50)}</td>
+      <td class="r">${ms(m.latencyMs?.p95)}</td>
+      <td class="r">${ms(m.latencyMs?.max)}</td>
     </tr>`).join("");
 
-  const notTested = (r.coverage?.notTested || []).map((c) =>
-    `<li><code>${esc(c.method)}</code> — ${esc(c.wouldHaveTested)}</li>`).join("");
+  // Thirteen slots, filled or not. The gap is the point: a run that never
+  // called refreshSession has not tested token expiry, whatever else it proved.
+  const slots = CONTRACT.map((name) => {
+    const on = implemented.includes(name);
+    const gap = notTested.find((c) => c.method === name);
+    return `<span class="slot${on ? " on" : ""}${gap ? " gap" : ""}" title="${esc(gap ? gap.wouldHaveTested : name)}">${esc(name)}</span>`;
+  }).join("");
+
+  const gaps = notTested.map((c) =>
+    `<li><code>${esc(c.method)}</code> \u2014 ${esc(c.wouldHaveTested)}</li>`).join("");
+
+  const act = r.activity || {};
 
   body.innerHTML = `
-    <div class="verdict ${clean ? "clean" : "other"}">${clean ? "✓ Clean" : "⚠ " + esc(r.verdict?.status ?? "unknown")}
-      &nbsp;·&nbsp; ${Number(r.api?.calls ?? 0).toLocaleString()} calls &nbsp;·&nbsp;
-      ${r.api?.apiFailures ?? 0} API failures</div>
-    <p class="muted">${r.population?.signedIn ?? 0} people · ${r.run?.population?.minutes ?? "?"} min ·
-      ${(r.run?.population?.cities || []).length} cities · coverage ${esc(r.coverage?.label ?? "?")} ·
-      ${r.cleanup?.removed ?? 0}/${r.population?.signedIn ?? 0} accounts removed</p>
-    <table>
-      <thead><tr><th>Method</th><th>Calls</th><th>API fails</th><th>Network</th><th>p50</th><th>p95</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    ${notTested ? `<p class="muted spaced"><b>Not tested</b> — the adapter implements ${esc(r.coverage.label)}:</p><ul class="muted">${notTested}</ul>` : ""}
+    <div class="panel verdict-panel ${clean ? "is-clean" : "is-trouble"}">
+      <div class="verdict-row">
+        <span class="verdict-mark">${clean ? "\u2713" : "\u26a0"}</span>
+        <div>
+          <h2 class="verdict-title">${clean ? "Clean run" : esc(r.verdict?.status ?? "unknown")}</h2>
+          <p class="muted">${esc(r.run?.app ?? "your app")} \u00b7 ${esc(r.run?.environment ?? "?")} environment
+            \u00b7 ${new Date(r.run?.startedAt ?? Date.now()).toLocaleString()}</p>
+        </div>
+      </div>
+      <p class="verdict-line">${clean
+        ? "Every call this run made reached your API and was answered. Coverage was " + esc(cov.label ?? "?") + "."
+        : (r.verdict?.problems || []).map(esc).join(" ") || "See the failures below."}</p>
+    </div>
+
+    <div class="stats report-stats">
+      <div class="stat"><b>${Number(r.api?.calls ?? 0).toLocaleString()}</b><span>API calls</span></div>
+      <div class="stat"><b class="${r.api?.apiFailures ? "bad" : "ok"}">${r.api?.apiFailures ?? 0}</b><span>API failures</span></div>
+      <div class="stat"><b class="${r.api?.transportFailures ? "warn" : ""}">${r.api?.transportFailures ?? 0}</b><span>network</span></div>
+      <div class="stat"><b>${made}</b><span>people</span></div>
+      <div class="stat"><b>${mins}</b><span>minutes</span></div>
+      <div class="stat"><b class="${removed === made ? "ok" : "bad"}">${removed}/${made}</b><span>removed</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Latency by method</h2><span class="muted">p50 solid, p95 faint \u00b7 worst first</span></div>
+      <div class="lats">${bars || '<p class="muted">No calls were recorded.</p>'}</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Every method</h2><span class="muted">${methods.length} of ${implemented.length} implemented methods were called this run</span></div>
+      <div class="tablewrap">
+        <table class="people">
+          <thead><tr><th>Method</th><th class="r">calls</th><th class="r">API fails</th>
+            <th class="r">network</th><th class="r">p50</th><th class="r">p95</th><th class="r">max</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid2-about">
+      <div class="panel">
+        <div class="panel-head"><h2>Coverage</h2><span class="muted">${esc(cov.label ?? "?")}</span></div>
+        <div class="slots">${slots}</div>
+        ${gaps ? `<p class="muted spaced"><b>Not tested</b> \u2014 and what that leaves unknown:</p><ul class="gaps">${gaps}</ul>` : ""}
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>What they did</h2><span class="muted">and what became of them</span></div>
+        <div class="mini">
+          <div><b>${Number(act.posts ?? 0).toLocaleString()}</b><span>posts</span></div>
+          <div><b>${Number(act.likes ?? 0).toLocaleString()}</b><span>likes</span></div>
+          <div><b>${Number(act.comments ?? 0).toLocaleString()}</b><span>comments</span></div>
+          <div><b>${Number(act.messages ?? 0).toLocaleString()}</b><span>messages</span></div>
+        </div>
+        <p class="muted spaced">${Number(act.distanceKm ?? 0).toFixed(1)} km driven.
+          ${removed === made
+            ? `All ${made} accounts were removed afterwards.`
+            : `<b class="bad">${made - removed} of ${made} accounts were left behind.</b>`}
+          What your app keeps of what a deleted account wrote is your app's behaviour.</p>
+      </div>
+    </div>
+
     <div class="actions spaced-lg">
-      <button id="open-html" class="btn" type="button">Open the shareable page</button>
+      <button id="open-html" class="btn primary" type="button">Open the shareable page</button>
       <button id="go-explain" class="btn" type="button">Explain the failures</button>
     </div>`;
+
+  // Widths are set here, not in the markup: style attributes are discarded
+  // under `style-src 'self'`.
+  for (const el of body.querySelectorAll("[data-w]")) el.style.width = el.dataset.w + "%";
 
   $("open-html").addEventListener("click", () => api.showItem(file.replace(/\.json$/, ".html")));
   $("go-explain").addEventListener("click", () => { show("explain"); $("do-explain").click(); });
 }
 
-// ── explain ─────────────────────────────────────────────────────────
-$("do-explain").addEventListener("click", async () => {
-  if (!lastReportPath) { $("explain-out").textContent = "No report yet — finish a run first."; return; }
-  $("explain-out").textContent = "Working…";
-  const res = await api.cli(["explain", "--file", lastReportPath]);
-  $("explain-out").textContent = res.out.trim() || "(nothing came back)";
-});
+/** The contract, in the order a person meets it. */
+const CONTRACT = [
+  "createUser", "setProfile", "refreshSession", "reportLocation", "post",
+  "recentPostsByOthers", "like", "comment", "openConversation", "sendMessage",
+  "listGroups", "joinGroup", "deleteUser",
+];
 
-// ── updates ─────────────────────────────────────────────────────────
+const BLAME = {
+  app:         { label: "Your app", tone: "app",  note: "A defect in the software under test." },
+  environment: { label: "The platform", tone: "env", note: "The database, the host or the network it runs on." },
+  harness:     { label: "The test client", tone: "harness", note: "Populace itself, or the adapter." },
+  unknown:     { label: "Unclassified", tone: "unknown", note: "No rule matched. Read the message and judge it yourself." },
+};
+
+$("do-explain").addEventListener("click", async () => {
+  const host = $("explain-body");
+  if (!lastReportPath) {
+    host.textContent = "";
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = "No report yet. Finish a run first.";
+    host.appendChild(e);
+    return;
+  }
+
+  host.textContent = "";
+  const wait = document.createElement("div");
+  wait.className = "empty";
+  wait.textContent = "Working out what happened\u2026";
+  host.appendChild(wait);
+
+  // The text form too, in the fold below, so the window and the terminal can
+  // be compared line for line by anyone who wants to.
+  api.cli(["explain", "--file", lastReportPath]).then((t) => {
+    $("explain-out").textContent = (t.out || "").trim() || "(nothing came back)";
+  });
+
+  const res = await api.cli(["explain", "--file", lastReportPath, "--json"]);
+  let data = null;
+  try { data = JSON.parse((res.out || "").trim().split("\n").filter((l) => l.startsWith("{")).pop()); } catch { /* handled below */ }
+
+  host.textContent = "";
+  if (!data) {
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = "Could not read the explanation. The raw output is in the fold below.";
+    host.appendChild(e);
+    return;
+  }
+
+  if (!data.explained.length) {
+    const e = document.createElement("div");
+    e.className = "empty ok-empty";
+    e.textContent = "Nothing failed in this run, so there is nothing to explain.";
+    host.appendChild(e);
+    return;
+  }
+
+  const groups = new Map();
+  for (const item of data.explained) {
+    const key = BLAME[item.blame] ? item.blame : "unknown";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  // Your app first: it is the only group the person reading this can fix today.
+  const order = ["app", "environment", "harness", "unknown"];
+
+  const parts = [`<p class="verdict-line strong">${esc(data.verdict || "")}</p>`];
+  for (const key of order) {
+    const items = groups.get(key);
+    if (!items) continue;
+    const b = BLAME[key];
+    parts.push(`<div class="panel blame ${b.tone}">
+      <div class="panel-head">
+        <h2>${esc(b.label)}</h2>
+        <span class="muted">${esc(b.note)}</span>
+      </div>
+      ${items.map((e) => `
+        <div class="cause">
+          <div class="cause-head">
+            <code>${esc(e.method)}</code>
+            <span class="times">\u00d7 ${Number(e.count ?? 1).toLocaleString()}</span>
+            ${e.source === "model" ? '<span class="by-model">explained by the model</span>' : ""}
+          </div>
+          <p class="cause-head-line">${esc(e.headline || "")}</p>
+          <p class="cause-why">${esc(e.why || "")}</p>
+          ${e.fix ? `<p class="cause-fix"><b>Fix.</b> ${esc(e.fix)}</p>` : ""}
+          ${e.message ? `<pre class="cause-msg">${esc(e.message)}</pre>` : ""}
+        </div>`).join("")}
+    </div>`);
+  }
+  host.innerHTML = parts.join("");
+});
 
 // ── this application's own version ──────────────────────────────────
 (async () => {

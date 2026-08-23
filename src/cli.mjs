@@ -627,6 +627,19 @@ async function explainCmd() {
   }
 
   const explained = explainReport(report);
+
+  // --json for anything rendering this itself rather than reading a terminal.
+  // Same explanations, same order; only the presentation differs, so a window
+  // cannot show a cause the command line would not.
+  if (has("json")) {
+    console.log(JSON.stringify({
+      report: reportPath,
+      verdict: explained.length ? verdictLine(explained) : null,
+      explained,
+    }));
+    return;
+  }
+
   if (!explained.length) {
     console.log(`
   Nothing failed in ${displayPath(reportPath)}. Nothing to explain.
