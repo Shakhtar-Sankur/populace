@@ -26,12 +26,12 @@
     <span class="wordmark">Populace<em>Studio</em></span>
   </div>
 
-  <button class="tab is-on" data-screen="run"     type="button"><span class="k">1</span> Run</button>
-  <button class="tab"       data-screen="live"    type="button"><span class="k">2</span> Live</button>
-  <button class="tab"       data-screen="report"  type="button"><span class="k">3</span> Report</button>
-  <button class="tab"       data-screen="explain" type="button"><span class="k">4</span> Explain</button>
-  <button class="tab"       data-screen="updates" type="button"><span class="k">5</span> Updates</button>
-  <button class="tab"       data-screen="about"   type="button"><span class="k">6</span> About</button>
+  <button class="tab is-on" data-screen="run"     type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l13 8-13 8V4z"/></svg>Run<span class="k">1</span></button>
+  <button class="tab"       data-screen="live"    type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Live<span class="k">2</span></button>
+  <button class="tab"       data-screen="report"  type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>Report<span class="k">3</span></button>
+  <button class="tab"       data-screen="explain" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.4 2.5c-.6.2-.9.8-.9 1.4v.4"/><path d="M12 17.2v.1"/></svg>Explain<span class="k">4</span></button>
+  <button class="tab"       data-screen="updates" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M4 18.5h16"/></svg>Updates<span class="k">5</span></button>
+  <button class="tab"       data-screen="about"   type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.6v.1"/></svg>About<span class="k">6</span></button>
 
   <div class="rail-foot">
     <div id="engine-state" class="muted">checking engine…</div>
@@ -51,6 +51,19 @@
       <p>Simulated people sign in to your app and use it at the same time, through your own API, with your permission rules applying.</p>
     </header>
 
+    <div class="presets">
+      <button class="preset" type="button" data-people="5"   data-minutes="2"  data-tick="2" data-engagement="1">
+        <b>Smoke</b><span>5 people &middot; 2 min</span><em>Does the adapter work at all?</em>
+      </button>
+      <button class="preset" type="button" data-people="25"  data-minutes="10" data-tick="2" data-engagement="2">
+        <b>Standard</b><span>25 people &middot; 10 min</span><em>A normal afternoon of use.</em>
+      </button>
+      <button class="preset" type="button" data-people="100" data-minutes="15" data-tick="1" data-engagement="3">
+        <b>Heavy</b><span>100 people &middot; 15 min</span><em>Everyone at once, all day.</em>
+      </button>
+    </div>
+
+    <div class="run-grid">
     <div class="card">
       <label class="field">
         <span class="lbl">Config</span>
@@ -77,6 +90,30 @@
         <button id="stop" class="btn" type="button" disabled>Stop</button>
         <span id="run-note" class="muted"></span>
       </div>
+
+      <aside class="panel run-summary">
+        <div class="panel-head"><h2>What this will do</h2></div>
+        <div id="target-box" class="target" hidden>
+          <div class="target-row"><span>App</span><b id="t-app">&mdash;</b></div>
+          <div class="target-row"><span>Target</span><b id="t-url" class="mono-b">&mdash;</b></div>
+          <div class="target-row"><span>Environment</span><b id="t-env">&mdash;</b></div>
+          <div class="target-row"><span>Coverage</span><b id="t-cov">&mdash;</b></div>
+          <div class="target-row"><span>Reachable</span><b id="t-reach">&mdash;</b></div>
+        </div>
+        <p class="run-line"><b id="sum-people">10</b> people in <b id="sum-cities">the config&rsquo;s cities</b>,
+          for <b id="sum-minutes">5</b> minutes, deciding what to do every
+          <b id="sum-tick">2</b> seconds.</p>
+        <p class="run-line"><b id="sum-moments">1,500</b> moments where somebody chooses to post, read,
+          like, message, move or rest. How many API calls that becomes is up to them.</p>
+        <ul class="ticks run-guarantees">
+          <li>Every account it creates, it deletes.</li>
+          <li>Any host in <code>neverRunAgainst</code> is refused before startup.</li>
+          <li>Nothing about your app or your credentials leaves this machine.</li>
+        </ul>
+      </aside>
+
+    </div>
+
     </div>
 
     <div class="note">
@@ -140,6 +177,14 @@
           </div>
         </section>
       </div>
+
+      <section class="panel failures" id="failures" hidden>
+        <div class="panel-head">
+          <h2>What is failing</h2>
+          <span id="fail-note" class="muted">&mdash;</span>
+        </div>
+        <div id="fail-body"></div>
+      </section>
 
       <section class="panel">
         <div class="panel-head">
