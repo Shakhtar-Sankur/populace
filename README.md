@@ -267,9 +267,13 @@ export ANTHROPIC_API_KEY=sk-ant-...
 populace explain
 ```
 
-Rules run first and the model only ever sees what they could not name — so most
-runs never call it at all, and the ones that do send a handful of short strings.
-Explanations that came from the model are labelled as such.
+Rules run first and the model only ever sees what they could not name, so most
+runs never call it at all. What is sent, exactly: the method name, the error
+message truncated to 500 characters, how many times it happened, and two
+latency numbers. No URL, no credential, no persona, nothing about your
+configuration. Note that the error message is your application's own text, so
+it can carry a table or column name — read one before you enable this if that
+matters to you. Explanations that came from the model are labelled as such.
 
 **What is sent, exactly:** the method name, the error text, how many times it
 happened, and that method's p50/p95. Nothing else — no target URL, no keys, no
