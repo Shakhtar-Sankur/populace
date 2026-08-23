@@ -135,6 +135,8 @@ const live = {
   lastCalls: 0,
   lastAt: 0,
   rates: [],       // calls per second, one per tick, for the sparkline
+  tick: 0, totalTicks: 0,   // exact progress, straight from the engine
+  projectedMs: 0,           // how long the run looks like taking, at the current rate
   latency: {},     // last known p50/p95 per method, refreshed every few ticks
   rows: new Map(), // person name -> <tr>, so scroll position survives a tick
   dots: new Map(),   // person name -> <circle>
@@ -191,18 +193,34 @@ function put(id, text) {
 /* The clock and the bar run off wall time, not off ticks. The engine emits a
    tick only every simulated step, and at a one-second tick over fifteen
    minutes the old screen sat at zero for three minutes and looked frozen. */
+function paintClock() {
+  const elapsed = Date.now() - live.startedAt;
+  $("s-elapsed").textContent = clockText(elapsed);
+
+  // Progress is ticks, not time. It is the one number here that cannot be
+  // wrong, because the engine counts it.
+  if (live.totalTicks) {
+    $("bar").style.width = Math.min(100, (live.tick / live.totalTicks) * 100) + "%";
+  }
+
+  // Remaining is a projection, and it is labelled as one only by being right:
+  // once it runs out with ticks still to come, it stops guessing.
+  const left = live.projectedMs ? live.projectedMs - elapsed : live.totalMs - elapsed;
+  const done = live.totalTicks && live.tick >= live.totalTicks;
+  $("s-remaining").textContent = done ? "finishing"
+    : left > 0 ? clockText(left) + " left"
+    : "finishing";
+}
+
 function startClock(totalMs) {
   live.startedAt = Date.now();
   live.totalMs = totalMs;
+  live.projectedMs = 0;
+  live.tick = 0;
+  live.totalTicks = 0;
   clearInterval(live.timer);
-  live.timer = setInterval(() => {
-    const elapsed = Date.now() - live.startedAt;
-    $("s-elapsed").textContent = clockText(elapsed);
-    if (live.totalMs) {
-      $("s-remaining").textContent = clockText(Math.max(0, live.totalMs - elapsed)) + " left";
-      $("bar").style.width = Math.min(100, (elapsed / live.totalMs) * 100) + "%";
-    }
-  }, 1000);
+  live.timer = setInterval(paintClock, 1000);
+  paintClock();
 }
 function stopClock() { clearInterval(live.timer); live.timer = null; }
 
@@ -572,6 +590,7 @@ for (const th of document.querySelectorAll("#people thead th[data-sort]")) {
 
 function resetLive() {
   live.rates = []; live.latency = {}; live.lastCalls = 0; live.lastAt = 0;
+  live.tick = 0; live.totalTicks = 0; live.projectedMs = 0;
   live.rows.clear(); live.dots.clear(); live.trails.clear(); mcards.clear();
   view.x = 0; view.y = 0; view.w = MAP_W; view.h = MAP_H;
   const map = $("map");
@@ -603,6 +622,8 @@ api.onProgress((e) => {
   }
   if (e.type === "done") {
     stopClock();
+    $("bar").style.width = "100%";
+    $("s-remaining").textContent = "done";
     const pill = $("pill");
     pill.textContent = e.verdict === "clean" ? "clean" : e.verdict;
     pill.className = "pill " + (e.verdict === "clean" ? "clean" : "trouble");
@@ -615,16 +636,9 @@ api.onProgress((e) => {
   // what the window knows.
   if (!live.startedAt) {
     live.startedAt = Date.now() - e.elapsedMs;
-    live.totalMs = (e.totalTicks / e.tick) * e.elapsedMs || 0;
+    live.totalMs = 0;   // projected from the tick rate below instead
     clearInterval(live.timer);
-    live.timer = setInterval(() => {
-      const elapsed = Date.now() - live.startedAt;
-      $("s-elapsed").textContent = clockText(elapsed);
-      if (live.totalMs) {
-        $("s-remaining").textContent = clockText(Math.max(0, live.totalMs - elapsed)) + " left";
-        $("bar").style.width = Math.min(100, (elapsed / live.totalMs) * 100) + "%";
-      }
-    }, 1000);
+    live.timer = setInterval(paintClock, 1000);
     $("pill").textContent = "running";
     $("pill").className = "pill running";
   }
@@ -638,6 +652,13 @@ api.onProgress((e) => {
   if (dt > 0) live.rates.push(Math.max(0, (calls - live.lastCalls) / dt));
   live.lastCalls = calls;
   live.lastAt = e.elapsedMs;
+
+  // Project the finish from how fast ticks are actually arriving, not from
+  // how long they were configured to take.
+  live.tick = e.tick;
+  live.totalTicks = e.totalTicks;
+  if (e.tick > 0) live.projectedMs = (e.elapsedMs / e.tick) * e.totalTicks;
+  paintClock();
 
   if (e.latency) live.latency = e.latency;
 
