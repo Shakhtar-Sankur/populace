@@ -8,3 +8,7 @@ build/icon.ico
 
 # Generated from Natural Earth data by build/make-world.mjs at build time.
 renderer/world.js
+
+# Generated from icon.png by build/make-store-assets.mjs at build time, the
+# same way icon.ico is. The generator is the source of truth for both.
+build/appx/

@@ -108,6 +108,9 @@ ipcMain.handle("shell:openExternal", (_e, url) => { if (/^https?:/.test(url)) sh
  */
 ipcMain.handle("app:checkUpdate", async () => {
   const current = app.getVersion();
+  if (process.windowsStore) {
+    return { ok: true, current, latest: null, managed: "store" };
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12000);
   try {
@@ -153,6 +156,17 @@ function compareVersions(a, b) {
 }
 
 ipcMain.handle("app:version", () => app.getVersion());
+
+/**
+ * Which copy of this application is running.
+ *
+ * Electron sets process.windowsStore on packages installed from the Microsoft
+ * Store. Those update through the Store, so the application must not offer its
+ * own download of an executable - both because the Store forbids it and
+ * because two update paths for one program is how people end up running a
+ * version nobody can account for.
+ */
+ipcMain.handle("app:distribution", () => (process.windowsStore ? "store" : "standalone"));
 
 ipcMain.handle("report:read", (_e, file) => {
   try { return { ok: true, report: JSON.parse(fs.readFileSync(file, "utf8")) }; }
