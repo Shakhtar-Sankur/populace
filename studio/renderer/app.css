@@ -367,3 +367,66 @@ main::before {
 .links li { padding: 0 0 8px 0; font-size: 13.5px; }
 .links a { color: var(--accent); text-decoration: none; }
 .links a:hover { text-decoration: underline; }
+
+/* ── Report ────────────────────────────────────────────────────────── */
+#screen-report { max-width: 1100px; }
+.verdict-panel { margin-top: 0; border-left: 3px solid var(--accent); }
+.verdict-panel.is-trouble { border-left-color: var(--crit); }
+.verdict-row { display: flex; align-items: center; gap: 14px; }
+.verdict-mark { font-size: 26px; line-height: 1; color: var(--accent); }
+.is-trouble .verdict-mark { color: var(--crit); }
+.verdict-title { margin: 0 0 2px; font-size: 20px; font-weight: 650; letter-spacing: -.01em; text-transform: none; }
+.verdict-line { margin: 14px 0 0; color: var(--muted); font-size: 14px; max-width: 80ch; }
+.report-stats { margin-top: 16px; }
+
+.lats { display: grid; gap: 7px; }
+.lat { display: grid; grid-template-columns: 168px 1fr 140px; align-items: center; gap: 12px; }
+.lat-name { font-family: var(--mono); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lat-track { position: relative; height: 14px; background: var(--sunk); border-radius: 4px; overflow: hidden; }
+.lat-p95, .lat-p50 { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; transition: width .5s ease; }
+.lat-p95 { background: color-mix(in srgb, var(--accent) 26%, transparent); }
+.lat-p50 { background: var(--accent); }
+.lat-val { font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.lat-val i { font-style: normal; opacity: .45; }
+@media (prefers-reduced-motion: reduce) { .lat-p95, .lat-p50 { transition: none; } }
+@media (max-width: 760px) { .lat { grid-template-columns: 120px 1fr 110px; } }
+
+.slots { display: flex; flex-wrap: wrap; gap: 6px; }
+.slot {
+  font-family: var(--mono); font-size: 11px; padding: 4px 9px; border-radius: 999px;
+  background: var(--sunk); color: var(--faint); border: 1px solid var(--line);
+}
+.slot.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.slot.gap { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--line)); }
+.gaps { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.gaps code { font-size: .92em; }
+
+table.people td.mono { font-family: var(--mono); }
+table.people td.warn { color: var(--amber); }
+
+/* ── Explain ───────────────────────────────────────────────────────── */
+#screen-explain { max-width: 1000px; }
+.verdict-line.strong { color: var(--ink); font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+.empty.ok-empty { border-color: color-mix(in srgb, var(--accent) 40%, var(--line-2)); color: var(--accent); }
+
+.panel.blame { border-left: 3px solid var(--line-2); }
+.panel.blame.app { border-left-color: var(--crit); }
+.panel.blame.env { border-left-color: var(--amber); }
+.panel.blame.harness { border-left-color: var(--accent); }
+.panel.blame.unknown { border-left-color: var(--line-2); }
+
+.cause { padding: 12px 0; border-top: 1px solid var(--line); }
+.cause:first-of-type { border-top: 0; padding-top: 2px; }
+.cause-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.cause-head code { font-size: 13px; background: var(--sunk); padding: 2px 8px; border-radius: 5px; }
+.cause-head .times { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.cause-head .by-model { font-size: 11px; color: var(--accent); letter-spacing: .04em; text-transform: uppercase; }
+.cause-head-line { margin: 0 0 6px; font-weight: 600; font-size: 14.5px; }
+.cause-why { margin: 0 0 8px; color: var(--muted); font-size: 13.5px; line-height: 1.6; max-width: 84ch; }
+.cause-fix { margin: 0 0 8px; font-size: 13.5px; line-height: 1.6; color: var(--ink); max-width: 84ch; }
+.cause-fix b { color: var(--accent); }
+.cause-msg {
+  margin: 0; padding: 8px 11px; background: var(--sunk); border-radius: 7px;
+  font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+  white-space: pre-wrap; word-break: break-word; max-height: 120px; overflow: auto;
+}

@@ -1,7 +1,7 @@
 {
   "name": "populace-studio",
   "productName": "Populace Studio",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Bring a population of simulated users to life against your app, and watch what breaks.",
   "author": "Gigzen Private Limited",
   "license": "MIT",
