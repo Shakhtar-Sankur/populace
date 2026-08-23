@@ -691,8 +691,30 @@ api.onStderr((text) => log(text));
 api.onDone(async ({ code, report, error }) => {
   $("start").disabled = false;
   $("stop").disabled = true;
+
+  // The process has exited, so the run is over whatever else happened. This is
+  // the only signal that always arrives: the engine's own "done" carries a
+  // verdict but is written after the report, and a run that dies during
+  // sign-up never reaches it. Without this the screen sat on "running" and
+  // "finishing" while the log below it said the run had failed and exited.
+  stopClock();
   $("bar").style.width = "100%";
+  $("s-remaining").textContent = "done";
+  const pill = $("pill");
+  if (/running/.test(pill.className)) {
+    pill.textContent = code === 0 ? "clean" : "stopped";
+    pill.className = "pill " + (code === 0 ? "clean" : "trouble");
+  }
+
   log(`\n— finished, exit ${code}${error ? ` (${error})` : ""} —\n`);
+
+  // A run that never produced a tick produced no numbers either, and zeroes
+  // with no explanation read as a broken window rather than a failed run.
+  if (!live.totalTicks) {
+    $("live-sub").textContent =
+      "The run ended before anyone could sign in. The log below says why, and Report has the detail.";
+  }
+
   $("run-note").textContent = code === 0 ? "Clean run." : "Finished with problems — see Report.";
   if (report) { lastReportPath = report; await renderReport(report); show("report"); }
 });
