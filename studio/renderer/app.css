@@ -509,3 +509,24 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .fields li::before { content: "\2022"; position: absolute; left: 4px; color: var(--faint); }
 .warnline { border-left: 2px solid var(--warn); padding-left: 12px; }
 .warnline b { color: var(--warn); }
+
+/* ── scrollbars ──────────────────────────────────────────────────────
+   Chromium's default is a pale grey bar, which on this ground looks like
+   a piece of another program. Wide enough to grab, quiet until pointed
+   at. scrollbar-gutter keeps the layout still when one appears. */
+* { scrollbar-color: var(--line-2) transparent; scrollbar-width: thin; }
+main { scrollbar-gutter: stable; }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--line-2); border-radius: 6px;
+  border: 3px solid transparent; background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: #3C474B; background-clip: content-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* The rail's content is as tall as the window at 780px, and it was set to
+   hide the overflow - so a shorter window silently cut off the engine
+   status and the company link with no way to reach them. */
+#rail { overflow-y: auto; overflow-x: hidden; }
+#rail::-webkit-scrollbar { width: 0; }

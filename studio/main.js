@@ -8,7 +8,7 @@
 // It also means the engine keeps its zero runtime dependencies: Electron's
 // weight is entirely in this package and never reaches what ships to npm.
 
-const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, screen, shell } = require("electron");
 const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -35,10 +35,59 @@ function enginePath() {
   return candidates.find((p) => { try { return fs.existsSync(p); } catch { return false; } }) || null;
 }
 
+/**
+ * Where the window was last time.
+ *
+ * Kept beside the application's own settings rather than anywhere the user has
+ * to think about. A corrupt or missing file is not an error worth reporting -
+ * it just means this is the first run.
+ */
+function windowStateFile() {
+  return path.join(app.getPath("userData"), "window-state.json");
+}
+
+function savedWindowState() {
+  try {
+    const saved = JSON.parse(fs.readFileSync(windowStateFile(), "utf8"));
+    if (!Number.isFinite(saved.width) || !Number.isFinite(saved.height)) return null;
+    // A window remembered on a monitor that is no longer attached would open
+    // off-screen, where it cannot be found or moved.
+    const visible = screen.getAllDisplays().some((d) => {
+      const b = d.workArea;
+      return saved.x < b.x + b.width && saved.x + saved.width > b.x
+          && saved.y < b.y + b.height && saved.y + saved.height > b.y;
+    });
+    return visible ? saved : { ...saved, x: undefined, y: undefined };
+  } catch {
+    return null;
+  }
+}
+
+function rememberWindowState() {
+  if (!win || win.isDestroyed()) return;
+  try {
+    const bounds = win.isMaximized() ? win.getNormalBounds() : win.getBounds();
+    fs.writeFileSync(windowStateFile(), JSON.stringify({ ...bounds, maximized: win.isMaximized() }));
+  } catch {
+    // A read-only profile is not a reason to fail on the way out.
+  }
+}
+
 function createWindow() {
+  const saved = savedWindowState();
+  // No memory yet: take most of the work area rather than a fixed size that
+  // leaves a third of a laptop screen empty.
+  const area = screen.getPrimaryDisplay().workAreaSize;
+  const first = {
+    width: Math.min(1440, Math.round(area.width * 0.9)),
+    height: Math.min(940, Math.round(area.height * 0.9)),
+  };
+
   win = new BrowserWindow({
-    width: 1180,
-    height: 820,
+    width: saved?.width ?? first.width,
+    height: saved?.height ?? first.height,
+    x: saved?.x,
+    y: saved?.y,
     minWidth: 900,
     minHeight: 640,
     backgroundColor: "#f2f4f0",
@@ -53,7 +102,11 @@ function createWindow() {
     },
   });
   win.setMenuBarVisibility(false);
+  if (saved?.maximized) win.maximize();
   win.loadFile(path.join(__dirname, "renderer", "index.html"));
+
+  for (const event of ["resize", "move", "maximize", "unmaximize"]) win.on(event, rememberWindowState);
+  win.on("close", rememberWindowState);
 
   // Links open in the real browser, never inside the app frame.
   win.webContents.setWindowOpenHandler(({ url }) => {
