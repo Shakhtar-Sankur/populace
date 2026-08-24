@@ -91,6 +91,8 @@ function describeRun() {
     ? `${cities.length} ${cities.length === 1 ? "city" : "cities"}`
     : "the config\u2019s cities";
   $("sum-moments").textContent = moments.toLocaleString();
+  // The same arithmetic the engine uses in World.run(), so the two cannot drift.
+  $("sum-ticks").textContent = Math.max(1, Math.round((minutes * 60) / tick)).toLocaleString();
 
   // A preset stays lit only while the numbers still match it.
   for (const b of document.querySelectorAll(".preset")) {
@@ -160,6 +162,7 @@ const clockText = (ms) => {
  * with other characters in it - "46/300" - is set directly.
  */
 const tweens = new Map();
+const lands = new Map();
 
 function put(id, text) {
   const el = $(id);
@@ -172,11 +175,25 @@ function put(id, text) {
   void el.offsetWidth;            // restart the lift
   el.classList.add("tickup");
 
+  // Counting is decoration, and decoration must never be the only thing that
+  // writes a number. requestAnimationFrame does not run at all while the window
+  // is hidden, so a tween-only write froze every figure here at whatever it held
+  // when the window went behind another one. Measured on 2026-08-24 during a
+  // 250-person run: the screen read 86,492 calls while the engine was reporting
+  // 131,825 — beside a tick counter that stayed correct only because "147/600"
+  // is not a plain number and skipped the tween entirely. A monitor disagreeing
+  // with itself is the failure this product exists to find.
   const canCount = Number.isFinite(target) && Number.isFinite(from) && target !== from
-    && Math.abs(target - from) > 1 && !/[^\d,]/.test(String(text));
+    && Math.abs(target - from) > 1 && !/[^\d,]/.test(String(text))
+    && !document.hidden;
   if (!canCount) { el.textContent = text; return; }
 
   cancelAnimationFrame(tweens.get(id));
+  // Second line of defence, for a window that is throttled rather than hidden or
+  // that simply drops the frames: a timer is not tied to painting, so the true
+  // value lands even if no frame is ever rendered.
+  clearTimeout(lands.get(id));
+  lands.set(id, setTimeout(() => { el.textContent = text; lands.delete(id); }, 700));
   const started = performance.now();
   const DURATION = 420;
   const step = (now) => {
@@ -185,7 +202,12 @@ function put(id, text) {
     const eased = 1 - Math.pow(1 - t, 3);
     el.textContent = Math.round(from + (target - from) * eased).toLocaleString("en-US");
     if (t < 1) tweens.set(id, requestAnimationFrame(step));
-    else { tweens.delete(id); el.textContent = text; }
+    else {
+      tweens.delete(id);
+      el.textContent = text;
+      clearTimeout(lands.get(id));   // frames arrived; the timer is not needed
+      lands.delete(id);
+    }
   };
   tweens.set(id, requestAnimationFrame(step));
 }
@@ -347,9 +369,21 @@ function wireMap() {
   });
 }
 
+/**
+ * Draw the coastline, graticule and equator, once. Kept separate from paintMap()
+ * so the world can be on screen before there is anybody standing on it.
+ */
+function showWorld() {
+  const svg = $("map");
+  if (!svg || svg.dataset.ready) return;
+  drawBase(svg);
+  wireMap();
+  svg.dataset.ready = "1";
+}
+
 function paintMap(people) {
   const svg = $("map");
-  if (!svg.dataset.ready) { drawBase(svg); wireMap(); svg.dataset.ready = "1"; }
+  showWorld();
 
   const cities = new Map();
   for (const p of people) {
@@ -595,6 +629,11 @@ function resetLive() {
   view.x = 0; view.y = 0; view.w = MAP_W; view.h = MAP_H;
   const map = $("map");
   map.textContent = ""; delete map.dataset.ready; delete map.dataset.labelled;
+  // Put the world back immediately. drawBase() used to run only from paintMap(),
+  // so the coastline waited for the first tick — and at 250 people sign-up takes
+  // about two and a half minutes, during which a large panel headed "where they
+  // are" was an empty rectangle. An empty panel reads as broken, not as waiting.
+  showWorld();
   $("spark").textContent = "";
   $("people").querySelector("tbody").textContent = "";
   $("failures").hidden = true;
@@ -1063,3 +1102,7 @@ $("pick-spec").addEventListener("click", async () => {
   $("spec-note").textContent = res.ok ? "Done — written next to the spec." : "Finished with problems.";
   $("spec-out").textContent = res.out.trim();
 });
+
+// The world is on screen from the moment the window opens, not from the first
+// tick. Runs last, after drawBase and wireMap exist.
+showWorld();

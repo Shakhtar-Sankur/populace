@@ -76,7 +76,7 @@
 
       <div class="grid4">
         <label class="field"><span class="lbl">People</span><input id="agents" type="number" min="1" max="500" value="10"></label>
-        <label class="field"><span class="lbl">Minutes</span><input id="minutes" type="number" min="1" max="120" value="5"></label>
+        <label class="field"><span class="lbl">Minutes <span class="muted">&mdash; simulated</span></span><input id="minutes" type="number" min="1" max="120" value="5"></label>
         <label class="field"><span class="lbl">Tick (s)</span><input id="tick" type="number" min="1" max="60" value="2"></label>
         <label class="field"><span class="lbl">Engagement</span><input id="engagement" type="number" min="1" max="5" step="1" value="1"></label>
       </div>
@@ -102,10 +102,18 @@
           <div class="target-row"><span>Reachable</span><b id="t-reach">&mdash;</b></div>
         </div>
         <p class="run-line"><b id="sum-people">10</b> people in <b id="sum-cities">the config&rsquo;s cities</b>,
-          for <b id="sum-minutes">5</b> minutes, deciding what to do every
+          for <b id="sum-minutes">5</b> simulated minutes, deciding what to do every
           <b id="sum-tick">2</b> seconds.</p>
         <p class="run-line"><b id="sum-moments">1,500</b> moments where somebody chooses to post, read,
           like, message, move or rest. How many API calls that becomes is up to them.</p>
+        <!-- Said here because the field says "minutes" and means simulated ones.
+             A tick of 250 people costs several real seconds, so a 20-minute
+             simulation ran for 70 actual minutes on 2026-08-24 - which looks like
+             a stuck run if nothing warned you. -->
+        <p class="run-line muted">That is <b id="sum-ticks">150</b> ticks. How long they take in real
+          time is up to your API: with a few hundred people a tick costs more than the seconds it
+          stands for, so the run can outlast its simulated span several times over. The Live clock
+          stops guessing and starts projecting once it has measured a few ticks.</p>
         <ul class="ticks run-guarantees">
           <li>Every account it creates, it deletes.</li>
           <li>Any host in <code>neverRunAgainst</code> is refused before startup.</li>

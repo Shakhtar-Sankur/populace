@@ -56,6 +56,7 @@ function overridesFromFlags() {
   if (flag("cities")) o.cities = String(flag("cities")).split(",").map((s) => s.trim()).filter(Boolean);
   if (flag("engagement")) o.engagement = Number(flag("engagement"));
   if (flag("report")) o.reportPath = flag("report");
+  if (flag("stagger")) o.signupStaggerMs = Number(flag("stagger"));
   return o;
 }
 
@@ -266,6 +267,11 @@ async function run() {
   const world = World.fromConfig(config, adapter, {
     joined: (a) => console.log(`   ✓ ${a.persona.name} (${a.persona.city.name}, ${a.persona.platform})`),
     joinFailed: (p, e) => console.log(`   ✖ ${p.name}: ${e.message}`),
+    // Said out loud, because waiting silently is indistinguishable from hanging.
+    // Retrying a throttled sign-up can add seconds per person, and a run that
+    // pauses without explanation is a run somebody kills.
+    joinThrottled: (p, attempt) =>
+      console.log(`   … ${p.name}: rate limited, waiting (attempt ${attempt})`),
     tick: (n, total, w) => {
       render(config, n, total, w);
       progress.tick(n, total, w, metrics);
@@ -752,6 +758,8 @@ if (!commands[command]) {
     --tick <seconds>                  simulated seconds per step
     --cities <a,b>                    ${Object.keys(CITIES).join(", ")}
     --engagement <x>                  how busy people are; 1 = normal, 5 = relentless
+    --stagger <ms>                    gap between sign-ups; raise it for a
+                                      throttled auth endpoint (default 400)
     --report <path>                   where to write the report
     --keep                            leave accounts in place after a run
     --file <path>                     which report to re-open (report)

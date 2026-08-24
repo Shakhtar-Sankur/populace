@@ -6,6 +6,67 @@ This file records what *broke* as well as what was added. A changelog that
 only lists features is a marketing document, and the argument for this tool is
 that a report should tell you what went wrong.
 
+Newest first. **This file has a hole in it:** `1.0.0` went to npm on 21 August
+and Studio shipped 1.0.1 through 1.0.9 between the 22nd and the 24th, none of
+which were written up here. Rather than reconstruct nine releases from memory
+and risk getting them wrong, the gap is left visible.
+
+## engine 1.1.0 · Studio 1.0.10 — 24 August 2026
+
+Found by running 250 simulated drivers for twenty simulated minutes against a
+local backend, and watching the window from behind other windows — which is how
+anybody actually watches a run that long.
+
+### Fixed
+
+- **The Live screen froze every number whenever the window was not visible.**
+  Counters were written only by a `requestAnimationFrame` tween, and Chromium
+  does not run those for a hidden window, so each figure stopped at whatever it
+  held when the window went behind another one. Measured during the run above:
+  the screen read 86,492 API calls while the engine was reporting 131,825. The
+  tick counter kept working purely by accident — `"147/600"` is not a plain
+  number, so it skipped the tween and was written directly. A monitoring window
+  showing stale figures beside a correct one is the exact failure this tool
+  exists to find, and it would have shipped. Fixed in two places: the window no
+  longer lets Electron throttle it in the background, and counters no longer
+  depend on a frame ever being painted.
+- **The map was an empty rectangle for the whole sign-up phase.** The coastline
+  was drawn from inside the per-tick paint, so a panel headed *where they are*
+  showed nothing until the first tick — about two and a half minutes at 250
+  people, which reads as broken rather than as waiting. The world is now drawn
+  when the window opens.
+- **A rate-limited sign-up was recorded as a failure.** Auth endpoints are
+  throttled far harder than the rest of an API; Supabase's default is 30
+  sign-ups per five minutes per address. A 250-person run signed in 35 people
+  and reported the other 215 as failures — an accusation about the app under
+  test based on an error that says nothing about it. Refusals *for going too
+  fast* are now waited out and retried, and each wait is announced so a pause
+  cannot be mistaken for a hang. Failures carry a `throttled` flag so the two
+  causes stay apart in the report. A genuine error is still never retried:
+  waiting out a finding would hide it.
+
+### Added
+
+- `signupStaggerMs`, `signupRateLimitBackoffMs` and `signupRateLimitRetries` in
+  config, with `--stagger <ms>` on the command line. The gap between sign-ups
+  had been hardcoded at 400ms since the beginning, so a target throttling harder
+  than 2.5 sign-ups a second could not be tested at all without editing this
+  package's source. The engine's own comment anticipated the problem and then
+  did not expose the control.
+- `examples/buzzbuzz-local` — a self-contained config for running at a scale a
+  hosted project's rate limits refuse. Self-contained on purpose: Studio passes
+  a config path and no environment, so a config reading `process.env` works from
+  a shell and silently targets `undefined` when launched from the desktop.
+- Four self-tests covering the above; the suite is now 101 checks.
+
+### Known
+
+- `minutes` is *simulated* time, not wall-clock. 20 minutes at a 2-second tick
+  is 600 ticks, and with 250 people a tick costs several real seconds — so that
+  run took about 70 actual minutes. The field is now labelled, and the Live
+  clock projects the real finish once it has measured a few ticks, but the two
+  numbers still surprise people.
+
 ## 0.1.0 — 15 August 2026
 
 First release on npm as `@gigzen/populace`.

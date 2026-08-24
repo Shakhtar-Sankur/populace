@@ -27,6 +27,13 @@ export class World {
     const options = {
       ...(config.identity || {}),
       refreshEveryMs: (config.session?.refreshEveryMinutes ?? 30) * 60_000,
+      // Sign-up pacing, so populate() does not have to be told twice. These were
+      // hardcoded in populate() until 2026-08-24, which meant a target throttling
+      // harder than 2.5 sign-ups a second could not be tested at all without
+      // editing this package's source.
+      signupStaggerMs: config.signupStaggerMs,
+      signupRateLimitBackoffMs: config.signupRateLimitBackoffMs,
+      signupRateLimitRetries: config.signupRateLimitRetries,
     };
     return new World({ adapter, personas, options, on });
   }
@@ -36,16 +43,37 @@ export class World {
    * a burst of simultaneous sign-ups produces a wall of 429s that looks like a
    * bug in the customer's app when it is really a bug in this harness.
    */
-  async populate({ staggerMs = 400 } = {}) {
+  async populate({
+    staggerMs = this.options?.signupStaggerMs ?? 400,
+    rateLimitBackoffMs = this.options?.signupRateLimitBackoffMs ?? 5_000,
+    rateLimitRetries = this.options?.signupRateLimitRetries ?? 2,
+  } = {}) {
     for (const [i, persona] of this.personas.entries()) {
-      const agent = new Agent(persona, this.adapter, i, this.options);
-      try {
-        await agent.ensureAccount();
-        this.agents.push(agent);
-        this.on.joined?.(agent);
-      } catch (error) {
-        this.signupFailures.push({ persona: persona.name, error: String(error.message || error) });
-        this.on.joinFailed?.(persona, error);
+      let attempt = 0;
+      for (;;) {
+        const agent = new Agent(persona, this.adapter, i, this.options);
+        try {
+          await agent.ensureAccount();
+          this.agents.push(agent);
+          this.on.joined?.(agent);
+          break;
+        } catch (error) {
+          const message = String(error.message || error);
+          // Being refused for going too fast is the target pacing us, not a
+          // defect in it. Waiting is the honest response: at a hosted default of
+          // 30 sign-ups per five minutes a 250-person run otherwise loses 215
+          // people to an error that says nothing about the app under test.
+          const throttled = /rate limit|429|too many requests/i.test(message);
+          if (throttled && rateLimitBackoffMs > 0 && attempt < rateLimitRetries) {
+            attempt += 1;
+            this.on.joinThrottled?.(persona, attempt);
+            await sleep(rateLimitBackoffMs * attempt);
+            continue;
+          }
+          this.signupFailures.push({ persona: persona.name, error: message, throttled });
+          this.on.joinFailed?.(persona, error);
+          break;
+        }
       }
       if (staggerMs) await sleep(staggerMs);
     }

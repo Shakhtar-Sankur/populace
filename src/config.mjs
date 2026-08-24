@@ -36,6 +36,19 @@ const DEFAULTS = {
   // Consecutive unreachable calls before Populace declares the target down and
   // stops, instead of retrying every call for the rest of the run. 0 disables.
   giveUpAfter: 12,
+  // Gap between sign-ups. Auth endpoints are throttled far harder than the rest
+  // of an API — Supabase's default is 30 sign-ups per five minutes per address,
+  // and 400ms is 2.5 per second. That default is right for real users, who each
+  // arrive from their own address, and impossible for a simulation, where every
+  // request shares one. Raise this to fit a target you do not control; a hosted
+  // Supabase project needs about 10_000.
+  signupStaggerMs: 400,
+  // When a sign-up is refused *for being too fast*, wait and try that person
+  // again rather than recording them as a failure. A rate limit says nothing
+  // about the application under test, so counting it as a finding is a lie.
+  // Backoff is this value times the attempt number. 0 disables retrying.
+  signupRateLimitBackoffMs: 5_000,
+  signupRateLimitRetries: 2,
   population: { agents: 6, cities: ["manila", "mumbai"], tickSeconds: 5, minutes: 10 },
   // Comfortably inside a 1-hour token, which is the common default.
   session: { refreshEveryMinutes: 30 },
@@ -43,8 +56,8 @@ const DEFAULTS = {
 };
 
 export async function loadConfig({ configPath, cwd = process.cwd(), overrides = {} } = {}) {
-  // reportPath is not a population setting; keep it out of that spread.
-  const { reportPath: _reportPath, ...populationOverrides } = overrides;
+  // Neither of these is a population setting; keep them out of that spread.
+  const { reportPath: _reportPath, signupStaggerMs: _stagger, ...populationOverrides } = overrides;
   const file = path.resolve(cwd, configPath || "populace.config.mjs");
 
   if (!fs.existsSync(file)) {
@@ -63,6 +76,9 @@ export async function loadConfig({ configPath, cwd = process.cwd(), overrides = 
   const config = {
     ...DEFAULTS,
     ...loaded,
+    // --stagger wins over the config file, so a run can be paced to fit a target
+    // whose rate limit is not yours to change.
+    ...(overrides.signupStaggerMs ? { signupStaggerMs: overrides.signupStaggerMs } : {}),
     population: {
       ...DEFAULTS.population,
       ...(loaded.population || {}),
