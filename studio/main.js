@@ -94,6 +94,13 @@ function createWindow() {
     title: "Populace Studio",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
+      // Keep painting while the window is not the front one. Electron throttles
+      // a hidden renderer by default - timers slow to once a second and
+      // requestAnimationFrame stops entirely - which is sensible for a document
+      // and wrong for a monitor. A twenty-minute run is watched from behind
+      // other windows, and on 2026-08-24 that throttle left the Live screen
+      // reading 86,492 calls while the engine was reporting 131,825.
+      backgroundThrottling: false,
       // The renderer never gets Node. Everything privileged goes through the
       // narrow IPC surface below, which is the whole reason preload exists.
       contextIsolation: true,

@@ -1610,6 +1610,78 @@ check("POPULACE_NO_UPDATE_CHECK switches it off", () => {
 // would report "all passed" while an async assertion was still in flight — a
 // test suite lying about its own result, in a product whose entire argument is
 // that a report must never claim more than it has earned.
+// --- sign-up pacing and throttling -----------------------------------------
+// A rate limit is the target pacing us; a real error is a finding. Waiting out
+// the first is honest and waiting out the second would hide a defect, so the two
+// must never be treated alike. Added 2026-08-24 after a 250-person run lost 215
+// people to a limit that said nothing about the app under test.
+{
+  const persona = () => ({
+    name: "Test Person",
+    city: { name: "Manila", country: "PH", lat: 14.6, lng: 121 },
+    platform: "grab", rhythm: {}, engagement: 1,
+  });
+  const stub = (fail) => ({
+    createUser: fail,
+    async setProfile() {}, async refreshSession() {}, async reportLocation() {},
+    async post() {}, async recentPostsByOthers() { return []; }, async like() {},
+    async comment() {}, async openConversation() { return { id: "c" }; },
+    async sendMessage() {}, async listGroups() { return []; }, async joinGroup() {},
+    async deleteUser() {},
+  });
+  const throttling = (times) => {
+    let n = 0;
+    return stub(async () => {
+      if (n++ < times) throw new Error("Request rate limit reached");
+      return { id: "u" + n, token: "t" };
+    });
+  };
+  const world = (adapter, options, on = {}) =>
+    new World({ adapter, personas: [persona()], options, on });
+  const pacing = { signupRateLimitBackoffMs: 10, signupRateLimitRetries: 2, signupStaggerMs: 0 };
+
+  const recovered = world(throttling(2), pacing);
+  const attempts = [];
+  recovered.on.joinThrottled = (_p, a) => attempts.push(a);
+  await recovered.populate();
+  check("a sign-up refused for being too fast is retried, not counted as a failure", () => {
+    assert.equal(recovered.agents.length, 1, "the person should end up signed in");
+    assert.equal(recovered.signupFailures.length, 0, "a rate limit is not a finding");
+    assert.deepEqual(attempts, [1, 2], "each wait should be announced, not silent");
+  });
+
+  const exhausted = world(throttling(99), pacing);
+  await exhausted.populate();
+  check("a rate limit that never lets up is recorded with its cause intact", () => {
+    assert.equal(exhausted.agents.length, 0);
+    assert.equal(exhausted.signupFailures[0].throttled, true,
+      "the report must be able to tell throttling from a broken API");
+  });
+
+  let realErrorCalls = 0;
+  const genuine = world(stub(async () => {
+    realErrorCalls += 1;
+    throw new Error("duplicate key violates unique constraint");
+  }), pacing);
+  await genuine.populate();
+  check("a genuine sign-up error is never retried or waited out", () => {
+    assert.equal(realErrorCalls, 1, "retrying a finding would hide it");
+    assert.equal(genuine.signupFailures[0].throttled, false);
+  });
+
+  const paced = new World({
+    adapter: throttling(0), personas: [persona(), persona(), persona()],
+    options: { signupStaggerMs: 120 }, on: {},
+  });
+  const startedAt = Date.now();
+  await paced.populate();
+  const elapsed = Date.now() - startedAt;
+  check("signupStaggerMs actually paces sign-ups", () => {
+    assert.ok(elapsed >= 240,
+      `three people at 120ms apart should take at least 240ms, took ${elapsed}ms`);
+  });
+}
+
 await Promise.all(pending);
 
 console.log(
