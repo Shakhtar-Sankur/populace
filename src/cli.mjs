@@ -301,10 +301,43 @@ async function run() {
     },
   });
 
-  process.on("SIGINT", () => {
+  const askedToStop = () => {
+    if (world.stopping) return;
     world.stop();
     console.log(`\n  Stopping…\n`);
-  });
+  };
+
+  process.on("SIGINT", askedToStop);
+
+  /*
+   * A second way to ask, because the first one does not exist on Windows.
+   *
+   * `child.kill("SIGTERM")` there does not deliver a signal - Windows has no
+   * POSIX signals, so Node terminates the process outright whatever name is
+   * passed. A parent asking politely therefore killed the run mid-flight and
+   * stranded every account it had created, which is the one promise this tool
+   * makes loudest. Measured on 2026-08-26: pressing Stop during a 200-person
+   * run left all 200 behind.
+   *
+   * stdin works the same on every platform. A line containing "stop" asks for
+   * the same orderly wind-down SIGINT does: finish the tick, tear down, delete
+   * the accounts, write the report.
+   *
+   * unref() so simply having this listener never keeps the process alive, and
+   * resume() because a paused stdin emits nothing.
+   */
+  if (!process.stdin.isTTY) {
+    let pending = "";
+    process.stdin.on("data", (chunk) => {
+      pending += String(chunk);
+      const lines = pending.split("\n");
+      pending = lines.pop() ?? "";
+      if (lines.some((l) => l.trim() === "stop")) askedToStop();
+    });
+    process.stdin.on("error", () => {});   // a closed pipe is not a reason to fail a run
+    process.stdin.resume();
+    process.stdin.unref();
+  }
 
   await world.populate();
   if (!world.agents.length) {

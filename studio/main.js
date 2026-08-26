@@ -350,11 +350,50 @@ ipcMain.handle("run:start", (_e, opts) => {
   return { ok: true, report, fellBack: target.fellBack, beside: target.beside, command: `populace ${args.join(" ")}` };
 });
 
+/** How long an orderly wind-down may take before the process is killed anyway.
+ *  Tearing down a few hundred accounts is a few hundred API calls, so this is
+ *  generous on purpose: a slow stop is better than a stranded population. */
+const STOP_GRACE_MS = 120_000;
+
 function stopRun() {
   if (!current) return false;
-  // The CLI cleans up its accounts on exit; killing the tree would strand them,
-  // so this asks it to stop rather than removing it.
-  try { current.kill("SIGTERM"); } catch {}
+
+  // Ask over stdin, not with a signal.
+  //
+  // This used to be `current.kill("SIGTERM")` with a comment explaining that
+  // killing the tree would strand the accounts. The intent was right and the
+  // mechanism could not deliver it: Windows has no POSIX signals, so kill()
+  // terminates the process outright whatever name is passed, the CLI's SIGINT
+  // handler never runs, and teardown never happens. Pressing Stop during a
+  // 200-person run on 2026-08-26 left all 200 accounts behind — the exact
+  // outcome the comment said it was avoiding.
+  //
+  // A line on stdin means the same thing on every platform.
+  let asked = false;
+  try {
+    if (current.stdin && !current.stdin.destroyed) {
+      current.stdin.write("stop\n");
+      asked = true;
+    }
+  } catch {
+    // Falls through to the signal below.
+  }
+
+  if (!asked) {
+    try { current.kill(); } catch {}
+    return true;
+  }
+
+  // If it has not wound down in time, stop waiting. An engine that is hung is
+  // worse than one that is killed, and the user has already asked twice by then.
+  const child = current;
+  const forceTimer = setTimeout(() => {
+    if (child === current) {
+      try { child.kill(); } catch {}
+    }
+  }, STOP_GRACE_MS);
+  child.once("close", () => clearTimeout(forceTimer));
+
   return true;
 }
 ipcMain.handle("run:stop", () => ({ ok: stopRun() }));

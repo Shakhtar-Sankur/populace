@@ -230,6 +230,9 @@ function paintClock() {
   // Nothing has ticked yet, so there is nothing to project from. Saying how
   // long is left would be inventing it, and a countdown beside a screen of
   // zeros is what made a sign-up phase look like a hung window.
+  // Neither of these is a state where "X left" is a fact, so the clock says
+  // which one it is instead of counting down towards nothing.
+  if (live.stopping) { $("s-remaining").textContent = "cleaning up"; return; }
   if (live.joining) { $("s-remaining").textContent = "signing in"; return; }
 
   const left = live.projectedMs ? live.projectedMs - elapsed : live.totalMs - elapsed;
@@ -631,6 +634,7 @@ function resetLive() {
   live.rates = []; live.latency = {}; live.lastCalls = 0; live.lastAt = 0;
   live.tick = 0; live.totalTicks = 0; live.projectedMs = 0;
   live.joining = false;
+  live.stopping = false;
   live.rows.clear(); live.dots.clear(); live.trails.clear(); mcards.clear();
   view.x = 0; view.y = 0; view.w = MAP_W; view.h = MAP_H;
   const map = $("map");
@@ -814,8 +818,17 @@ $("start").addEventListener("click", async () => {
 });
 
 $("stop").addEventListener("click", async () => {
-  await api.stopRun();
+  // Say what is happening, because tearing down a few hundred accounts is a few
+  // hundred API calls and the window would otherwise sit still through all of
+  // it — which is how the sign-up phase came to be reported as frozen twice.
+  $("stop").disabled = true;
+  $("pill").textContent = "stopping";
+  $("pill").className = "pill running";
+  $("s-remaining").textContent = "cleaning up";
+  live.joining = false;
+  live.stopping = true;
   log("\n— asked the run to stop; it removes its accounts before exiting —\n");
+  await api.stopRun();
 });
 
 // ── report ──────────────────────────────────────────────────────────

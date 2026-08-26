@@ -11,6 +11,36 @@ and Studio shipped 1.0.1 through 1.0.9 between the 22nd and the 24th, none of
 which were written up here. Rather than reconstruct nine releases from memory
 and risk getting them wrong, the gap is left visible.
 
+## engine 1.3.0 · Studio 1.0.12 — 26 August 2026
+
+### Fixed
+
+- **Stop stranded every account it was supposed to remove.** The button called
+  `child.kill("SIGTERM")`, under a comment explaining that killing the tree
+  would strand the accounts and that this asked the run to stop instead. The
+  intent was right and the mechanism could not carry it: Windows has no POSIX
+  signals, so `kill()` terminates the process outright whatever name is passed.
+  The CLI's `SIGINT` handler never ran, teardown never happened, and the report
+  was never written. Pressing Stop during a 200-person run on 26 August left all
+  200 accounts behind — precisely the outcome the comment claimed to prevent,
+  and the opposite of the guarantee printed on the Run screen.
+
+  A run can now be asked to stop over stdin, which behaves the same on every
+  platform. The engine finishes what it is doing, tears down, deletes its
+  accounts and writes the report. Verified against the database rather than the
+  exit code: twenty accounts alive mid-run, `stop` written to stdin, zero
+  afterwards, cleanup and report both present in the output.
+
+  The signal path remains as a fallback for when stdin is unavailable, and a
+  two-minute grace period ends in a real kill — an engine that hangs is worse
+  than one that is stopped, and by then the user has asked twice.
+
+- **The window went quiet during the wind-down.** Tearing down a few hundred
+  accounts is a few hundred API calls, and the screen sat unchanged through all
+  of it — the same shape of problem as the sign-up phase, which was reported as
+  frozen twice. The pill now reads `stopping`, the clock reads `cleaning up`,
+  and the button disables so it cannot be pressed again while it works.
+
 ## engine 1.2.0 · Studio 1.0.11 — 26 August 2026
 
 Reported as *"the page is stuck at zero"*, twice, by someone watching a real run
