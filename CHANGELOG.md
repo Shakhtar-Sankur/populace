@@ -11,6 +11,41 @@ and Studio shipped 1.0.1 through 1.0.9 between the 22nd and the 24th, none of
 which were written up here. Rather than reconstruct nine releases from memory
 and risk getting them wrong, the gap is left visible.
 
+## engine 1.2.0 · Studio 1.0.11 — 26 August 2026
+
+Reported as *"the page is stuck at zero"*, twice, by someone watching a real run
+— and both times it was fair.
+
+### Fixed
+
+- **The Live screen had no way to show the sign-up phase.** Bringing 250 people
+  to life takes minutes, and for all of it the window read `tick 0/0`, zero
+  calls, zero people, an empty progress bar — beside a clock already counting
+  down *"28:09 left"*. The log pane scrolled names the whole time, so nothing
+  was actually wrong: the engine was working and 148 accounts already existed.
+  The window simply had nothing to say, because the progress stream carried no
+  event until the first tick. A screen indistinguishable from a hung one is a
+  run people kill.
+
+  Putting the map on screen at launch (1.0.10) fixed the visual half of this and
+  left every number at zero, which was half a fix.
+
+### Added
+
+- `progress.joining()` — one event per person as they sign in, carrying who and
+  how far through. The count climbs, the bar tracks sign-up instead of sitting
+  at zero, the panel names whoever just arrived, and the clock says
+  **signing in** rather than inventing a countdown. Before any tick exists there
+  is nothing to project from, so a remaining time was fabrication.
+
+The engine moves to 1.2.0 rather than 1.1.1 because the progress stream gained
+an event type. Studio bundles the engine directly, and shipping something that
+calls itself 1.1.0 while differing from the 1.1.0 on npm would make the version
+mean two things.
+
+**Not yet on npm.** `@gigzen/populace@1.1.0` is the published engine; 1.2.0 ships
+inside Studio 1.0.11 and needs a `npm publish` to reach anyone else.
+
 ## engine 1.1.0 · Studio 1.0.10 — 24 August 2026
 
 Found by running 250 simulated drivers for twenty simulated minutes against a
