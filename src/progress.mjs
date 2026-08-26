@@ -71,7 +71,7 @@ function latencies(metrics) {
  * @param {(line: string) => void} options.write
  */
 export function createProgress({ enabled, everyLatency = 5, write = (l) => process.stdout.write(l) } = {}) {
-  if (!enabled) return { start() {}, tick() {}, done() {} };
+  if (!enabled) return { start() {}, joining() {}, tick() {}, done() {} };
 
   const emit = (event) => {
     try {
@@ -95,6 +95,18 @@ export function createProgress({ enabled, everyLatency = 5, write = (l) => proce
         tickSeconds: config.population.tickSeconds,
         engagement: config.population.engagement ?? 1,
       });
+    },
+
+    /**
+     * One event per person as they sign in, before any tick exists.
+     *
+     * Signing 250 people in takes minutes, and until this existed a watcher had
+     * nothing to show for it: every counter read zero, the progress bar stayed
+     * empty and the clock counted down as though the run were already under way.
+     * A window that looks identical to a hung one is a window people kill.
+     */
+    joining({ done, total, name, city, ok }) {
+      emit({ type: "joining", done, total, name, city, ok });
     },
 
     tick(tickNo, totalTicks, world, metrics) {

@@ -264,9 +264,24 @@ async function run() {
 
   console.log(`\n  Bringing ${agents} people to life across ${cities.join(", ")}…\n`);
 
+  // Sign-ups are counted here rather than in the engine, so the engine keeps
+  // knowing nothing about who is watching.
+  let joinedSoFar = 0;
   const world = World.fromConfig(config, adapter, {
-    joined: (a) => console.log(`   ✓ ${a.persona.name} (${a.persona.city.name}, ${a.persona.platform})`),
-    joinFailed: (p, e) => console.log(`   ✖ ${p.name}: ${e.message}`),
+    joined: (a) => {
+      console.log(`   ✓ ${a.persona.name} (${a.persona.city.name}, ${a.persona.platform})`);
+      progress.joining({
+        done: ++joinedSoFar, total: agents, ok: true,
+        name: a.persona.name, city: a.persona.city.name,
+      });
+    },
+    joinFailed: (p, e) => {
+      console.log(`   ✖ ${p.name}: ${e.message}`);
+      progress.joining({
+        done: ++joinedSoFar, total: agents, ok: false,
+        name: p.name, city: p.city?.name,
+      });
+    },
     // Said out loud, because waiting silently is indistinguishable from hanging.
     // Retrying a throttled sign-up can add seconds per person, and a run that
     // pauses without explanation is a run somebody kills.
