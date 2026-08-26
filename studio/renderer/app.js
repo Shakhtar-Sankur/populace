@@ -227,6 +227,11 @@ function paintClock() {
 
   // Remaining is a projection, and it is labelled as one only by being right:
   // once it runs out with ticks still to come, it stops guessing.
+  // Nothing has ticked yet, so there is nothing to project from. Saying how
+  // long is left would be inventing it, and a countdown beside a screen of
+  // zeros is what made a sign-up phase look like a hung window.
+  if (live.joining) { $("s-remaining").textContent = "signing in"; return; }
+
   const left = live.projectedMs ? live.projectedMs - elapsed : live.totalMs - elapsed;
   const done = live.totalTicks && live.tick >= live.totalTicks;
   $("s-remaining").textContent = done ? "finishing"
@@ -625,6 +630,7 @@ for (const th of document.querySelectorAll("#people thead th[data-sort]")) {
 function resetLive() {
   live.rates = []; live.latency = {}; live.lastCalls = 0; live.lastAt = 0;
   live.tick = 0; live.totalTicks = 0; live.projectedMs = 0;
+  live.joining = false;
   live.rows.clear(); live.dots.clear(); live.trails.clear(); mcards.clear();
   view.x = 0; view.y = 0; view.w = MAP_W; view.h = MAP_H;
   const map = $("map");
@@ -657,6 +663,24 @@ api.onProgress((e) => {
     $("pill").className = "pill running";
     $("live-sub").textContent = e.app + " \u00b7 " + e.environment + " \u00b7 " + e.agents
       + " people \u00b7 " + e.cities.length + " cities \u00b7 engagement " + e.engagement + "\u00d7";
+    live.joining = true;
+    $("methods").textContent = "Signing people in\u2026 nobody has acted yet.";
+    $("s-remaining").textContent = "signing in";
+    return;
+  }
+
+  // Signing 250 people in takes minutes. Until this arrived the screen showed
+  // nothing but zeros through all of it, with a bar at zero and a clock already
+  // counting down \u2014 identical to a hung window, and reported as one.
+  if (e.type === "joining") {
+    live.joining = true;
+    put("s-people", fmt(e.done));
+    $("bar").style.width = (e.total ? (e.done / e.total) * 100 : 0).toFixed(1) + "%";
+    $("s-remaining").textContent = "signing in";
+    $("methods").textContent = "Signing people in \u2014 " + fmt(e.done) + " of " + fmt(e.total)
+      + (e.name ? " \u00b7 " + e.name + (e.city ? " (" + e.city + ")" : "") : "");
+    $("methods").dataset.empty = "yes";
+    $("live-sub").dataset.phase = "joining";
     return;
   }
   if (e.type === "done") {
@@ -681,6 +705,8 @@ api.onProgress((e) => {
     $("pill").textContent = "running";
     $("pill").className = "pill running";
   }
+
+  live.joining = false;   // the first tick ends the sign-up phase
 
   const calls = e.methods.reduce((n, m) => n + m.calls, 0);
   const fails = e.methods.reduce((n, m) => n + m.apiFailures, 0);
