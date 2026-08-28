@@ -1,38 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <!--
-    Populace Studio.
+    Gigzen Populace — the desktop application icon.
 
-    Not the Gigzen mark. That one is a single figure; this is a population - the
-    whole point of the product is that it is many people at once, not one. The
-    lime is Gigzen's, so the two read as a family without the app pretending to
-    be the company.
+    This replaces the lime-on-charcoal grid. Two things changed and both were
+    deliberate:
 
-    One dot is brighter and larger: the run is watching all of them, but a report
-    is always about the one that broke.
+    1. INDIGO. #4F46E5 is Gigzen's colour, and both products now use it. The
+       lime was this product's own, which made the two Gigzen applications look
+       like they came from different companies.
+
+    2. THE MARK IS NOW THE BRAND MARK. It used to be a loose nine-dot grid with
+       one dot under a progress ring — a good drawing, but nothing else in the
+       product used it, so it was an icon rather than an identity. This is the
+       same ring of six that the website and the favicon use: six agents,
+       because a run uses six simulated people, and the last one hollow,
+       because the run that made this product's reputation had one user whose
+       profile was never created.
+
+    Geometry note: centres sit on a radius-120 circle and the dots are r=53.6,
+    so adjacent dots leave a 12.8px gap at 512. That gap survives down to a
+    16x16 favicon as a visible texture; any tighter and the ring fills in and
+    reads as a solid blob.
+
+    Flat fills, no gradient on the dots: this is rasterised to a 16px .ico and a
+    gradient at that size is noise that costs sharpness.
   -->
-  <rect width="512" height="512" rx="112" fill="#12171A"/>
-  <rect x="6" y="6" width="500" height="500" rx="108" fill="none" stroke="#D3FF00" stroke-opacity=".18" stroke-width="3"/>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset=".55" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#3730A3"/>
+    </linearGradient>
+  </defs>
 
-  <g fill="#D3FF00">
-    <!-- the population: a loose grid, deliberately uneven so it reads as people
-         rather than a spreadsheet -->
-    <circle cx="140" cy="132" r="26" fill-opacity=".38"/>
-    <circle cx="256" cy="118" r="30" fill-opacity=".55"/>
-    <circle cx="372" cy="140" r="24" fill-opacity=".32"/>
+  <rect width="512" height="512" rx="112" fill="url(#tile)"/>
+  <rect x="6" y="6" width="500" height="500" rx="108" fill="none"
+        stroke="#FFFFFF" stroke-opacity=".16" stroke-width="3"/>
 
-    <circle cx="118" cy="252" r="30" fill-opacity=".52"/>
-    <circle cx="392" cy="248" r="28" fill-opacity=".45"/>
-
-    <circle cx="148" cy="372" r="24" fill-opacity=".3"/>
-    <circle cx="262" cy="396" r="28" fill-opacity=".48"/>
-    <circle cx="378" cy="366" r="26" fill-opacity=".36"/>
-
-    <!-- the one under the microscope -->
-    <circle cx="256" cy="256" r="54"/>
+  <!-- five agents that exist -->
+  <g fill="#FFFFFF">
+    <circle cx="256"    cy="136" r="53.6"/>
+    <circle cx="152.08" cy="196" r="53.6"/>
+    <circle cx="152.08" cy="316" r="53.6"/>
+    <circle cx="256"    cy="376" r="53.6"/>
+    <circle cx="359.92" cy="316" r="53.6"/>
   </g>
 
-  <!-- the ring: a run in progress, three quarters round -->
-  <circle cx="256" cy="256" r="86" fill="none" stroke="#D3FF00" stroke-opacity=".9"
-          stroke-width="12" stroke-linecap="round"
-          stroke-dasharray="405 135" transform="rotate(-90 256 256)"/>
+  <!-- and the one that never got created -->
+  <circle cx="359.92" cy="196" r="44.8" fill="none" stroke="#FFFFFF" stroke-width="17.6"/>
 </svg>

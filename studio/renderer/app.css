@@ -36,18 +36,21 @@
 
 /* ── tokens ──────────────────────────────────────────────────────────── */
 :root {
-  /* Neutrals, darkest first. Cool and slightly green rather than pure grey:
-     lime sits on a green-black ground without vibrating against it. */
-  --n0:#06080A; --n1:#0B0F11; --n3:#141A1C; --n4:#1A2124;
-  --line:#1E2528; --line-2:#2B3438;
-  --ink:#E9EFEB; --muted:#8E9C96; --faint:#5F6C67;
+  /* Neutrals, darkest first. Indigo-black rather than the old green-black:
+     that ground was chosen so lime would not vibrate against it, and indigo on
+     a green ground does exactly what that note was trying to avoid. */
+  --n0:#07061A; --n1:#0B0A1F; --n3:#12102E; --n4:#171438;
+  --line:#211E44; --line-2:#2E2A5C;
+  --ink:#EEEEFB; --muted:#A7A6C8; --faint:#7E7DA4;
 
-  --lime:#D3FF00; --lime-dim:#A8CC00; --lime-soft:rgba(211,255,0,.13);
-  --bad:#FF6B6B; --bad-soft:rgba(255,107,107,.13);
-  --warn:#FFB454; --warn-soft:rgba(255,180,84,.12);
+  /* Gigzen indigo. Renamed from --indigo rather than revalued: a variable called
+     --indigo holding #4F46E5 is how a palette stops being readable. */
+  --indigo:#6366F1; --indigo-dim:#4F46E5; --indigo-soft:rgba(99,102,241,.15);
+  --bad:#FF7B7B; --bad-soft:rgba(255,123,123,.13);
+  --warn:#F5B45C; --warn-soft:rgba(245,180,92,.12);
 
-  --paper:var(--n0); --surface:var(--n1); --sunk:var(--n3); --rail:#040607;
-  --accent:var(--lime); --accent-soft:var(--lime-soft);
+  --paper:var(--n0); --surface:var(--n1); --sunk:var(--n3); --rail:#050418;
+  --accent:var(--indigo); --accent-soft:var(--indigo-soft);
   --crit:var(--bad); --amber:var(--warn);
 
   /* A lit top edge on every raised surface. One line of inset highlight is
@@ -94,23 +97,23 @@ body {
 .tab svg { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
            stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
 .tab:hover { background: rgba(255,255,255,.045); color: var(--ink); }
-.tab.is-on { background: var(--lime-soft); color: var(--lime); }
+.tab.is-on { background: var(--indigo-soft); color: var(--indigo); }
 /* A lit bar rather than a filled slab: the accent stays an accent. */
 .tab.is-on::before {
   content: ""; position: absolute; left: -14px; top: 8px; bottom: 8px; width: 2px;
-  border-radius: 0 2px 2px 0; background: var(--lime);
+  border-radius: 0 2px 2px 0; background: var(--indigo);
   box-shadow: 0 0 10px 0 rgba(211,255,0,.55);
 }
 .tab .k { font-family: var(--mono); font-size: 10.5px; opacity: .45; margin-left: auto; }
-.tab:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.tab:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
 
 .rail-foot { margin-top: auto; padding: 12px 8px 0; border-top: 1px solid var(--line); }
 .by { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--faint);
       text-decoration: none; font-size: 11.5px; }
 .by svg { width: 13px; height: 13px; flex: none; }
 .by b { color: var(--muted); font-weight: 600; }
-.by:hover b { color: var(--lime); }
-.by:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; border-radius: 4px; }
+.by:hover b { color: var(--indigo); }
+.by:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; border-radius: 4px; }
 #engine-state { font-family: var(--mono); font-size: 10.5px; line-height: 1.5;
                 white-space: pre-line; word-break: break-all; color: var(--faint); }
 #rail .muted { color: var(--faint); }
@@ -162,7 +165,7 @@ main::before {
 .panel-head h2::before {
   content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
   width: 3px; height: 12px; border-radius: 2px;
-  background: linear-gradient(180deg, var(--lime), rgba(211,255,0,.15));
+  background: linear-gradient(180deg, var(--indigo), rgba(211,255,0,.15));
 }
 .panel-head .muted { font-family: var(--mono); font-size: 11.5px; text-align: right;
                      min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -180,7 +183,7 @@ input[type=text], input[type=number] {
   transition: border-color .18s var(--ease), box-shadow .18s var(--ease);
 }
 input[readonly] { color: var(--muted); }
-input:focus-visible { outline: none; border-color: var(--lime-dim);
+input:focus-visible { outline: none; border-color: var(--indigo-dim);
                       box-shadow: 0 0 0 3px rgba(211,255,0,.13); }
 
 .btn {
@@ -190,22 +193,22 @@ input:focus-visible { outline: none; border-color: var(--lime-dim);
   transition: transform .16s var(--ease), border-color .16s var(--ease),
               background .16s var(--ease), color .16s var(--ease), box-shadow .16s var(--ease);
 }
-.btn:hover:not(:disabled) { border-color: var(--lime-dim); color: var(--lime); transform: translateY(-1px); }
-.btn.primary { background: var(--lime); border-color: var(--lime); color: #101400; font-weight: 600; }
-.btn.primary:hover:not(:disabled) { background: #E2FF3A; color: #101400;
+.btn:hover:not(:disabled) { border-color: var(--indigo-dim); color: var(--indigo); transform: translateY(-1px); }
+.btn.primary { background: var(--indigo); border-color: var(--indigo); color: #FFFFFF; font-weight: 600; }
+.btn.primary:hover:not(:disabled) { background: #818CF8; color: #FFFFFF;
                                     box-shadow: 0 10px 26px -12px rgba(211,255,0,.7); }
 .btn:disabled { opacity: .38; cursor: default; }
-.btn:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.btn:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
 
 .actions { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
 .muted { color: var(--muted); font-size: 12.5px; }
-.ok { color: var(--lime); }
+.ok { color: var(--indigo); }
 .bad { color: var(--bad); }
 .warn { color: var(--warn); }
 .spaced { margin-top: 14px; }
 .spaced-lg { margin-top: 18px; }
 
-.note { margin-top: 18px; padding: 14px 17px; border-left: 2px solid var(--lime);
+.note { margin-top: 18px; padding: 14px 17px; border-left: 2px solid var(--indigo);
         background: var(--n1); border-radius: 0 10px 10px 0; font-size: 13.5px; color: var(--muted); }
 .note b { color: var(--ink); }
 code { font-family: var(--mono); font-size: .9em; background: var(--n3);
@@ -213,7 +216,7 @@ code { font-family: var(--mono); font-size: .9em; background: var(--n3);
 
 .empty { padding: 40px; text-align: center; color: var(--muted);
          background: var(--n1); border: 1px dashed var(--line-2); border-radius: 12px; }
-.empty.ok-empty { border-color: rgba(211,255,0,.35); color: var(--lime); }
+.empty.ok-empty { border-color: rgba(211,255,0,.35); color: var(--indigo); }
 
 /* ── live: header ────────────────────────────────────────────────────── */
 .live-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; }
@@ -226,7 +229,7 @@ code { font-family: var(--mono); font-size: .9em; background: var(--n3);
         font-weight: 600; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px;
         border: 1px solid transparent; }
 .pill.idle { background: var(--n3); color: var(--faint); border-color: var(--line); }
-.pill.running, .pill.clean { background: var(--lime-soft); color: var(--lime);
+.pill.running, .pill.clean { background: var(--indigo-soft); color: var(--indigo);
                              border-color: rgba(211,255,0,.3); }
 .pill.trouble { background: var(--bad-soft); color: var(--bad); border-color: rgba(255,107,107,.32); }
 .pill.running::before { content: "\25cf"; margin-right: 7px; display: inline-block;
@@ -235,7 +238,7 @@ code { font-family: var(--mono); font-size: .9em; background: var(--n3);
 
 .progress { height: 3px; background: var(--n3); border-radius: 2px; margin: 16px 0 20px; overflow: hidden; }
 #bar { height: 100%; width: 0; border-radius: 2px;
-       background: linear-gradient(90deg, var(--lime-dim), var(--lime));
+       background: linear-gradient(90deg, var(--indigo-dim), var(--indigo));
        box-shadow: 0 0 12px 0 rgba(211,255,0,.5); transition: width 1s linear; }
 
 /* ── live: numbers ───────────────────────────────────────────────────── */
@@ -246,7 +249,7 @@ code { font-family: var(--mono); font-size: .9em; background: var(--n3);
           letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-bottom: 3px; }
 .stat span { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
 /* The first tile is the headline number, so it carries the accent. */
-.stat:first-child b { color: var(--lime); }
+.stat:first-child b { color: var(--indigo); }
 @keyframes bump { 0% { transform: translateY(0); } 45% { transform: translateY(-3px); } 100% { transform: none; } }
 .stat b.tickup { animation: bump .34s var(--ease); }
 
@@ -264,17 +267,17 @@ code { font-family: var(--mono); font-size: .9em; background: var(--n3);
 #map .land { fill: #182022; stroke: #263134; stroke-width: .4; }
 #map .grat { stroke: #141B1D; stroke-width: .5; }
 #map .equator { stroke: #1B2427; stroke-width: .8; }
-#map .dot { fill: var(--lime); transition: cx .9s linear, cy .9s linear; }
-#map .halo { fill: var(--lime); opacity: .13; animation: breathe 3.8s ease-in-out infinite; }
+#map .dot { fill: var(--indigo); transition: cx .9s linear, cy .9s linear; }
+#map .halo { fill: var(--indigo); opacity: .13; animation: breathe 3.8s ease-in-out infinite; }
 @keyframes breathe { 0%,100% { opacity: .08; } 50% { opacity: .22; } }
-#map .trail { fill: none; stroke: var(--lime); opacity: .3; stroke-linecap: round; }
+#map .trail { fill: none; stroke: var(--indigo); opacity: .3; stroke-linecap: round; }
 #map .label { font-family: var(--mono); fill: var(--faint); }
 
 /* ── live: chart ─────────────────────────────────────────────────────── */
 #spark { width: 100%; height: 100px; display: block; border-radius: 10px;
          border: 1px solid var(--line); background: var(--n0); }
 #spark .fill { fill: url(#sparkfill); }
-#spark .line { fill: none; stroke: var(--lime); stroke-width: 1.6; stroke-linejoin: round; }
+#spark .line { fill: none; stroke: var(--indigo); stroke-width: 1.6; stroke-linejoin: round; }
 #spark .peak { stroke: var(--line-2); stroke-width: .6; stroke-dasharray: 3 3; }
 #spark .peaklabel { font-family: var(--mono); font-size: 8px; fill: var(--faint); }
 
@@ -299,7 +302,7 @@ code { font-family: var(--mono); font-size: .9em; background: var(--n3);
 .mcard .m-track { display: block; height: 3px; background: var(--n4); border-radius: 2px;
                   margin: 11px 0 9px; overflow: hidden; }
 .mcard .m-bar { display: block; height: 100%; width: 0; border-radius: 2px;
-                background: var(--lime); transition: width .6s var(--ease); }
+                background: var(--indigo); transition: width .6s var(--ease); }
 .mcard.bad .m-bar { background: var(--bad); }
 .mcard .m-foot { display: flex; justify-content: space-between; gap: 8px; white-space: nowrap;
                  font-family: var(--mono); font-size: 10.5px; color: var(--faint);
@@ -329,7 +332,7 @@ table.people .state { font-size: 11px; color: var(--faint); }
 table.people .state.break { color: var(--warn); }
 table.people thead th[data-sort] { cursor: pointer; user-select: none; }
 table.people thead th[data-sort]:hover { color: var(--ink); }
-table.people thead th.sorted { color: var(--lime); }
+table.people thead th.sorted { color: var(--indigo); }
 table.people thead th.sorted::after { content: " \25be"; }
 table.people thead th.sorted.asc::after { content: " \25b4"; }
 
@@ -343,10 +346,10 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .logbox .log { margin-top: 9px; }
 
 /* ── report ──────────────────────────────────────────────────────────── */
-.verdict-panel { margin-top: 0; border-left: 2px solid var(--lime); }
+.verdict-panel { margin-top: 0; border-left: 2px solid var(--indigo); }
 .verdict-panel.is-trouble { border-left-color: var(--bad); }
 .verdict-row { display: flex; align-items: center; gap: 15px; }
-.verdict-mark { font-size: 27px; line-height: 1; color: var(--lime); }
+.verdict-mark { font-size: 27px; line-height: 1; color: var(--indigo); }
 .is-trouble .verdict-mark { color: var(--bad); }
 .verdict-title { margin: 0 0 2px; padding: 0; font-size: 21px; font-weight: 600;
                  letter-spacing: -.025em; text-transform: none; }
@@ -356,7 +359,7 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .report-stats { margin-top: 18px; }
 .verdict { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px;
            border-radius: 999px; font-weight: 600; font-size: 13px; margin-bottom: 14px; }
-.verdict.clean { background: var(--lime-soft); color: var(--lime); }
+.verdict.clean { background: var(--indigo-soft); color: var(--indigo); }
 .verdict.other { background: var(--warn-soft); color: var(--warn); }
 
 .lats { display: grid; gap: 8px; }
@@ -368,7 +371,7 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .lat-p95, .lat-p50 { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px;
                      transition: width .6s var(--ease); }
 .lat-p95 { background: rgba(211,255,0,.2); }
-.lat-p50 { background: var(--lime); }
+.lat-p50 { background: var(--indigo); }
 .lat-val { font-family: var(--mono); font-size: 11.5px; color: var(--muted); text-align: right;
            font-variant-numeric: tabular-nums; }
 .lat-val i { font-style: normal; opacity: .4; }
@@ -377,7 +380,7 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .slots { display: flex; flex-wrap: wrap; gap: 7px; }
 .slot { font-family: var(--mono); font-size: 10.5px; padding: 5px 10px; border-radius: 999px;
         background: var(--n0); color: var(--faint); border: 1px solid var(--line); }
-.slot.on { color: var(--lime); border-color: rgba(211,255,0,.35); background: var(--lime-soft); }
+.slot.on { color: var(--indigo); border-color: rgba(211,255,0,.35); background: var(--indigo-soft); }
 .slot.gap { color: var(--warn); border-color: rgba(255,180,84,.35); background: var(--warn-soft); }
 .gaps { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
 
@@ -385,18 +388,18 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .panel.blame { border-left: 2px solid var(--line-2); }
 .panel.blame.app { border-left-color: var(--bad); }
 .panel.blame.env { border-left-color: var(--warn); }
-.panel.blame.harness { border-left-color: var(--lime); }
+.panel.blame.harness { border-left-color: var(--indigo); }
 .cause { padding: 14px 0; border-top: 1px solid var(--line); }
 .cause:first-of-type { border-top: 0; padding-top: 2px; }
 .cause-head { display: flex; align-items: baseline; gap: 11px; margin-bottom: 7px; }
 .cause-head code { font-size: 12.5px; background: var(--n0); border: 1px solid var(--line);
                    padding: 3px 9px; border-radius: 6px; color: var(--ink); }
 .cause-head .times { font-family: var(--mono); font-size: 11.5px; color: var(--faint); }
-.cause-head .by-model { font-size: 10px; color: var(--lime); letter-spacing: .1em; text-transform: uppercase; }
+.cause-head .by-model { font-size: 10px; color: var(--indigo); letter-spacing: .1em; text-transform: uppercase; }
 .cause-head-line { margin: 0 0 7px; font-weight: 600; font-size: 14.5px; letter-spacing: -.01em; }
 .cause-why { margin: 0 0 9px; color: var(--muted); font-size: 13.5px; line-height: 1.65; max-width: 84ch; }
 .cause-fix { margin: 0 0 9px; font-size: 13.5px; line-height: 1.65; color: var(--ink); max-width: 84ch; }
-.cause-fix b { color: var(--lime); }
+.cause-fix b { color: var(--indigo); }
 .cause-msg { margin: 0; padding: 9px 12px; background: var(--n0); border: 1px solid var(--line);
              border-radius: 8px; font-family: var(--mono); font-size: 11px; color: var(--faint);
              white-space: pre-wrap; word-break: break-word; max-height: 120px; overflow: auto; }
@@ -408,6 +411,11 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .hero-marks .eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 8px;
                        font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--faint); }
 .hero-marks .eyebrow b { color: var(--ink); font-weight: 600; }
+/* The brand is written "Gigzen", never "GIGZEN". <b> here wraps exactly the
+   brand word, so opting it out of the label's uppercase is enough — the rest
+   of the label keeps the caps that make it read as a label. */
+.hero-marks .eyebrow b { text-transform: none; letter-spacing: .02em; }
+.by b { text-transform: none; }
 .gz { width: 15px; height: 15px; flex: none; }
 .vision-title { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.034em; line-height: 1.18; }
 .vision { margin: 0 0 13px; max-width: 76ch; color: var(--muted); font-size: 14.5px; line-height: 1.7; }
@@ -420,7 +428,7 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .steps li::before {
   content: counter(step); position: absolute; left: 0; top: 0;
   width: 27px; height: 27px; border-radius: 9px; display: grid; place-items: center;
-  background: var(--lime-soft); color: var(--lime); border: 1px solid rgba(211,255,0,.25);
+  background: var(--indigo-soft); color: var(--indigo); border: 1px solid rgba(211,255,0,.25);
   font-family: var(--mono); font-size: 11.5px; font-weight: 600;
 }
 .steps li:last-child { padding-bottom: 0; }
@@ -433,7 +441,7 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
             font-size: 13px; line-height: 1.6; }
 .ticks li::before { content: "\2715"; position: absolute; left: 0; top: 0; color: var(--bad); font-size: 11px; }
 .links li { padding: 0 0 9px 0; font-size: 13px; }
-.links a { color: var(--lime); text-decoration: none; }
+.links a { color: var(--indigo); text-decoration: none; }
 .links a:hover { text-decoration: underline; }
 
 /* ── accessibility ───────────────────────────────────────────────────── */
@@ -450,11 +458,11 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
   color: var(--ink); font: inherit; cursor: pointer;
   transition: border-color .18s var(--ease), transform .18s var(--ease);
 }
-.preset:hover { border-color: var(--lime-dim); transform: translateY(-2px); }
-.preset:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
-.preset.is-on { border-color: var(--lime); background: linear-gradient(180deg, var(--lime-soft), var(--n1) 70%); }
+.preset:hover { border-color: var(--indigo-dim); transform: translateY(-2px); }
+.preset:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.preset.is-on { border-color: var(--indigo); background: linear-gradient(180deg, var(--indigo-soft), var(--n1) 70%); }
 .preset b { display: block; font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
-.preset span { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--lime); margin: 3px 0 5px; }
+.preset span { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--indigo); margin: 3px 0 5px; }
 .preset em { font-style: normal; font-size: 12px; color: var(--muted); }
 
 .run-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; align-items: start; }
@@ -463,7 +471,7 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .run-line { margin: 0 0 13px; font-size: 13.5px; line-height: 1.7; color: var(--muted); }
 .run-line b { color: var(--ink); font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums; }
 .run-guarantees { margin-top: 4px; }
-.run-guarantees li::before { content: "\2713"; color: var(--lime); }
+.run-guarantees li::before { content: "\2713"; color: var(--indigo); }
 
 /* ── live: failures ──────────────────────────────────────────────────── */
 /* Present only while something is wrong, so the place failures appear is
@@ -490,13 +498,13 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .target-row b { color: var(--ink); font-weight: 600; text-align: right;
                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .target-row b.mono-b { font-family: var(--mono); font-weight: 400; font-size: 11.5px; }
-.target-row b.good { color: var(--lime); }
+.target-row b.good { color: var(--indigo); }
 .target-row b.risky { color: var(--bad); }
 
 /* ── privacy ─────────────────────────────────────────────────────────── */
 #screen-privacy { max-width: 1020px; }
-.privacy-lead { margin-top: 0; border-left: 2px solid var(--lime); }
-.keeps li::before { content: "\2713"; color: var(--lime); }
+.privacy-lead { margin-top: 0; border-left: 2px solid var(--indigo); }
+.keeps li::before { content: "\2713"; color: var(--indigo); }
 .keeps li, .fields li { color: var(--muted); }
 .keeps li b, .leave p b { color: var(--ink); }
 .leave { padding: 14px 0; border-top: 1px solid var(--line); }
