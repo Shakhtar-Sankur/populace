@@ -460,8 +460,8 @@ function paintSpark() {
   const grad = svgEl("linearGradient", { id: "sparkfill", x1: "0", y1: "0", x2: "0", y2: "1" });
   // Faint. The line carries the information; the fill only gives it a body,
   // and at full strength it reads as a solid block of colour instead.
-  grad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "var(--lime)", "stop-opacity": ".22" }));
-  grad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "var(--lime)", "stop-opacity": "0" }));
+  grad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "var(--indigo)", "stop-opacity": ".22" }));
+  grad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "var(--indigo)", "stop-opacity": "0" }));
   defs.appendChild(grad);
   svg.appendChild(defs);
 
