@@ -11,6 +11,36 @@ and Studio shipped 1.0.1 through 1.0.9 between the 22nd and the 24th, none of
 which were written up here. Rather than reconstruct nine releases from memory
 and risk getting them wrong, the gap is left visible.
 
+## engine 1.3.1 — 29 August 2026
+
+### Fixed
+
+- **`run` crashed before it started whenever stdin was not a TTY.**
+
+  ```
+  TypeError: process.stdin.unref is not a function
+      at Object.run (src/cli.mjs:339)
+  ```
+
+  `unref()` is not on every stdin. Node hands you a different stream depending
+  on what stdin is attached to, and only some of them are sockets — with stdin
+  redirected from a file or the null device it is an `fs.ReadStream`, which has
+  no `unref`. So the call threw and the run died before a single agent existed.
+
+  That is CI, `docker run` without `-i`, anything piping output, and any
+  automation harness. The line sat inside `if (!process.stdin.isTTY)`, a branch
+  whose entire purpose is to make non-interactive use work by accepting a typed
+  `stop` in place of Ctrl-C. It failed in exactly the case it was written for,
+  and this repository ships a GitHub Action that would have hit it.
+
+  **This affected the published 1.3.0, including `npx @gigzen/populace demo`** —
+  the command the README and the project's own materials offer as the thirty-
+  second proof. In an interactive terminal it was fine; piped, redirected or in
+  CI it crashed immediately.
+
+  Found by running the product rather than reading it. `doctor` and `smoke` both
+  pass on the same machine, because neither reaches this line.
+
 ## engine 1.3.0 · Studio 1.0.12 — 26 August 2026
 
 ### Fixed
