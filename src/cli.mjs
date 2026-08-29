@@ -336,7 +336,17 @@ async function run() {
     });
     process.stdin.on("error", () => {});   // a closed pipe is not a reason to fail a run
     process.stdin.resume();
-    process.stdin.unref();
+    /* unref() is NOT on every stdin. Node hands you a different stream
+       depending on what stdin is attached to, and only some of them are
+       sockets: with stdin redirected from a file or the null device — CI
+       runners, `docker run` without -i, most automation — it is an
+       fs.ReadStream, which has no unref, and calling it threw
+       "process.stdin.unref is not a function" before the run had started.
+       This whole branch exists to make non-interactive use work, so it was
+       failing in exactly the case it was written for. Nothing is lost when it
+       is absent: those streams reach EOF immediately and never hold the loop
+       open, which is all unref was buying. */
+    process.stdin.unref?.();
   }
 
   await world.populate();
