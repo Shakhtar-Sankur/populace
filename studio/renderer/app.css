@@ -1,14 +1,14 @@
 /* Populace Studio.
  *
- * One accent, and it is the company's: Gigzen lime. Everything else is a
- * neutral scale on near-black. The previous palette used a sea green that
- * appeared nowhere in the brand, so the application looked like it had
- * borrowed the logo rather than come from the same place.
+ * One accent, and it is the company's: Gigzen indigo. Everything else is a
+ * neutral scale on near-black. Two palettes came before it — a sea green that
+ * appeared nowhere in the brand, then a lime that did until the company settled
+ * on indigo — and each time the application looked like it had borrowed the
+ * logo rather than come from the same place.
  *
- * Lime is loud, which is why it is spent carefully: the running state, the
- * active screen, the primary action, the line on a chart, the headline number.
- * Everything else stays neutral, so that when something does turn lime it
- * means something.
+ * Indigo is spent carefully: the running state, the active screen, the primary
+ * action, the line on a chart, the headline number. Everything else stays
+ * neutral, so that when something does turn indigo it means something.
  *
  * Inter for the interface, JetBrains Mono for anything you would compare down
  * a column. Both bundled — the window has no network by design.
@@ -37,8 +37,8 @@
 /* ── tokens ──────────────────────────────────────────────────────────── */
 :root {
   /* Neutrals, darkest first. Indigo-black rather than the old green-black:
-     that ground was chosen so lime would not vibrate against it, and indigo on
-     a green ground does exactly what that note was trying to avoid. */
+       that ground was chosen for an accent this application no longer wears, and
+       the old accent on a green ground did what that note was warning about. */
   --n0:#07061A; --n1:#0B0A1F; --n3:#12102E; --n4:#171438;
   --line:#211E44; --line-2:#2E2A5C;
   --ink:#EEEEFB; --muted:#A7A6C8; --faint:#7E7DA4;
