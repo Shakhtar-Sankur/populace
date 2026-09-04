@@ -1210,12 +1210,32 @@ main,footer{position:relative; z-index:1}
       </div>
 
       <div>
-        <img class="shot" src="studio-report.png" width="1459" height="974" loading="lazy"
-             alt="Populace Studio showing a finished run: a clean verdict, 797 API calls, no failures,
-                  and a table of every method with its latency.">
+        <!-- Two screens, because the paragraph beside this promises five and the
+             page was showing one. The live view is the one that explains what
+             the tool actually does; the verdict is the one that says whether it
+             worked. -->
+        <img class="shot" src="studio-live.jpg" width="1459" height="744" loading="lazy"
+             alt="Populace Studio mid-run: thirty simulated drivers pinned across twenty-five cities on a
+                  world map from Lima to Manila, 21,559 API calls at 36 a second with no failures, and
+                  counts of the posts, likes, comments and messages they have made.">
         <p style="font-size:13.5px; color:var(--muted); margin-top:10px; text-align:center">
-          A real run against <a href="https://about.gitea.com/">Gitea</a> — an application
-          we did not write.
+          Thirty drivers across twenty-five cities, driving Waggle through its own API.
+        </p>
+
+        <!-- Replaces a screenshot of the same screen taken in August, which was
+             accurate then and had quietly become false: it still showed the
+             green accent this application carried before the indigo one, so the
+             page was advertising a colour scheme the download no longer has.
+             The Gitea claim it carried was the only mention on this page, so it
+             moved into the caption rather than being lost with the picture. -->
+        <img class="shot" src="studio-verdict.jpg" width="1459" height="744" loading="lazy"
+             style="margin-top:22px"
+             alt="Populace Studio showing a finished run: a clean verdict over 48,930 API calls with no
+                  failures, thirty of thirty accounts removed afterwards, and latency for every method
+                  with its median and 95th percentile.">
+        <p style="font-size:13.5px; color:var(--muted); margin-top:10px; text-align:center">
+          The verdict from that run. The same engine has been driven against
+          <a href="https://about.gitea.com/">Gitea</a> too — an application we did not write.
         </p>
       </div>
     </div>
