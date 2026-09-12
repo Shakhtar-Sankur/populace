@@ -57,6 +57,11 @@ and risk getting them wrong, the gap is left visible.
   respect `prefers-reduced-motion`, and small text that is no longer shouted in
   capitals.
 
+- The Report tab icon is a clipboard with a tick. It was a page with a folded
+  corner, drawn for 64px and used at 18px, where the fold and the clipped corner
+  collapse into a curl — it was read as a scroll. It also said "a file exists"
+  where the screen it marks says whether the run was clean.
+
 ## engine 1.3.1 — 29 August 2026
 
 ### Fixed
