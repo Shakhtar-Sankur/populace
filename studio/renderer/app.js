@@ -11,6 +11,12 @@ const $ = (id) => document.getElementById(id);
 const api = window.populace;
 
 let lastReportPath = null;
+// One person is a person, one city is a city. The Run screen's summary has
+// always said this correctly; the Live screen had its own two copies of the
+// same sentence and neither of them did, so a single-city run announced
+// itself as "1 cities" in the header and again under the map.
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
 let lastConfig = null;
 
 // ── navigation ──────────────────────────────────────────────────────
@@ -438,7 +444,7 @@ function paintMap(people) {
     svg.dataset.labelled = "1";
   }
   applyView();
-  $("map-note").textContent = people.length + " people \u00b7 " + cities.size + " cities";
+  $("map-note").textContent = plural(people.length, "person", "people") + " · " + plural(cities.size, "city", "cities");
 }
 
 /* -- throughput ----------------------------------------------------- */
@@ -665,8 +671,7 @@ api.onProgress((e) => {
     startClock(Number(e.minutes) * 60000);
     $("pill").textContent = "running";
     $("pill").className = "pill running";
-    $("live-sub").textContent = e.app + " \u00b7 " + e.environment + " \u00b7 " + e.agents
-      + " people \u00b7 " + e.cities.length + " cities \u00b7 engagement " + e.engagement + "\u00d7";
+    $("live-sub").textContent = e.app + " \u00b7 " + e.environment + " \u00b7 " + plural(e.agents, "person", "people") + " · " + plural(e.cities.length, "city", "cities") + " \u00b7 engagement " + e.engagement + "\u00d7";
     live.joining = true;
     $("methods").textContent = "Signing people in\u2026 nobody has acted yet.";
     $("s-remaining").textContent = "signing in";
