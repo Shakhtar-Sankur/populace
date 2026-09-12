@@ -1,10 +1,11 @@
 /* Populace Studio.
  *
  * One accent, and it is the company's: Gigzen indigo. Everything else is a
- * neutral scale on near-black. Two palettes came before it — a sea green that
+ * neutral scale on paper. Three palettes came before it — a sea green that
  * appeared nowhere in the brand, then a lime that did until the company settled
- * on indigo — and each time the application looked like it had borrowed the
- * logo rather than come from the same place.
+ * on indigo, then that same indigo on near-black — and each time the
+ * application looked like it had borrowed the logo rather than come from the
+ * same place. The ground is light now; the accent did not move.
  *
  * Indigo is spent carefully: the running state, the active screen, the primary
  * action, the line on a chart, the headline number. Everything else stays
@@ -36,27 +37,38 @@
 
 /* ── tokens ──────────────────────────────────────────────────────────── */
 :root {
-  /* Neutrals, darkest first. Indigo-black rather than the old green-black:
-       that ground was chosen for an accent this application no longer wears, and
-       the old accent on a green ground did what that note was warning about. */
-  --n0:#07061A; --n1:#0B0A1F; --n3:#12102E; --n4:#171438;
-  --line:#211E44; --line-2:#2E2A5C;
-  --ink:#EEEEFB; --muted:#A7A6C8; --faint:#7E7DA4;
+  /* Neutrals, LIGHTEST first — this is a light application now.
+     The names keep their old meaning: n0 is the ground everything sits on,
+     n1 the raised surface, n3 a sunk well, n4 one step deeper. Only the values
+     turned over, which is the whole reason they were tokens.
 
-  /* Gigzen indigo. Renamed from --indigo rather than revalued: a variable called
-     --indigo holding #4F46E5 is how a palette stops being readable. */
-  --indigo:#6366F1; --indigo-dim:#4F46E5; --indigo-soft:rgba(99,102,241,.15);
-  --bad:#FF7B7B; --bad-soft:rgba(255,123,123,.13);
-  --warn:#F5B45C; --warn-soft:rgba(245,180,92,.12);
+     The ground is not white. A true #FFF ground under white panels leaves
+     nothing to separate them except a border, and the panels stop reading as
+     panels; a hair of indigo in the paper gives them something to sit on and
+     ties the neutral scale to the one accent. */
+  --n0:#F6F6FB; --n1:#FFFFFF; --n3:#F0F0F7; --n4:#E8E8F3;
+  --line:#E3E3EF; --line-2:#CFCFE2;
+  --ink:#16162A; --muted:#55557A; --faint:#7B7B9C;
 
-  --paper:var(--n0); --surface:var(--n1); --sunk:var(--n3); --rail:#050418;
+  /* Gigzen indigo, unchanged in hue and spent the same way: the running state,
+     the active screen, the primary action, the line on a chart, the headline
+     number. On a light ground the darker of the two reads as the accent and
+     the brighter one as its hover, so the pair swaps roles rather than being
+     revalued — the same discipline that kept --indigo honest before. */
+  --indigo:#4F46E5; --indigo-dim:#6366F1; --indigo-soft:rgba(79,70,229,.10);
+  --bad:#D03B3B; --bad-soft:rgba(208,59,59,.09);
+  --warn:#9A6400; --warn-soft:rgba(154,100,0,.10);
+
+  --paper:var(--n0); --surface:var(--n1); --sunk:var(--n3); --rail:#FBFBFE;
   --accent:var(--indigo); --accent-soft:var(--indigo-soft);
   --crit:var(--bad); --amber:var(--warn);
 
-  /* A lit top edge on every raised surface. One line of inset highlight is
-     most of what separates "a box" from "a panel". */
-  --lift: inset 0 1px 0 rgba(255,255,255,.045);
-  --shadow: 0 1px 2px rgba(0,0,0,.5), 0 18px 40px -28px rgba(0,0,0,.9);
+  /* A lit top edge made sense on near-black. On paper the same trick is
+     invisible, and what separates a panel from its ground is a soft shadow
+     plus a hairline — so the highlight becomes a hairline and the shadow
+     stops being tuned for black. */
+  --lift: inset 0 0 0 1px rgba(22,22,42,.04);
+  --shadow: 0 1px 2px rgba(22,22,42,.05), 0 14px 34px -22px rgba(22,22,42,.20);
 
   --mono:"JB Mono", ui-monospace, Consolas, monospace;
   --ui:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -66,8 +78,12 @@
   --ease: cubic-bezier(.16, 1, .3, 1);
 }
 
-/* Designed for the dark ground it ships on. A light theme is a separate
-   design rather than an inversion, so none is pretended at here. */
+/* This used to read "designed for the dark ground it ships on", and warned
+   that a light theme would be a separate design rather than an inversion.
+   That warning was right and was followed: the neutrals were rebuilt rather
+   than flipped, the lit top edge became a hairline because a white highlight
+   is invisible on paper, the shadow stopped being tuned for black, and the
+   two indigos swapped roles so the accent stays the darker one. */
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
@@ -75,6 +91,35 @@ body {
   background: var(--paper); color: var(--ink);
   font-family: var(--ui); font-size: 14px; line-height: 1.55;
   -webkit-font-smoothing: antialiased; overflow: hidden;
+  position: relative;
+}
+
+/* ── the ground moves ────────────────────────────────────────────────────
+   Two wide indigo washes drifting under everything, far too soft to read as
+   shapes — what they do is stop a large pale window from looking like a dead
+   sheet. Kept to the ONE accent rather than a spread of hues: a second colour
+   here would compete with the indigo the interface spends so carefully.
+
+   Painted on a ::before behind the content (z-index -1, no pointer events) so
+   nothing in the app has to know it exists, and dropped entirely for anyone
+   who has asked their system to stop animations. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -25%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 44% at 22% 28%, rgba(79,70,229,.09), transparent 62%),
+    radial-gradient(42% 38% at 78% 72%, rgba(99,102,241,.07), transparent 64%);
+  animation: ground-drift 34s var(--ease) infinite alternate;
+}
+@keyframes ground-drift {
+  from { transform: translate3d(-2.5%, -1.5%, 0) scale(1); }
+  to   { transform: translate3d( 2.5%,  1.5%, 0) scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
 }
 
 /* ── rail ────────────────────────────────────────────────────────────── */
@@ -96,13 +141,16 @@ body {
 }
 .tab svg { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
            stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
-.tab:hover { background: rgba(255,255,255,.045); color: var(--ink); }
+.tab:hover { background: rgba(22,22,42,.045); color: var(--ink); }
 .tab.is-on { background: var(--indigo-soft); color: var(--indigo); }
 /* A lit bar rather than a filled slab: the accent stays an accent. */
 .tab.is-on::before {
   content: ""; position: absolute; left: -14px; top: 8px; bottom: 8px; width: 2px;
   border-radius: 0 2px 2px 0; background: var(--indigo);
-  box-shadow: 0 0 10px 0 rgba(211,255,0,.55);
+  /* This glow was rgba(211,255,0,.55) — lime, from a palette the application
+     stopped wearing two rewrites ago. It was invisible against a near-black
+     rail and would have been plainly wrong on paper. */
+  box-shadow: 0 0 10px 0 rgba(79,70,229,.45);
 }
 .tab .k { font-family: var(--mono); font-size: 10.5px; opacity: .45; margin-left: auto; }
 .tab:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
@@ -126,8 +174,8 @@ main { position: relative; isolation: isolate; overflow: auto; padding: 34px 38p
 main::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background:
-    radial-gradient(52% 40% at 12% -4%, rgba(211,255,0,.055), transparent 70%),
-    radial-gradient(44% 36% at 96% 4%, rgba(211,255,0,.03), transparent 72%);
+    radial-gradient(52% 40% at 12% -4%, rgba(79,70,229,.055), transparent 70%),
+    radial-gradient(44% 36% at 96% 4%, rgba(79,70,229,.03), transparent 72%);
   animation: drift 70s ease-in-out infinite alternate;
 }
 @keyframes drift { from { opacity: .7; } to { opacity: 1; } }
@@ -165,7 +213,7 @@ main::before {
 .panel-head h2::before {
   content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
   width: 3px; height: 12px; border-radius: 2px;
-  background: linear-gradient(180deg, var(--indigo), rgba(211,255,0,.15));
+  background: linear-gradient(180deg, var(--indigo), rgba(79,70,229,.15));
 }
 .panel-head .muted { font-family: var(--mono); font-size: 11.5px; text-align: right;
                      min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -184,7 +232,7 @@ input[type=text], input[type=number] {
 }
 input[readonly] { color: var(--muted); }
 input:focus-visible { outline: none; border-color: var(--indigo-dim);
-                      box-shadow: 0 0 0 3px rgba(211,255,0,.13); }
+                      box-shadow: 0 0 0 3px rgba(79,70,229,.13); }
 
 .btn {
   padding: 9px 16px; border: 1px solid var(--line-2); border-radius: 9px;
@@ -196,7 +244,7 @@ input:focus-visible { outline: none; border-color: var(--indigo-dim);
 .btn:hover:not(:disabled) { border-color: var(--indigo-dim); color: var(--indigo); transform: translateY(-1px); }
 .btn.primary { background: var(--indigo); border-color: var(--indigo); color: #FFFFFF; font-weight: 600; }
 .btn.primary:hover:not(:disabled) { background: #818CF8; color: #FFFFFF;
-                                    box-shadow: 0 10px 26px -12px rgba(211,255,0,.7); }
+                                    box-shadow: 0 10px 26px -12px rgba(79,70,229,.7); }
 .btn:disabled { opacity: .38; cursor: default; }
 .btn:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
 
@@ -216,7 +264,7 @@ code { font-family: var(--mono); font-size: .9em; background: var(--n3);
 
 .empty { padding: 40px; text-align: center; color: var(--muted);
          background: var(--n1); border: 1px dashed var(--line-2); border-radius: 12px; }
-.empty.ok-empty { border-color: rgba(211,255,0,.35); color: var(--indigo); }
+.empty.ok-empty { border-color: rgba(79,70,229,.35); color: var(--indigo); }
 
 /* ── live: header ────────────────────────────────────────────────────── */
 .live-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; }
@@ -230,7 +278,7 @@ code { font-family: var(--mono); font-size: .9em; background: var(--n3);
         border: 1px solid transparent; }
 .pill.idle { background: var(--n3); color: var(--faint); border-color: var(--line); }
 .pill.running, .pill.clean { background: var(--indigo-soft); color: var(--indigo);
-                             border-color: rgba(211,255,0,.3); }
+                             border-color: rgba(79,70,229,.3); }
 .pill.trouble { background: var(--bad-soft); color: var(--bad); border-color: rgba(255,107,107,.32); }
 .pill.running::before { content: "\25cf"; margin-right: 7px; display: inline-block;
                         animation: beat 1.5s ease-in-out infinite; }
@@ -239,7 +287,7 @@ code { font-family: var(--mono); font-size: .9em; background: var(--n3);
 .progress { height: 3px; background: var(--n3); border-radius: 2px; margin: 16px 0 20px; overflow: hidden; }
 #bar { height: 100%; width: 0; border-radius: 2px;
        background: linear-gradient(90deg, var(--indigo-dim), var(--indigo));
-       box-shadow: 0 0 12px 0 rgba(211,255,0,.5); transition: width 1s linear; }
+       box-shadow: 0 0 12px 0 rgba(79,70,229,.5); transition: width 1s linear; }
 
 /* ── live: numbers ───────────────────────────────────────────────────── */
 .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
@@ -260,13 +308,13 @@ code { font-family: var(--mono); font-size: .9em; background: var(--n3);
 /* ── live: map ───────────────────────────────────────────────────────── */
 .mapwrap {
   border-radius: 10px; padding: 8px; border: 1px solid var(--line);
-  background: radial-gradient(120% 100% at 50% -10%, rgba(211,255,0,.05), transparent 62%), var(--n0);
+  background: radial-gradient(120% 100% at 50% -10%, rgba(79,70,229,.05), transparent 62%), var(--n0);
 }
 #map { width: 100%; height: auto; display: block; cursor: grab; touch-action: none; }
 #map.grabbing { cursor: grabbing; }
-#map .land { fill: #182022; stroke: #263134; stroke-width: .4; }
-#map .grat { stroke: #141B1D; stroke-width: .5; }
-#map .equator { stroke: #1B2427; stroke-width: .8; }
+#map .land { fill: #E9E9F4; stroke: #D2D2E4; stroke-width: .4; }
+#map .grat { stroke: #ECECF5; stroke-width: .5; }
+#map .equator { stroke: #DEDEEC; stroke-width: .8; }
 #map .dot { fill: var(--indigo); transition: cx .9s linear, cy .9s linear; }
 #map .halo { fill: var(--indigo); opacity: .13; animation: breathe 3.8s ease-in-out infinite; }
 @keyframes breathe { 0%,100% { opacity: .08; } 50% { opacity: .22; } }
@@ -322,7 +370,7 @@ table.people thead th {
 table.people td { border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; color: var(--muted); }
 table.people td:first-child { color: var(--ink); }
 table.people tbody tr { transition: background .15s var(--ease); }
-table.people tbody tr:hover { background: rgba(255,255,255,.022); }
+table.people tbody tr:hover { background: rgba(22,22,42,.028); }
 table.people tbody tr:last-child td { border-bottom: 0; }
 table.people td.r, table.people th.r { text-align: right; font-family: var(--mono); }
 table.people td.mono { font-family: var(--mono); color: var(--ink); }
@@ -370,7 +418,7 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
              border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
 .lat-p95, .lat-p50 { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px;
                      transition: width .6s var(--ease); }
-.lat-p95 { background: rgba(211,255,0,.2); }
+.lat-p95 { background: rgba(79,70,229,.2); }
 .lat-p50 { background: var(--indigo); }
 .lat-val { font-family: var(--mono); font-size: 11.5px; color: var(--muted); text-align: right;
            font-variant-numeric: tabular-nums; }
@@ -380,7 +428,7 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .slots { display: flex; flex-wrap: wrap; gap: 7px; }
 .slot { font-family: var(--mono); font-size: 10.5px; padding: 5px 10px; border-radius: 999px;
         background: var(--n0); color: var(--faint); border: 1px solid var(--line); }
-.slot.on { color: var(--indigo); border-color: rgba(211,255,0,.35); background: var(--indigo-soft); }
+.slot.on { color: var(--indigo); border-color: rgba(79,70,229,.35); background: var(--indigo-soft); }
 .slot.gap { color: var(--warn); border-color: rgba(255,180,84,.35); background: var(--warn-soft); }
 .gaps { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
 
@@ -428,7 +476,7 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
 .steps li::before {
   content: counter(step); position: absolute; left: 0; top: 0;
   width: 27px; height: 27px; border-radius: 9px; display: grid; place-items: center;
-  background: var(--indigo-soft); color: var(--indigo); border: 1px solid rgba(211,255,0,.25);
+  background: var(--indigo-soft); color: var(--indigo); border: 1px solid rgba(79,70,229,.25);
   font-family: var(--mono); font-size: 11.5px; font-weight: 600;
 }
 .steps li:last-child { padding-bottom: 0; }
@@ -530,7 +578,7 @@ main { scrollbar-gutter: stable; }
   background: var(--line-2); border-radius: 6px;
   border: 3px solid transparent; background-clip: content-box;
 }
-::-webkit-scrollbar-thumb:hover { background: #3C474B; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--line-2); background-clip: content-box; }
 ::-webkit-scrollbar-corner { background: transparent; }
 
 /* The rail's content is as tall as the window at 780px, and it was set to
@@ -538,3 +586,71 @@ main { scrollbar-gutter: stable; }
    status and the company link with no way to reach them. */
 #rail { overflow-y: auto; overflow-x: hidden; }
 #rail::-webkit-scrollbar { width: 0; }
+
+/* ── motion ──────────────────────────────────────────────────────────────
+   The application already had a considered motion layer: screens rise in, the
+   map halo breathes, the running dot beats, a stat bumps when it ticks up.
+   What it did not have was any sense of things ARRIVING — every screen
+   appeared as one slab, which is the difference between an interface that
+   moves and one that feels alive.
+
+   Everything below is opacity and transform only, so it stays on the
+   compositor and cannot cost a frame during a run. All of it is off for
+   anyone who has asked their system to stop animations; that switch is at
+   the bottom and covers the ground wash too. */
+
+/* Children arrive just after their screen does, a beat apart. The delays are
+   tiny and deliberately capped at six — past that a stagger stops reading as
+   craft and starts reading as lag. */
+.screen.is-on > * { animation: arrive .42s var(--ease) both; }
+.screen.is-on > *:nth-child(1) { animation-delay: .04s; }
+.screen.is-on > *:nth-child(2) { animation-delay: .09s; }
+.screen.is-on > *:nth-child(3) { animation-delay: .14s; }
+.screen.is-on > *:nth-child(4) { animation-delay: .19s; }
+.screen.is-on > *:nth-child(5) { animation-delay: .23s; }
+.screen.is-on > *:nth-child(n+6) { animation-delay: .26s; }
+@keyframes arrive {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Within a row, each card arrives across rather than together — the presets
+   and the live stat tiles are the two places where that reads. */
+.presets > *, .stats > * { animation: arrive .4s var(--ease) both; }
+.presets > *:nth-child(2), .stats > *:nth-child(2) { animation-delay: .05s; }
+.presets > *:nth-child(3), .stats > *:nth-child(3) { animation-delay: .10s; }
+.stats > *:nth-child(4) { animation-delay: .15s; }
+.stats > *:nth-child(5) { animation-delay: .20s; }
+.stats > *:nth-child(6) { animation-delay: .25s; }
+
+/* Anything you can click says so before you do. A 1px rise is enough; more
+   turns a dense tool into a bouncing toy. */
+.preset, .panel, .card, .stat {
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease),
+              border-color .2s var(--ease);
+}
+.preset:hover, .stat:hover {
+  transform: translate3d(0, -1px, 0);
+  box-shadow: var(--lift), 0 10px 26px -18px rgba(22,22,42,.30);
+  border-color: var(--line-2);
+}
+
+/* Press is where an interface feels responsive or does not: the reaction has
+   to land on the DOWN stroke, not on release. */
+.btn { transition: transform .12s var(--ease), background .18s var(--ease),
+                   border-color .18s var(--ease), color .18s var(--ease); }
+.btn:active:not(:disabled) { transform: translate3d(0, 1px, 0) scale(.985); }
+.preset:active { transform: translate3d(0, 0, 0) scale(.995); }
+
+/* The active rail bar grows from nothing rather than blinking into place. */
+.tab.is-on::before { animation: bar-in .3s var(--ease) both; transform-origin: center; }
+@keyframes bar-in { from { transform: scaleY(0); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen.is-on > *, .presets > *, .stats > *, .tab.is-on::before {
+    animation: none;
+  }
+  .preset:hover, .stat:hover, .btn:active:not(:disabled), .preset:active {
+    transform: none;
+  }
+}
