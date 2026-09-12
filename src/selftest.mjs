@@ -25,6 +25,7 @@ import {
   normaliseError,
   summarise,
 } from "./instrument.mjs";
+import { guardProduction } from "./config.mjs";
 import { buildReport, renderReport } from "./report.mjs";
 import { canSignInOnly, CONTRACT_METHODS, coverageOf, isStub } from "./contract.mjs";
 import { diagnose } from "./diagnose.mjs";
@@ -504,6 +505,77 @@ check("doctor names the cleanup mode", () => {
     diagnose({ config: cfg, adapter: noDelete(), reachable: true }).cleanup,
     "create-then-delete",
   );
+});
+
+// --- 4c-bis. the denylist, which is the one thing that must never be wrong --
+//
+// Everything else in this file protects a report. This protects a database
+// that real people's accounts are in. It had no coverage until a substring
+// match was found refusing `key: "k"` — and the same test showed the far worse
+// half: because the comparison included the scheme, writing the forbidden host
+// as http:// instead of https:// walked straight past it.
+//
+// So the rule is hosts, not strings, and both directions are asserted: every
+// way of spelling a forbidden host is refused, and nothing else is.
+
+const FORBIDDEN = "prod.example.com";
+const guarded = (target) => {
+  try {
+    guardProduction({
+      _file: "x", environment: "test",
+      neverRunAgainst: [`https://${FORBIDDEN}`], target,
+    });
+    return "ran";
+  } catch { return "refused"; }
+};
+
+for (const [how, target] of Object.entries({
+  "written plainly": `https://${FORBIDDEN}`,
+  "with no scheme": FORBIDDEN,
+  "over http instead of https": `http://${FORBIDDEN}`,
+  "as a websocket url": `wss://${FORBIDDEN}/realtime/v1`,
+  "as a postgres connection string": `postgresql://postgres:pw@${FORBIDDEN}:5432/postgres`,
+  "with credentials in front of it": `https://user:secret@${FORBIDDEN}`,
+  "with a port": `https://${FORBIDDEN}:443`,
+  "with a path, query and hash": `https://${FORBIDDEN}/rest/v1?a=1#b`,
+  "in capitals with a trailing slash": `HTTPS://${FORBIDDEN.toUpperCase()}/`,
+  "padded with whitespace": `   https://${FORBIDDEN}   `,
+  "as a subdomain of it": `https://api.${FORBIDDEN}`,
+  "buried in a nested field": { url: "http://127.0.0.1:54321", replica: `https://${FORBIDDEN}` },
+  "hidden in an array": ["http://127.0.0.1:54321", `https://${FORBIDDEN}`],
+})) {
+  check(`a forbidden host is refused ${how}`, () => {
+    assert.equal(guarded(target), "refused",
+      "this is the guard that keeps simulated people out of a real database");
+  });
+}
+
+check("a short field value is not mistaken for a forbidden host", () => {
+  // "e", "com" and "pro" are all substrings of prod.example.com. None is a host.
+  assert.equal(guarded({ url: "http://127.0.0.1:54321", key: "e", schema: "com", pool: "pro" }), "ran");
+});
+
+check("a different host on the same domain still runs", () => {
+  assert.equal(guarded({ url: "https://staging.example.com", key: "k" }), "ran");
+});
+
+check("naming a domain also covers its subdomains", () => {
+  // Someone who forbids example.com means all of it, not the apex alone.
+  assert.equal(guarded(`https://api.${FORBIDDEN}`), "refused");
+});
+
+check("an empty denylist warns rather than silently allowing", () => {
+  const c = guardProduction({ _file: "x", environment: "test", target: { url: "https://anything.example" } });
+  assert.ok((c._warnings || []).some((w) => /neverRunAgainst is empty/.test(w)));
+});
+
+check("a non-production environment is still required", () => {
+  for (const environment of ["production", "prod", undefined, "", "live"]) {
+    assert.throws(() => guardProduction({
+      _file: "x", environment, target: { url: "http://127.0.0.1:54321" },
+      neverRunAgainst: [`https://${FORBIDDEN}`],
+    }), `environment "${environment}" must not be accepted`);
+  }
 });
 
 // --- 4d. teardown must not claim removals it did not make ------------------

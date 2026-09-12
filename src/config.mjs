@@ -16,6 +16,40 @@ export class ConfigError extends Error {}
 
 const strip = (u) => String(u || "").trim().replace(/\/+$/, "").toLowerCase();
 
+/**
+ * The hostname inside a string, however it was written.
+ *
+ * Everything here is a variation a person actually types: a trailing slash, a
+ * path on the end, no scheme at all, a port, capitals, stray whitespace. All of
+ * them must come out as the same host, because all of them are the same
+ * database.
+ *
+ * Returns null for a string that is not a host. That matters more than it
+ * looks: the denylist is compared against every string in the target block,
+ * keys and schema names included, and those must not be mistaken for hosts.
+ */
+function hostOf(value) {
+  const s = strip(value).replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/^[^/@]*@/, "");
+  const host = s.split(/[/?#]/)[0].split(":")[0];
+  return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(host) ? host.replace(/^\.+|\.+$/g, "") : null;
+}
+
+/**
+ * Is this target one of the hosts the customer forbade?
+ *
+ * Host equality, or a subdomain of a forbidden host — so naming
+ * `example.com` also stops `api.example.com`, which is what someone listing
+ * their production domain means.
+ *
+ * It is deliberately NOT a substring test. A substring test refuses
+ * `key: "k"` because some forbidden URL happens to contain the letter k, and a
+ * guard that cries wolf over a single character is a guard people switch off.
+ */
+function sameHost(target, denied) {
+  if (!target || !denied) return false;
+  return target === denied || target.endsWith(`.${denied}`) || denied.endsWith(`.${target}`);
+}
+
 /** Pull every string out of a nested object, so we can scan a whole target block. */
 function stringsIn(value, found = []) {
   if (typeof value === "string") found.push(value);
@@ -134,14 +168,24 @@ export function guardProduction(config) {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean),
-  ].map(strip);
+  ];
+
+  // A denied entry that is not a host is kept as a literal, so a customer who
+  // writes something unusual in there still gets an exact match rather than
+  // silently nothing.
+  const deniedHosts = denied.map(hostOf).filter(Boolean);
+  const deniedLiterals = denied.filter((d) => !hostOf(d)).map(strip).filter(Boolean);
 
   if (denied.length) {
-    const targets = stringsIn(config.target).map(strip).filter(Boolean);
-    const hit = targets.find((t) => denied.some((d) => d && (t === d || t.includes(d) || d.includes(t))));
+    const targets = stringsIn(config.target);
+    const hit = targets.find((raw) => {
+      const host = hostOf(raw);
+      if (host && deniedHosts.some((d) => sameHost(host, d))) return true;
+      return deniedLiterals.includes(strip(raw));
+    });
     if (hit) {
       refuse(
-        `The target matches a host listed in neverRunAgainst:\n    ${hit}`,
+        `The target matches a host listed in neverRunAgainst:\n    ${hostOf(hit) || strip(hit)}`,
         `Simulated people must never be visible to real users.\n` +
           `  Point \`target\` at a separate test environment.`,
       );
