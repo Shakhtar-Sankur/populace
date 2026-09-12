@@ -922,8 +922,8 @@ async function renderReport(file) {
       <div class="stat"><b>${Number(r.api?.calls ?? 0).toLocaleString()}</b><span>API calls</span></div>
       <div class="stat"><b class="${r.api?.apiFailures ? "bad" : "ok"}">${r.api?.apiFailures ?? 0}</b><span>API failures</span></div>
       <div class="stat"><b class="${r.api?.transportFailures ? "warn" : ""}">${r.api?.transportFailures ?? 0}</b><span>network</span></div>
-      <div class="stat"><b>${made}</b><span>people</span></div>
-      <div class="stat"><b>${mins}</b><span>minutes</span></div>
+      <div class="stat"><b>${made}</b><span>${made === 1 ? "person" : "people"}</span></div>
+      <div class="stat"><b>${mins}</b><span>${mins === 1 ? "minute" : "minutes"}</span></div>
       <div class="stat"><b class="${removed === made ? "ok" : "bad"}">${removed}/${made}</b><span>removed</span></div>
     </div>
 
