@@ -732,3 +732,15 @@ main { scrollbar-gutter: stable; }
   font-weight: 500;
   color: var(--muted);
 }
+
+/* Table headers were the last capitals left: 9.5px, tracked .12em, in a table
+   whose whole job is to be read across. A column heading is a label like any
+   other — and these sit directly above figures, which is where legibility is
+   worth most. Sentence case, at a size you can actually read. */
+table.people thead th {
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 600;
+  color: var(--muted);
+}
