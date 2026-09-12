@@ -421,14 +421,16 @@
         <h3>1. The version check</h3>
         <p>An anonymous <code>GET</code> to <code>api.github.com</code> when you press
           <b>Check for a newer Studio</b>, and to <code>registry.npmjs.org</code> when the engine
-          checks itself. No identifier is sent, and the engine's check is off entirely when
+          checks itself. Nothing identifies you or this install &mdash; GitHub requires a user-agent,
+          so it gets <code>populace-studio/</code> and the version you are running, and nothing else.
+          The engine's check is off entirely when
           <code>POPULACE_NO_UPDATE_CHECK=1</code> or <code>CI</code> is set.</p>
       </div>
 
       <div class="leave">
         <h3>2. Model explanations &mdash; only if you set a key</h3>
         <p>If, and only if, <code>ANTHROPIC_API_KEY</code> is set, failures that no built-in rule
-          could name are sent to <code>api.anthropic.com</code>. Exactly four fields go with each
+          could name are sent to <code>api.anthropic.com</code>. Exactly five fields go with each
           one:</p>
         <ul class="fields">
           <li><code>method</code> &mdash; the contract method name, such as <code>like</code></li>
