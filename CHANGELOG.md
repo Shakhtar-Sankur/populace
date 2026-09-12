@@ -11,6 +11,52 @@ and Studio shipped 1.0.1 through 1.0.9 between the 22nd and the 24th, none of
 which were written up here. Rather than reconstruct nine releases from memory
 and risk getting them wrong, the gap is left visible.
 
+## engine 1.3.2 · Studio 1.0.14 — 12 September 2026
+
+### Fixed
+
+- **`neverRunAgainst` did not stop a forbidden host written any other way.**
+  This is the guard that keeps simulated people out of a database real people
+  are in, and it compared whole strings with `includes()` in both directions,
+  scheme and all. So a host was only caught when it was typed exactly as it was
+  listed. Written over `http://` instead of `https://` it ran. As a Postgres
+  connection string it ran. As a `wss://` realtime URL, with credentials before
+  the host, or as any subdomain, it ran. Five realistic spellings of a
+  production URL walked past the one check that exists to stop them.
+
+  The same test found the noisy half first: `key: "k"` was *refused*, because a
+  forbidden URL happened to contain the letter k, and the refusal named `k` as
+  the matched host. That absurdity is what led to the rest.
+
+  Both sides are now reduced to a hostname and compared as hostnames, with
+  subdomains of a forbidden host counted as forbidden. A denylist entry that is
+  not a host is kept as a literal so nothing silently stops matching.
+
+  It had no coverage at all, which is how it survived. Every other safety
+  property in `selftest.mjs` was tested; the only one protecting customer data
+  was not. It now has eighteen checks in both directions — thirteen ways of
+  spelling a forbidden host, and the legitimate targets that must still run.
+
+- **Updates called an unreleased build "up to date".** Any version ahead of the
+  newest published release fell into the same branch as a version equal to it,
+  so a local build reported itself as the newest release available — naming a
+  version nobody can download. It now says it is ahead of what is published,
+  and that there is nothing to get.
+
+- **Privacy overstated its own precision, twice.** The page says every line of
+  it was checked against the code. "Exactly four fields" counted the bullets,
+  not the fields; five things go to the model. And "no identifier is sent" was
+  true of the user but not of the request, which carries the product name and
+  version in a user-agent GitHub requires. Neither was a leak. Both are now
+  stated as they are.
+
+### Changed
+
+- Studio is light. The dark palette is gone, replaced by tokens on a near-white
+  ground with a drifting wash behind the content, entrance animations that
+  respect `prefers-reduced-motion`, and small text that is no longer shouted in
+  capitals.
+
 ## engine 1.3.1 — 29 August 2026
 
 ### Fixed
