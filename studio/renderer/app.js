@@ -1118,6 +1118,12 @@ $("do-app-update").addEventListener("click", async () => {
     link.hidden = false;
     link.dataset.url = r.url;
     $("app-update-note").textContent = "Downloads from the release page. Windows will warn about the unsigned installer.";
+  } else if (r.current !== r.latest) {
+    // Running ahead of everything published \u2014 a local build, or a release that
+    // has not gone out yet. Saying "up to date" here would name a version
+    // nobody can download as the newest one available.
+    out.textContent = `You are running ${r.current}, which is ahead of the newest published release (${r.latest}).\nThis is a build that was never released.`;
+    $("app-update-note").textContent = "Nothing to download. There is no newer release than the one you have.";
   } else {
     out.textContent = `Up to date \u2014 ${r.current} is the newest release.`;
     $("app-update-note").textContent = "Checked against the public release list.";
