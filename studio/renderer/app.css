@@ -654,3 +654,81 @@ main { scrollbar-gutter: stable; }
     transform: none;
   }
 }
+
+/* ── small text, said rather than shouted ────────────────────────────────
+   Five different treatments of small text had settled on the same recipe:
+   10 to 11.5px, tracked out to .12em, and forced to uppercase. Stat labels,
+   panel headings, the clock's caption, the status pill and every form label.
+   Together they gave the window the look of a dashboard from a decade ago,
+   and they were the loudest thing on a screen whose actual content is numbers.
+
+   The markup was already written properly — "API calls", "Where they are",
+   "km driven" — and the stylesheet was shouting over it. So the transform goes
+   and the sentences come back. Nothing here changes a single word of copy. */
+
+/* Stat captions: the label under a number should name it, not compete with it. */
+.stat span {
+  font-size: 11.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* Panel headings keep their indigo tick and their weight; they simply stop
+   being capitals. At sentence case they can also come up to a readable size. */
+.panel-head h2 {
+  font-size: 13px;
+  letter-spacing: -.005em;
+  text-transform: none;
+  font-weight: 650;
+}
+
+/* Form labels, same reasoning. These sit directly above the field they name,
+   so they were being shouted at the closest possible range. */
+.lbl {
+  font-size: 11.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* The clock's caption, under a 30px figure — it never needed the emphasis. */
+.clock span {
+  font-size: 11.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* The pill is the one place capitals earn their keep: it is a state, it is two
+   words at most, and it has to read as a badge rather than a sentence. Kept
+   capital, but the tracking comes back in and it gains a little size. */
+.pill {
+  font-size: 11px;
+  letter-spacing: .04em;
+}
+
+/* Hints beside a heading — "calls per second", "worst first", "scroll to zoom"
+   — are prose, and prose does not belong in a monospace face. Mono is for
+   things you compare down a column: figures, method names, file paths. Using
+   it for an English phrase is decoration pretending to be information. */
+.panel-head .muted {
+  font-family: var(--ui);
+  font-size: 12px;
+  color: var(--faint);
+}
+
+/* The counts under the throughput chart — posts, likes, comments, messages —
+   were the last place still shouting, at 9.5px and .1em. They sit directly
+   beneath a chart and name four ordinary nouns; there was nothing to shout
+   about. Same treatment as every other caption. */
+.mini span {
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 500;
+  color: var(--muted);
+}
