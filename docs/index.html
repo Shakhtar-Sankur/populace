@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Populace — a simulated population that tests your app for real</title>
-<meta name="description" content="Populace brings a population of simulated people to life inside your app and drives it through its real API. It found six real bugs in a finished, shipped application — the last on the run meant to sign the work off. Built by Gigzen.">
+<title>Populace — test your app with people who don't exist</title>
+<meta name="description" content="Populace fills your app with simulated people who use it through your real API, all at once, and reports what broke and why. Its first run found defects in an app that had passed a full manual test. Free and open source, by Gigzen.">
 <meta name="author" content="Gigzen">
 <!-- The mark again as a tab icon. Geometry is slightly tighter than the inline
      symbol (centres 15 apart, radius 6.7 rather than 17/7.6) because here it
      sits inside a filled tile and needs breathing room against the corners;
      the inline one is on a transparent ground and wants to fill its box. -->
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%234F46E5'/><g fill='%23FFFFFF'><circle cx='32' cy='17' r='6.7'/><circle cx='19.01' cy='24.5' r='6.7'/><circle cx='19.01' cy='39.5' r='6.7'/><circle cx='32' cy='47' r='6.7'/><circle cx='44.99' cy='39.5' r='6.7'/></g><circle cx='44.99' cy='24.5' r='5.6' fill='none' stroke='%23FFFFFF' stroke-width='2.2'/></svg>">
-<meta property="og:title" content="Populace — a simulated population that tests your app for real">
-<meta property="og:description" content="Multi-user testing that uses your app the way people do. Six real bugs found in a shipped app. Zero runtime dependencies.">
+<meta property="og:title" content="Populace — test your app with people who don't exist">
+<meta property="og:description" content="Simulated people use your app through its real API, all at once, and the report tells you what broke and why. Free, open source, zero runtime dependencies.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -614,11 +614,11 @@ main,footer{position:relative; z-index:1}
       </span>
     </a>
     <div class="navlinks" id="navlinks">
-      <a href="#proof">Proof</a>
+      <a href="#proof">What it found</a>
       <a href="#foryou">Is it for you</a>
       <a href="#how">How it works</a>
       <a href="#report">The report</a>
-      <a href="#resilience">Resilience</a>
+      <a href="#resilience">Reliability</a>
       <a href="#safety">Safety</a>
       <a href="#docs">Docs</a>
       <a class="cta" href="#download">Download</a>
@@ -639,20 +639,20 @@ main,footer{position:relative; z-index:1}
     </p>
     <h1 class="grad hero-grad">Your app, used by people who don't exist.</h1>
     <p class="lede">
-      Populace brings a population of simulated people to life inside your application
-      and drives it through its <strong>real API</strong> — signing up, moving through
-      cities, posting, messaging, and deleting themselves afterwards. It finds the
-      bugs that only appear when more than one person is using your software at once.
+      Populace fills your app with simulated people who sign up, move, post and message
+      through your <strong>real API</strong>, all at once. Then it tells you what broke,
+      why, and what to change. It finds the bugs that only appear when more than one
+      person uses your software.
     </p>
     <div class="hero-cta">
       <a class="btn btn-primary" href="#download">Download Populace</a>
       <a class="btn btn-ghost" href="#proof">See what it found</a>
     </div>
     <div class="trust">
-      <span><b>6</b> real bugs found in a shipped app</span>
+      <span><b>3.17M</b> API calls in one day of testing</span>
       <span><b>0</b> runtime dependencies</span>
       <span><b>121</b> self-tests</span>
-      <span><b>13</b>-method adapter contract</span>
+      <span><b>Free</b> and open source</span>
     </div>
   </div>
   <div class="scrollcue" aria-hidden="true"><i></i><span>Scroll</span></div>
@@ -664,10 +664,13 @@ main,footer{position:relative; z-index:1}
     <div class="term rv">
       <div class="term-bar">
         <i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i>
-        <span class="t">populace run --agents 6 --minutes 5</span>
+        <span class="t">populace demo</span>
       </div>
-      <!-- The transcript is real content, so it lives in the HTML. The script
-           clears it and types it out; without scripts you simply read it. -->
+      <!-- Real output of `populace demo`, trimmed, captured on 13 September 2026.
+           The transcript that used to sit here was labelled as a Waggle run but
+           did not match any run in the test report, so it was replaced with the
+           command a visitor can type and get this exact shape of result from.
+           The script clears it and types it out; without scripts you read it. -->
       <div class="term-body" id="termbody">
   Bringing 6 people to life across manila, mumbai…
 
@@ -678,16 +681,17 @@ main,footer{position:relative; z-index:1}
    ✓ Dante Cruz (Manila, joyride)
    ✓ Imran Shaikh (Mumbai, swiggy)</span>
 
-  Running 6 people for 5 min…
+  Running 6 people for 1 min…
 
-<span class="d">  tick 12/60 · 6 people · 2.0km · 4p 14l 6c 0m
-  tick 60/60 · 6 people · 1.8km · 15p 39l 15c 18m</span>
+<span class="d">  tick 12/30 · 6 people · 1.0km · 6p 17l 6c 5m · 5 errors
+  tick 30/30 · 6 people · 2.4km · 18p 41l 17c 15m · 13 errors</span>
 
-<span class="c">  POPULACE REPORT — Waggle</span>
+<span class="c">  POPULACE REPORT — Demo App</span>
 <span class="r">  ✖ Problems found:</span>
-      · 13 of 318 API calls failed (4.1%).
-<span class="r">  ✖ recentPostsByOthers   24   24   82ms</span>
-<span class="d">      ↳ 24× returns only the caller's own rows</span>
+      · 13 of 335 API calls failed (3.9%).
+<span class="r">  ✖ like   53   13   42ms</span>
+<span class="d">      ↳ 13× new row violates row-level security policy "post_likes_insert"</span>
+<span class="c">  [YOUR APP]  The database refused the write on permissions, not on data.</span>
 <span class="g">  ✔ Cleanup complete — 6 accounts removed.</span></div>
     </div>
   </div>
@@ -699,83 +703,73 @@ main,footer{position:relative; z-index:1}
   <div class="aura" aria-hidden="true"></div>
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Proven, not promised</p>
-    <h2 class="rv grad">It found six real bugs in a finished app.</h2>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>What it found</p>
+    <h2 class="rv grad">Its first run broke an app that had passed every manual test.</h2>
     <p class="lede rv" style="margin-top:16px">
-      Not a toy example. Waggle is a shipped social application for delivery riders
-      — built, tested by hand, and believed to work. Six simulated people used it for
-      five minutes. A sixth arrived later, on the sign-off run itself.
-      Every run is written up in the
-      <a href="https://shakhtar-sankur.github.io/gigzen/test-report.html">full test report</a>,
-      including what was never tested.
-      Every one of these was invisible to single-user testing, because
-      every one of them requires a <em>second person</em> to exist.
+      Six simulated drivers used Waggle, our app for delivery riders, for three and a half
+      minutes. Waggle had already passed a full manual test of every screen. Populace
+      found three defects in it, and one meant no new account could work. It found two in
+      itself as well. A fourth app defect turned up later, on the run meant to sign the
+      work off. Every run is in the
+      <a href="https://shakhtar-sankur.github.io/gigzen/test-report.html">test report</a>.
     </p>
 
     <div class="grid4 rv" style="margin:38px 0 46px">
-      <div class="stat"><b>5</b><span>real bugs, first run</span></div>
-      <div class="stat"><b>318</b><span>API calls made</span></div>
-      <div class="stat"><b>6</b><span>concurrent identities</span></div>
-      <div class="stat"><b>5<span style="font-size:.5em">min</span></b><span>to find them all</span></div>
+      <div class="stat"><b>3.5<span style="font-size:.5em">min</span></b><span>to find the first five</span></div>
+      <div class="stat"><b>6</b><span>simulated drivers</span></div>
+      <div class="stat"><b>4</b><span>app defects, one root cause</span></div>
+      <div class="stat"><b>2</b><span>defects in Populace itself</span></div>
     </div>
 
     <div class="grid2" style="align-items:start">
       <div class="rv">
         <div class="bug">
-          <span class="sev">Blocker</span>
-          <h4>Nobody could see anybody else's posts</h4>
-          <p>The feed query filtered by the author's own id. With one tester it looked
-             perfect — you always saw your own posts. With six, the app was six private
-             diaries that happened to share a database.</p>
+          <span class="sev">In the app</span>
+          <h4>Signup created no profile</h4>
+          <p>Every new account came out broken. Signup wrote to a column the app is
+             deliberately not allowed to read, and an upsert has to read every column it
+             touches.</p>
         </div>
         <div class="bug">
-          <span class="sev">Blocker</span>
-          <h4>Profile updates silently wrote nothing</h4>
-          <p>An <code>INSERT … ON CONFLICT DO UPDATE</code> needs SELECT permission on
-             every column it touches. It had none, so the upsert reported success and
-             changed nothing. No error, no row.</p>
+          <span class="sev">In the app</span>
+          <h4>Likes failed at random</h4>
+          <p>About one tap in four was rejected. Liking was an upsert on a table with no
+             rule allowing updates.</p>
         </div>
         <div class="bug">
-          <span class="sev">High</span>
-          <h4>Account deletion left the data behind</h4>
-          <p>The auth record went; the posts, photos and messages stayed. The one path
-             almost nobody exercises, and the one regulators ask about first.</p>
+          <span class="sev">In the app</span>
+          <h4>Profile edits silently vanished</h4>
+          <p>The same upsert on the same unreadable column. No error on screen, and
+             nothing saved.</p>
         </div>
       </div>
       <div class="rv">
         <div class="bug">
-          <span class="sev">High</span>
-          <h4>Messages delivered to the wrong conversation</h4>
-          <p>Thread identity was derived from a pair of ids in inconsistent order, so
-             A→B and B→A were sometimes different threads and sometimes the same one.</p>
+          <span class="sev">In the app</span>
+          <h4>Rejoining a group failed silently</h4>
+          <p>Found later, on the sign-off run. The same mistake a third time, on a
+             different table.</p>
         </div>
         <div class="bug">
-          <span class="sev">Medium</span>
-          <h4>Group membership counted duplicates</h4>
-          <p>No unique constraint on the join table. Rejoining inflated the count, and
-             the number shown to users drifted upward the more they used the app.</p>
+          <span class="sev">In Populace</span>
+          <h4>Two defects in our own adapter</h4>
+          <p>A wrongly named argument, and an ignored error that made the report blame
+             the wrong method. Both fixed. The report now names the real cause.</p>
         </div>
 
         <div class="take">
           “You cannot upsert a column you cannot select.”
         </div>
 
-        <h3 style="margin:34px 0 10px">And a clean run since</h3>
+        <h3 style="margin:34px 0 10px">Clean runs since</h3>
         <p style="font-size:15.5px">
-          The same six people, the same schema, after the fixes:
-          <strong>627 API calls across twelve endpoints, zero failures</strong>, six
-          accounts created and all six removed. Every multi-user path exercised — 88
-          reads of other people's feeds, 87 likes and 37 comments on other people's
-          posts, 35 private messages between drivers.
+          After the fixes, the same run made <strong>400 API calls with no failures</strong>
+          and removed every account. On a local backend, up to 300 simulated drivers at once
+          made <strong>3.17 million calls with zero API failures</strong>.
         </p>
         <p style="font-size:15px; color:var(--muted)">
-          Run against a local instance of the production schema, so the latency figures
-          are loopback numbers and are deliberately not quoted here. What it establishes
-          is correctness under concurrency, not speed.
-        </p>
-        <p style="font-size:15px; color:var(--muted)">
-          The rule that came out of the run — and the one that had silently broken
-          profile editing for every user of a shipped application.
+          Local runs prove correctness under concurrency, not speed, so their latency isn't
+          quoted here.
         </p>
       </div>
     </div>
@@ -788,42 +782,40 @@ main,footer{position:relative; z-index:1}
 <section id="foryou">
   <div class="pop-field" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Is this you</p>
-    <h2 class="rv">You cannot test this alone, and you know it.</h2>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Is it for you</p>
+    <h2 class="rv">Some bugs need two people.</h2>
     <p class="lede rv" style="margin-top:16px; max-width:56ch">
-      Populace is for anyone shipping software where <strong>the second user is the problem</strong>.
-      If none of the lines below is your product, you do not need this.
+      Populace is for software where <strong>the second user is the problem</strong>. If
+      nothing below describes your product, you don't need it.
     </p>
 
     <div class="grid2 rv" style="margin-top:34px; align-items:start">
       <div class="card">
-        <h3 style="font-size:17px">You need it if your app has…</h3>
+        <h3 style="font-size:17px">You need it if your app has</h3>
         <ul style="margin-top:10px; font-size:15px; line-height:1.9">
-          <li>A feed, a chat, or anything one person publishes and another reads</li>
-          <li>Permission rules deciding who may see what</li>
-          <li>Presence, read receipts, or realtime fan-out</li>
-          <li>Counters, memberships, or anything two people can write at once</li>
-          <li>An account-deletion path you have never really exercised</li>
+          <li>A feed, a chat, or anything one person posts and another reads</li>
+          <li>Rules about who can see what</li>
+          <li>Presence, read receipts or live updates</li>
+          <li>Counters, memberships, or anything two people can change at once</li>
+          <li>An account deletion path nobody has really tested</li>
         </ul>
       </div>
       <div class="card">
-        <h3 style="font-size:17px">You do not need it if…</h3>
+        <h3 style="font-size:17px">You don't need it if</h3>
         <ul style="margin-top:10px; font-size:15px; line-height:1.9">
-          <li>Your product is single-player and always will be</li>
-          <li>You want a load test — this is a <em>correctness</em> tool, and says so</li>
-          <li>You want to know whether people <em>want</em> your product. It cannot tell you that,
-              and neither can any other tool</li>
+          <li>Your product is single-player</li>
+          <li>You want a load test. Populace checks <em>correctness</em>, not capacity.</li>
+          <li>You want to know if people <em>want</em> your product. No tool can tell you that.</li>
         </ul>
       </div>
     </div>
 
-    <h3 class="rv" style="margin-top:44px">Why not just write the scripts yourself?</h3>
+    <h3 class="rv" style="margin-top:44px">Why not write the scripts yourself?</h3>
     <p class="rv" style="margin-top:10px; max-width:64ch">
-      You can, and for one flow you probably should. The difference shows up at the fourth flow:
-      a script asserts what you already suspected, whereas a population does what people do and
-      finds what you did not think to assert. <strong>Nobody told Populace where the bugs were.</strong>
-      It found an upsert that could not read its own column — three times, in three different
-      places, months apart — because six strangers signing up at once is a thing a test script
+      You can, and for one flow you should. A script checks what you already suspect. A
+      population does what people do, and finds what you didn't think to check.
+      <strong>Nobody told Populace where Waggle's bugs were.</strong> It found the same upsert
+      mistake three times, because six strangers signing up at once is something a test script
       never does.
     </p>
 
@@ -831,24 +823,22 @@ main,footer{position:relative; z-index:1}
       <div class="card">
         <h3 style="font-size:17px">What it costs</h3>
         <p style="font-size:15px; margin-top:8px">
-          <strong>Nothing.</strong> Free and open source under AGPL-3.0, on npm as
-          <code>@gigzen/populace</code>. No account, no telemetry, no paid tier.
+          <strong>Nothing.</strong> Free and open source under AGPL-3.0. No account, no
+          telemetry, no paid tier.
         </p>
         <p style="font-size:14px; color:var(--muted); margin-top:10px">
-          AGPL means if you offer Populace itself as a hosted service, your version stays open.
-          Using it to test your own product — commercial or not — carries no such obligation.
+          The AGPL only matters if you offer Populace itself as a hosted service. Testing your
+          own product, commercial or not, carries no obligation.
         </p>
       </div>
       <div class="card">
-        <h3 style="font-size:17px">What it costs you in time</h3>
+        <h3 style="font-size:17px">What it costs in time</h3>
         <p style="font-size:15px; margin-top:8px">
-          One adapter. Thirteen small methods, two of them required, each answering
-          &ldquo;how does this happen in my app?&rdquo;
+          One adapter file. Thirteen small methods, two of them required.
         </p>
         <p style="font-size:14px; color:var(--muted); margin-top:10px">
-          <code>populace init</code> writes a working REST adapter with every line you need to
-          change marked <code>EDIT</code>. If your API speaks HTTP and JSON, that is an afternoon,
-          not a project.
+          <code>populace init</code> writes a working REST adapter with every line to change
+          marked <code>EDIT</code>. For an HTTP and JSON API, that's an afternoon.
         </p>
       </div>
     </div>
@@ -856,11 +846,7 @@ main,footer{position:relative; z-index:1}
     <p class="rv" style="margin-top:34px">
       <a class="btn btn-primary" href="#download">Install it</a>
       <a class="btn btn-ghost" href="https://shakhtar-sankur.github.io/gigzen/test-report.html"
-         style="margin-left:10px">Read the full test report &rarr;</a>
-    </p>
-    <p class="rv" style="margin-top:14px; font-size:14px; color:var(--muted)">
-      That report lists what was <em>not</em> tested, too. If a tool&rsquo;s own evidence page has no
-      such section, ask why.
+         style="margin-left:10px">Read the test report &rarr;</a>
     </p>
   </div>
 </section>
@@ -873,64 +859,60 @@ main,footer{position:relative; z-index:1}
     <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>How it works</p>
     <h2 class="rv grad">The engine never learns your app.</h2>
     <p class="lede rv" style="margin-top:16px">
-      Populace knows how to <em>be a person</em>: where they are, when they get bored,
-      who they reply to, when they give up on a slow screen. It knows nothing about your
-      software. Everything app-specific lives in one small adapter you write — and if
-      app logic ever leaks into the engine, Populace has collapsed back into a test script.
+      Populace knows how to <em>be a person</em>: where they go, when they get bored, who
+      they reply to. It knows nothing about your software. Everything specific to your app
+      lives in one small adapter you write.
     </p>
 
     <div class="grid3 rv" style="margin-top:40px">
       <div class="card">
         <span class="num">01</span>
         <h3>Write an adapter</h3>
-        <p>One file. Translate “a person did something” into your API calls. Only
-           <code>createUser</code> is mandatory — implement what you have, and Populace
-           reports honestly on what it therefore could not test.</p>
+        <p>One file that turns “a person did something” into your API calls. Two methods
+           are required, <code>createUser</code> and <code>deleteUser</code>. Add the rest
+           as they apply.</p>
       </div>
       <div class="card">
         <span class="num">02</span>
         <h3>Run a population</h3>
-        <p>Deterministic identities across real cities, each with their own rhythm,
-           patience and habits. Agent <em>n</em> always gets the same phone number, so
-           re-runs reuse accounts instead of piling up new ones.</p>
+        <p>Simulated people across real cities, each with their own habits and patience.
+           Person <em>n</em> always gets the same phone number, so reruns reuse accounts
+           instead of piling up new ones.</p>
       </div>
       <div class="card">
         <span class="num">03</span>
-        <h3>Read the evidence</h3>
-        <p>What broke, how often, under how many concurrent users, how slow it got —
-           and, crucially, what was never tested at all.</p>
+        <h3>Read the report</h3>
+        <p>What broke, how often, how slow it got with everyone on at once, and what the
+           run never reached.</p>
       </div>
     </div>
 
     <!-- The most common question, answered where it is asked. -->
-    <h3 class="rv" style="margin:60px 0 8px">What you connect it to — and what you don't</h3>
+    <h3 class="rv" style="margin:60px 0 8px">What to connect it to</h3>
     <div class="grid2 rv" style="margin-top:22px; align-items:start">
       <div class="card" style="border-color:color-mix(in srgb,var(--cyan) 34%,transparent)">
         <span class="num" style="color:var(--cyan)">Point it here</span>
         <h3>Your API</h3>
-        <p>The same HTTP endpoints, database and auth your real app talks to — your
-           <strong>test</strong> environment of them. Six agents sign in as six genuinely
-           different users, so the server has to keep them apart.</p>
-        <p style="margin-bottom:0"><strong>Why:</strong> every bug found so far lived on the
-           server — a feed query filtered to the wrong user, an upsert with no read
-           permission, a delete that left the rows behind. None was visible from the screen.</p>
+        <p>The same endpoints, database and sign-in your app uses, in a <strong>test</strong>
+           environment. Each simulated person signs in as a different user, so your server
+           has to keep them apart.</p>
+        <p style="margin-bottom:0"><strong>Why:</strong> every bug Populace has found so far
+           lived on the server, where no screen shows it.</p>
       </div>
       <div class="card">
         <span class="num" style="color:var(--muted)">Not this</span>
         <h3>Your .apk or .aab</h3>
-        <p>There is no “drop in your build and go”. A compiled binary is a
-           <em>client</em>; driving it means automating taps on screens, which tests the
-           interface rather than what happens when several people use it at once.</p>
-        <p style="margin-bottom:0">Populace works one layer below that, which is why one
-           adapter covers your Android app, your iOS app and your web app together — they
-           all speak to the same API.</p>
+        <p>A compiled app is a <em>client</em>. Driving it means automating taps, which tests
+           the screens, not what happens when many people use them at once.</p>
+        <p style="margin-bottom:0">Populace works one layer below, so one adapter covers your
+           Android, iOS and web apps together.</p>
       </div>
     </div>
 
     <h3 class="rv" style="margin:52px 0 14px">The whole integration is one file</h3>
     <p class="rv" style="max-width:64ch">
-      This is a real, working adapter — the Supabase one used for the run that found five
-      bugs, trimmed to its essentials. If your backend speaks HTTP, yours looks like this.
+      A trimmed version of a working adapter. If your backend speaks HTTP, yours looks like
+      this.
     </p>
     <div class="rv">
       <pre><span class="cm">// adapters/my-app.mjs — everything Populace needs to know about your app</span>
@@ -954,7 +936,7 @@ main,footer{position:relative; z-index:1}
     <span class="cm">// Say something publicly. Populace decides WHEN; you decide HOW.</span>
     <span class="k">async</span> post(user, text) { <span class="cm">/* one fetch */</span> },
 
-    <span class="cm">// Read the feed — this is the call that exposed the biggest bug.</span>
+    <span class="cm">// Read other people's posts — the path one tester never exercises.</span>
     <span class="k">async</span> recentPostsByOthers(user) { <span class="cm">/* one fetch */</span> },
 
     <span class="cm">// Delete the account and its data. Runs automatically after every run.</span>
@@ -963,35 +945,40 @@ main,footer{position:relative; z-index:1}
 }</pre>
     </div>
     <p class="rv" style="max-width:64ch; font-size:15.5px; color:var(--muted)">
-      Implement <code>createUser</code> and you can run. Add a method, and Populace starts
-      exercising that behaviour; leave one out, and the report names it under
-      <strong>NOT TESTED</strong> along with what it would have caught. It never quietly
-      appears more thorough than it was.
+      Implement the two required methods and you can run. Every method you add gets
+      exercised. Any you leave out are listed under <strong>Not tested</strong>, and any the
+      run never reached are listed under <strong>Not exercised</strong>.
     </p>
 
     <h3 class="rv" style="margin:56px 0 16px">The 13-method contract</h3>
     <p class="rv" style="max-width:62ch">
-      Implement as many as apply. Coverage is reported as a fraction and every gap is
-      named in the report, so a run can never quietly appear more thorough than it was.
+      Implement the ones that apply. Coverage counts the methods a run actually called, and
+      every gap is named.
     </p>
     <div class="scroller rv">
       <table>
         <thead><tr><th>Method</th><th>What a person is doing</th><th>Required</th></tr></thead>
         <tbody>
-          <tr><td><code>createUser</code></td><td>Signing up for the first time</td><td><span class="pill no">Required</span></td></tr>
-          <tr><td><code>deleteUser</code></td><td>Deleting their account and data</td><td><span class="pill warn">Strongly advised</span></td></tr>
-          <tr><td><code>signIn</code></td><td>Coming back later — also makes cleanup read-only</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>createUser</code></td><td>Signing up</td><td><span class="pill no">Required</span></td></tr>
           <tr><td><code>setProfile</code></td><td>Filling in who they are</td><td><span class="pill">Optional</span></td></tr>
-          <tr><td><code>reportLocation</code></td><td>Moving through the city</td><td><span class="pill">Optional</span></td></tr>
-          <tr><td><code>post</code></td><td>Saying something publicly</td><td><span class="pill">Optional</span></td></tr>
-          <tr><td><code>recentPostsByOthers</code></td><td>Reading a feed — the multi-user path</td><td><span class="pill">Optional</span></td></tr>
-          <tr><td><code>like</code> / <code>comment</code></td><td>Reacting to somebody else</td><td><span class="pill">Optional</span></td></tr>
-          <tr><td><code>sendMessage</code> / <code>inbox</code></td><td>Private conversation between two people</td><td><span class="pill">Optional</span></td></tr>
-          <tr><td><code>joinGroup</code> / <code>groupMembers</code></td><td>Membership and counts</td><td><span class="pill">Optional</span></td></tr>
           <tr><td><code>refreshSession</code></td><td>Staying signed in past token expiry</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>reportLocation</code></td><td>Moving through the city</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>post</code></td><td>Posting publicly</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>recentPostsByOthers</code></td><td>Reading other people's posts</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>like</code></td><td>Liking someone else's post</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>comment</code></td><td>Replying to someone else's post</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>openConversation</code></td><td>Starting a private chat</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>sendMessage</code></td><td>Sending a private message</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>listGroups</code></td><td>Browsing groups</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>joinGroup</code></td><td>Joining a group</td><td><span class="pill">Optional</span></td></tr>
+          <tr><td><code>deleteUser</code></td><td>Deleting their account and data</td><td><span class="pill no">Required</span></td></tr>
         </tbody>
       </table>
     </div>
+    <p class="rv" style="max-width:62ch; font-size:14.5px; color:var(--muted); margin-top:12px">
+      Also optional, outside the contract: <code>signIn</code>, which lets cleanup look for
+      leftover accounts without creating any.
+    </p>
   </div>
 </section>
 
@@ -1001,51 +988,55 @@ main,footer{position:relative; z-index:1}
   <div class="aura" aria-hidden="true"></div>
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>The deliverable</p>
-    <h2 class="rv grad">A report you can hand to somebody else.</h2>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>The report</p>
+    <h2 class="rv grad">A report you can hand to someone else.</h2>
     <p class="lede rv" style="margin-top:16px">
-      The live simulation is a demo. The report is the product. It is deliberately
-      conservative: anything unproven is called unproven, and there is no tolerance
-      threshold under which a real bug can hide.
+      The live run is the show. The report is the product. Anything unproven is called
+      unproven, and there's no tolerance threshold for a real bug to hide under.
     </p>
 
     <div class="grid2 rv" style="margin-top:40px; align-items:start">
       <div>
-        <pre><span class="cm">  POPULACE REPORT — Waggle</span>
-  test · 6 people · 80.4s
+        <!-- Real output of `populace demo`, trimmed. The demo app has a
+             row-level-security bug planted in it on purpose. -->
+        <pre><span class="cm">  POPULACE REPORT — Demo App</span>
+  test · 6 people · 78.6s
   ────────────────────────────────────────────
   <span class="k">✖ Problems found:</span>
-      · 13 of 318 API calls failed (4.1%).
+      · 13 of 335 API calls failed (3.9%).
 
   YOUR API UNDER 6 CONCURRENT USERS
     method              calls fails    p50    p95
-  <span class="k">✖</span> recentPostsByOthers    24    24   82ms  120ms
-      ↳ 24× returns only the caller's own rows
-  <span class="k">✖</span> setProfile             18     6  204ms  281ms
-      ↳ 6× upsert reported success, wrote nothing
-    post                   15     0  138ms  190ms
-    <span class="s">like</span>                   39     0   96ms  141ms
+  <span class="k">✖</span> like                   53    13   42ms   60ms
+      ↳ 13× new row violates row-level security
+        policy "post_likes_insert"
+    reportLocation        148     0   32ms   49ms
+    recentPostsByOthers    60     0  324ms  448ms
 
-  NOT TESTED — adapter implements 11/13
-    · joinGroup     would have tested membership counts
+  WHAT TO DO
+    [YOUR APP]  like × 13
+      The database refused the write on
+      permissions, not on data.
+
+  NOT TESTED — adapter implements 12/13
+    · refreshSession
 
   <span class="s">✔ Cleanup complete — 6 accounts removed.</span></pre>
       </div>
       <div>
         <ul class="tick">
-          <li><strong>Failures grouped by shape</strong>, not exact text — one bug is one
-              line, not fifty near-identical ones.</li>
-          <li><strong>Latency per endpoint</strong> (p50/p95/p99/max) measured under N
-              genuinely concurrent identities.</li>
-          <li><strong>Coverage stated honestly.</strong> Methods you did not implement are
-              listed with what they <em>would</em> have tested.</li>
-          <li><strong>Cleanup accounted for.</strong> If accounts could not be removed,
-              the report says so rather than claiming success.</li>
-          <li><strong>Machine-readable JSON</strong> for CI, plus a self-contained HTML
-              page — no scripts, nothing fetched — for the people who weren't watching
-              the terminal.</li>
-          <li><strong>Exits non-zero</strong> when problems are found, so a pipeline can
-              gate on it.</li>
+          <li><strong>One bug, one line.</strong> Failures are grouped by cause, not by exact
+              error text.</li>
+          <li><strong>Latency for every method</strong>, median and 95th percentile, with
+              everyone on at once.</li>
+          <li><strong>What to do next.</strong> Each failure says whether it's your app, the
+              platform or the network, and how to fix it.</li>
+          <li><strong>Honest coverage.</strong> Methods you didn't write, and methods the run
+              never reached, are both named.</li>
+          <li><strong>Cleanup counted.</strong> If an account couldn't be removed, the report
+              says so.</li>
+          <li><strong>JSON for CI</strong>, plus a self-contained HTML page for people who
+              weren't watching. It exits non-zero when anything is wrong.</li>
         </ul>
       </div>
     </div>
@@ -1058,45 +1049,37 @@ main,footer{position:relative; z-index:1}
   <div class="aura" aria-hidden="true"></div>
   <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Built for real infrastructure</p>
+    <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Reliability</p>
     <h2 class="rv grad">It tells you when the network was the problem.</h2>
     <p class="lede rv" style="margin-top:16px">
-      Staging environments sit behind flaky VPNs. CI runners drop sockets. A testing tool
-      that only works on a perfect connection has not been tested yet — and one that blames
-      your API for a dropped packet will be ignored the first time it cries wolf, along with
-      all the real findings that come after it.
+      Test environments sit behind flaky VPNs, and CI machines drop connections. A tool that
+      blames your API for a dropped connection gets ignored, and so do its real findings.
     </p>
 
     <div class="grid2 rv" style="margin-top:40px; align-items:start">
       <div class="card">
         <h3>Every call has a deadline</h3>
-        <p>One unresponsive endpoint used to freeze an entire run and produce nothing —
-           the worst failure a testing tool can have, because it doesn't look like a
-           failure. It looks like nothing. Now a slow endpoint becomes a timeout
-           <em>in the report</em>, and the other agents carry on.</p>
+        <p>A slow endpoint becomes a timeout in the report, and everyone else carries on.
+           One stuck call can't freeze the run.</p>
       </div>
       <div class="card">
-        <h3>Transport failures retry. Yours never do.</h3>
-        <p>A dropped socket is retried with jittered backoff. An error your server
-           actually returned — any status at all — is reported exactly once. Retrying a
-           500 until it passes would turn your bug into a green tick, which is the worst
-           thing a correctness tool can do.</p>
+        <h3>Network failures retry. Your errors don't.</h3>
+        <p>A dropped connection is retried with backoff. An error your server actually
+           returned is reported once, never retried until it happens to pass.</p>
       </div>
       <div class="card">
         <h3>Retries are visible</h3>
-        <p>A call that only worked on its third attempt is not the same as one that
-           worked first time. Retry counts are printed, and latency is measured on the
-           successful attempt alone so retry time can't quietly inflate your p95.</p>
+        <p>Retry counts are shown, and latency is measured on the attempt that worked, so
+           retries can't quietly inflate your numbers.</p>
       </div>
       <div class="card">
-        <h3>It gives up on a dead target</h3>
-        <p>After a run of consecutive unreachable calls, Populace concludes the host is
-           gone, stops, and says so — in seconds, rather than grinding out the full
-           duration and handing you nothing.</p>
+        <h3>It stops on a dead target</h3>
+        <p>If your server stops answering, Populace notices within seconds, stops, and says
+           so. You don't wait out the whole run for nothing.</p>
       </div>
     </div>
 
-    <h3 class="rv" style="margin:52px 0 14px">Three verdicts, because two would be a lie</h3>
+    <h3 class="rv" style="margin:52px 0 14px">Three verdicts</h3>
     <div class="scroller rv">
       <table>
         <thead><tr><th>Verdict</th><th>Means</th><th>Exit</th></tr></thead>
@@ -1111,9 +1094,8 @@ main,footer{position:relative; z-index:1}
           </tr>
           <tr>
             <td><span class="pill warn">inconclusive</span></td>
-            <td>Your API never failed — but the run couldn't complete, so nothing was
-                proven. Calling this “clean” would be the most damaging lie the tool
-                could tell.</td><td><code>1</code></td>
+            <td>Your API never failed, but some calls never reached it, so nothing is
+                proven either way.</td><td><code>1</code></td>
           </tr>
         </tbody>
       </table>
@@ -1130,36 +1112,33 @@ main,footer{position:relative; z-index:1}
     <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Safety</p>
     <h2 class="rv grad">It refuses to touch production.</h2>
     <p class="lede rv" style="margin-top:16px">
-      Populace creates <strong>real accounts</strong> and writes <strong>real rows</strong>
-      through your <strong>real API</strong>. Pointed at production it would put invented
-      people in front of paying customers — that is deception, not testing, and it is
-      painful to unpick afterwards. So the guard refuses in three independent ways, and
-      any one of them is enough to stop a run.
+      Populace creates <strong>real accounts</strong> through your <strong>real API</strong>.
+      Pointed at production, it would put invented people in front of real customers. So it
+      checks three separate ways, and any one of them stops the run.
     </p>
     <div class="grid3 rv" style="margin-top:38px">
       <div class="card">
-        <span class="num">Refusal 01</span>
-        <h3>Environment must opt in</h3>
-        <p>The config has to declare a recognised non-production environment. Never
-           assumed, never inferred.</p>
+        <span class="num">Check 01</span>
+        <h3>You declare a test environment</h3>
+        <p>The config must say it's a non-production environment. Populace never assumes
+           it.</p>
       </div>
       <div class="card">
-        <span class="num">Refusal 02</span>
-        <h3>Explicit denylist</h3>
-        <p>Name your production hosts once in <code>neverRunAgainst</code> and no later
-           edit can point a run at them. No flag overrides it.</p>
+        <span class="num">Check 02</span>
+        <h3>You name production once</h3>
+        <p>List your production hosts in <code>neverRunAgainst</code>. Any URL pointing at
+           them is refused, however it's written, subdomains included.</p>
       </div>
       <div class="card">
-        <span class="num">Refusal 03</span>
-        <h3>Loud about the gap</h3>
-        <p>An empty denylist is warned about every single run, because “I forgot to fill
-           it in” is the likeliest version of this mistake.</p>
+        <span class="num">Check 03</span>
+        <h3>It warns about the gap</h3>
+        <p>An empty production list is flagged on every run, because forgetting to fill it
+           in is the likeliest mistake.</p>
       </div>
     </div>
     <p class="rv" style="margin-top:30px">
-      Cleanup is equally deliberate: agents delete themselves after every run, and
-      <code>populace clean</code> finds anything a crashed run left behind. An identity it
-      could not verify is <em>never</em> reported as absent.
+      Simulated people delete their accounts after every run, and <code>populace clean</code>
+      removes anything a crashed run left behind.
     </p>
   </div>
 </section>
@@ -1173,10 +1152,9 @@ main,footer{position:relative; z-index:1}
     <p class="eyebrow rv"><span class="cohort" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>Get it</p>
     <h2 class="rv grad">Download Populace</h2>
     <p class="lede rv" style="margin-top:16px">
-      Two ways in, one engine. The <strong>desktop application</strong> installs like any
-      other Windows program and needs nothing else on the machine — no Node, no npm, no
-      terminal. The <strong>command line</strong> is the same code for people who would
-      rather type.
+      Two ways in, one engine. The <strong>Windows app</strong> installs like any other
+      program and needs nothing else. The <strong>command line</strong> is the same engine
+      for people who'd rather type.
     </p>
 
     <!-- ---------------------------------------------------------- the app -->
@@ -1184,10 +1162,9 @@ main,footer{position:relative; z-index:1}
       <div>
         <h3 style="font-size:22px; margin-bottom:12px">Populace Studio for Windows</h3>
         <p style="margin-bottom:18px">
-          Five screens over the engine: start a run, watch the population work, read the
-          verdict, ask what a failure means, check for updates. It runs the same
-          <code>populace</code> command a terminal would and shows you the command it ran,
-          so the window can never claim something the command line would not.
+          Start a run, watch it live on a map, read the verdict, ask what a failure means,
+          and check for updates. Under the hood it runs the same <code>populace</code>
+          engine as the command line, so both always agree.
         </p>
 
         <div class="hero-cta" style="margin-top:0">
@@ -1248,13 +1225,12 @@ main,footer{position:relative; z-index:1}
          mean meeting it alone, which is when people abandon a download. -->
     <div class="grid2 rv" style="margin-top:34px; align-items:start">
       <div class="card">
-        <h3 style="font-size:17px">Windows will warn you, and it is right to</h3>
+        <h3 style="font-size:17px">Windows will warn you</h3>
         <p style="font-size:15px">
-          Populace Studio is <strong>not code-signed yet</strong> — a certificate is bought
-          annually and we have not bought one. So Windows shows
-          <em>“Windows protected your PC.”</em> Choose <strong>More info → Run anyway</strong>,
-          or don't: an unsigned binary from a stranger deserves the suspicion. Which is why
-          the checksums are here.
+          Populace Studio is <strong>not code-signed yet</strong>, so Windows shows
+          <em>“Windows protected your PC.”</em> Choose <strong>More info</strong>, then
+          <strong>Run anyway</strong>. If you'd rather check the file first, the checksums
+          are alongside.
         </p>
       </div>
       <div class="card">
@@ -1272,9 +1248,9 @@ Get-FileHash .\PopulaceStudio-Setup-x64.exe</pre>
 
     <!-- ------------------------------------------------------ command line -->
     <p class="rv" style="margin-bottom:6px">
-      <strong>Or use the command line.</strong> Node 18 or newer, and
-      <strong>zero runtime dependencies</strong> — adapters bring their own, the engine
-      brings none. It runs on macOS and Linux too; the desktop build is Windows-only for now.
+      <strong>Or use the command line.</strong> Needs Node 18 or newer, and nothing else:
+      the engine has <strong>zero runtime dependencies</strong>. It runs on macOS and Linux
+      too. The Windows app is Windows-only for now.
     </p>
 
     <div class="grid2 rv" style="margin-top:24px; align-items:start">
@@ -1292,8 +1268,8 @@ populace doctor
 populace smoke
 populace run --agents 6 --minutes 5</pre>
         <p style="font-size:14.5px; color:var(--muted)">
-          <code>demo</code> runs the whole product against an in-memory app, so you can see
-          exactly what a report looks like before writing a line of adapter code.
+          <code>demo</code> runs everything against a built-in app with a bug planted in it,
+          so you see a real report before writing any adapter code.
         </p>
       </div>
 
@@ -1301,27 +1277,26 @@ populace run --agents 6 --minutes 5</pre>
         <h3 style="margin-bottom:14px">Other ways</h3>
         <div class="card" style="margin-bottom:14px">
           <h3 style="font-size:17px">Download a ZIP</h3>
-          <p style="font-size:15px">No git required —
-            <a href="https://github.com/Shakhtar-Sankur/populace/archive/refs/heads/main.zip">populace-main.zip</a>.
-            Unzip, then <code>node src/cli.mjs demo</code>.</p>
+          <p style="font-size:15px">No git needed. Get
+            <a href="https://github.com/Shakhtar-Sankur/populace/archive/refs/heads/main.zip">populace-main.zip</a>,
+            unzip it, then run <code>node src/cli.mjs demo</code>.</p>
         </div>
         <div class="card" style="margin-bottom:14px">
           <h3 style="font-size:17px">From source</h3>
           <p style="font-size:15px">
             <code>git clone https://github.com/Shakhtar-Sankur/populace.git</code>, then
-            <code>node src/cli.mjs demo</code>. Same code, no install.</p>
+            <code>node src/cli.mjs demo</code>. No install.</p>
         </div>
         <div class="card" style="margin-bottom:14px">
-          <h3 style="font-size:17px">Check what you installed</h3>
+          <h3 style="font-size:17px">Get the right package</h3>
           <p style="font-size:15px">
-            The scope matters: it is <code>@gigzen/populace</code>. An unrelated package
-            called <code>populace</code> exists and is not this.</p>
+            It's <code>@gigzen/populace</code>. A different package called
+            <code>populace</code> exists and isn't this.</p>
         </div>
         <div class="card">
-          <h3 style="font-size:17px">Windows</h3>
-          <p style="font-size:15px">A PowerShell runner ships in
-            <code>examples/buzzbuzz/run-test.ps1</code> — the Unix one-liner does not work
-            in PowerShell, so there is a native one.</p>
+          <h3 style="font-size:17px">PowerShell</h3>
+          <p style="font-size:15px">A ready-made runner ships in
+            <code>examples/buzzbuzz/run-test.ps1</code>.</p>
         </div>
       </div>
     </div>
@@ -1341,13 +1316,15 @@ populace run --agents 6 --minutes 5</pre>
       <table>
         <thead><tr><th>Command</th><th>What it does</th></tr></thead>
         <tbody>
-          <tr><td><code>populace demo</code></td><td>Run the whole product against a fake app, immediately</td></tr>
-          <tr><td><code>populace init</code></td><td>Scaffold a config and a blank adapter</td></tr>
-          <tr><td><code>populace doctor</code></td><td>Check config, reachability and coverage <em>without</em> running</td></tr>
-          <tr><td><code>populace smoke</code></td><td>Prove your adapter works — one user, every method once, seconds not minutes</td></tr>
-          <tr><td><code>populace run</code></td><td>Bring the population to life</td></tr>
+          <tr><td><code>populace demo</code></td><td>Run everything against a built-in app, no setup</td></tr>
+          <tr><td><code>populace init</code></td><td>Create a config and a starter adapter</td></tr>
+          <tr><td><code>populace doctor</code></td><td>Check config, connection and coverage <em>without</em> running</td></tr>
+          <tr><td><code>populace smoke</code></td><td>One person, every method once, in seconds</td></tr>
+          <tr><td><code>populace run</code></td><td>Run the population</td></tr>
+          <tr><td><code>populace explain</code></td><td>Explain the failures in the last report</td></tr>
           <tr><td><code>populace clean</code></td><td>Delete every account a run created</td></tr>
-          <tr><td><code>populace report</code></td><td>Re-open the report from an earlier run</td></tr>
+          <tr><td><code>populace report</code></td><td>Reopen the report from an earlier run</td></tr>
+          <tr><td><code>populace update</code></td><td>Check npm for a newer version</td></tr>
           <tr><td><code>populace version</code></td><td>Version and environment, for bug reports</td></tr>
         </tbody>
       </table>
@@ -1359,13 +1336,13 @@ populace run --agents 6 --minutes 5</pre>
   app: <span class="s">"My App"</span>,
   adapter: <span class="s">"./adapters/my-app.mjs"</span>,
 
-  <span class="cm">// Populace only runs against non-production environments, and it checks.</span>
+  <span class="cm">// Must be a non-production environment. Populace checks.</span>
   environment: <span class="s">"test"</span>,
 
-  <span class="cm">// The safety net that matters most. No flag overrides this.</span>
+  <span class="cm">// Your production hosts. Never run against, however the URL is written.</span>
   neverRunAgainst: [<span class="s">"https://api.myapp.com"</span>],
 
-  <span class="cm">// Resilience — see the section above for why each exists.</span>
+  <span class="cm">// Reliability settings</span>
   timeoutMs:   <span class="s">20000</span>,  <span class="cm">// give up waiting on one call</span>
   retries:     <span class="s">3</span>,      <span class="cm">// extra tries for calls that never landed</span>
   giveUpAfter: <span class="s">12</span>,     <span class="cm">// unreachable calls before stopping the run</span>
@@ -1388,14 +1365,12 @@ populace run --agents 6 --minutes 5</pre>
 }</pre>
       </div>
       <div>
-        <h3 style="margin-bottom:12px">What it will not tell you</h3>
-        <p><strong>Whether people want your product.</strong> These people are generated
-           from patterns. They will never surprise you the way a real customer does, they
-           cannot tell you your onboarding is confusing or your pricing is wrong, and they
-           are least accurate for exactly the users least represented online.</p>
+        <h3 style="margin-bottom:12px">What it won't tell you</h3>
+        <p><strong>Whether people want your product.</strong> Simulated people follow
+           patterns. They won't surprise you like real customers, and they can't tell you
+           your onboarding is confusing or your pricing is wrong.</p>
         <p>Use Populace to prove your app <strong>works</strong>. Use real people to decide
-           what to <strong>build</strong>. A report full of green ticks means your API held
-           up — not that anyone wants what you made.</p>
+           what to <strong>build</strong>.</p>
       </div>
     </div>
   </div>
@@ -1414,14 +1389,12 @@ populace run --agents 6 --minutes 5</pre>
       Full name · Gigzen Populace
     </p>
     <p class="lede rv" style="margin:18px auto 0; text-align:center">
-      Gigzen is a software company in Bhubaneswar, India. We built Populace because we
-      needed it ourselves — our own social application looked finished and was quietly
-      broken for every user but the first. Everything on this page was designed, built
-      and tested by Gigzen.
+      Gigzen is a software company in Bhubaneswar, India. We built Populace because we needed
+      it: our own app passed a full manual test and still couldn't create a working account.
     </p>
     <div class="hero-cta rv" style="justify-content:center">
       <a class="btn btn-ghost" href="https://github.com/Shakhtar-Sankur/populace">Source on GitHub</a>
-      <a class="btn btn-ghost" href="mailto:hello@gigzen.com">Talk to us</a>
+      <a class="btn btn-ghost" href="mailto:sankur.kundu.tw@gmail.com">Talk to us</a>
     </div>
   </div>
 </section>
@@ -1437,16 +1410,15 @@ populace run --agents 6 --minutes 5</pre>
         <span class="gword">Gigzen</span>
       </p>
       <p style="margin:10px 0 0; max-width:44ch; font-size:13.5px">
-        A simulated population that tests your app through its real API.
-        Designed and built by Gigzen.
+        Test your app with people who don't exist. Built by Gigzen.
       </p>
     </div>
     <div>
       <p style="margin:0 0 8px; color:var(--ink); font-weight:600; font-size:14px">Product</p>
       <p style="margin:0; line-height:2">
-        <a href="#proof">Proof</a><br>
+        <a href="#proof">What it found</a><br>
         <a href="#how">How it works</a><br>
-        <a href="#resilience">Resilience</a><br>
+        <a href="#resilience">Reliability</a><br>
         <a href="#download">Download</a>
       </p>
     </div>
@@ -1456,7 +1428,7 @@ populace run --agents 6 --minutes 5</pre>
       <p style="margin:0 0 8px; color:var(--ink); font-weight:600; font-size:14px">Gigzen</p>
       <p style="margin:0; line-height:2">
         <a href="https://shakhtar-sankur.github.io/gigzen/">Company</a><br>
-        <a href="https://shakhtar-sankur.github.io/waggle/">Waggle</a><br>
+        <a href="https://shakhtar-sankur.github.io/gigzen/waggle.html">Waggle</a><br>
         <a href="https://shakhtar-sankur.github.io/gigzen/test-report.html">Test report</a><br>
         <a href="https://shakhtar-sankur.github.io/gigzen/privacy.html">Privacy</a>
       </p>

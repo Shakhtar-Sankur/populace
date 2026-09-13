@@ -418,7 +418,7 @@ multi-user simulation is best at finding.
 - **A populated app** instead of an empty one — the cold-start problem, solved for demos and for judging your own UX
 - **Multi-user paths exercised** without recruiting humans: presence, receipts, realtime fan-out, membership counts
 - **Permission rules tested by users who genuinely have different identities**
-- **Latency per endpoint** (p50/p95/p99/max) under N concurrent users
+- **Latency per endpoint** (p50/p95/max) under N concurrent users
 - **Failures grouped by shape**, not exact text, so one bug is one line rather than fifty
 - **Account deletion actually tested** — the path almost nobody exercises and the one regulators ask about
 - **`populace-report.json`** for CI; the run exits non-zero when problems are found
