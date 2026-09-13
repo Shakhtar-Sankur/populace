@@ -50,6 +50,15 @@ export function renderHtmlReport(report) {
     )
     .join("");
 
+  // Implemented but never called. Kept apart from notTested because the fix is
+  // different: nothing to write, the run just has to reach it.
+  const notExercised = (r.coverage.notExercised || [])
+    .map(
+      (c) =>
+        `<li><span class="mono">${esc(c.method)}</span><span class="would">still untested: ${esc(c.wouldHaveTested)}</span></li>`,
+    )
+    .join("");
+
   const problems = r.verdict.problems.map((p) => `<li>${esc(p)}</li>`).join("");
 
   const engineBlock = engineBroke
@@ -170,7 +179,7 @@ ${engineBlock}
   <div class="stat"><span class="v" style="color:${r.api.failures ? "var(--bad)" : "var(--ok)"}">${r.api.failures}</span><span class="l">failed</span></div>
   <div class="stat"><span class="v">${pct(r.api.failureRate)}</span><span class="l">failure rate</span></div>
   <div class="stat"><span class="v">${r.population.signedIn}</span><span class="l">concurrent users</span></div>
-  <div class="stat"><span class="v">${esc(r.coverage.label)}</span><span class="l">coverage</span></div>
+  <div class="stat"><span class="v">${esc(r.coverage.label)}</span><span class="l">methods exercised</span></div>
 </div>
 
 <section>
@@ -195,9 +204,18 @@ ${engineBlock}
 </section>
 
 ${
+  notExercised
+    ? `<section>
+  <h2>Not exercised — implemented, but this run never called it</h2>
+  <div class="panel"><ul class="cov">${notExercised}</ul></div>
+</section>`
+    : ""
+}
+
+${
   notTested
     ? `<section>
-  <h2>Not tested — adapter implements ${esc(r.coverage.label)}</h2>
+  <h2>Not tested — adapter implements ${esc(r.coverage.implementedLabel ?? r.coverage.label)}</h2>
   <div class="panel"><ul class="cov">${notTested}</ul></div>
 </section>`
     : ""

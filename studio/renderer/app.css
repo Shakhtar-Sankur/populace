@@ -430,6 +430,8 @@ table.people thead th.sorted.asc::after { content: " \25b4"; }
         background: var(--n0); color: var(--faint); border: 1px solid var(--line); }
 .slot.on { color: var(--indigo); border-color: rgba(79,70,229,.35); background: var(--indigo-soft); }
 .slot.gap { color: var(--warn); border-color: rgba(255,180,84,.35); background: var(--warn-soft); }
+/* Implemented, never called: present but unproven, so outlined rather than filled. */
+.slot.idle { color: var(--muted); border-style: dashed; border-color: rgba(79,70,229,.45); background: transparent; }
 .gaps { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
 
 /* ── explain ─────────────────────────────────────────────────────────── */

@@ -11,6 +11,37 @@ and Studio shipped 1.0.1 through 1.0.9 between the 22nd and the 24th, none of
 which were written up here. Rather than reconstruct nine releases from memory
 and risk getting them wrong, the gap is left visible.
 
+## engine 1.3.3 · Studio 1.0.15 — 13 September 2026
+
+### Fixed
+
+- **Coverage counted methods that existed, not methods that ran.** The first
+  run against a hosted target — eight people for three minutes on the test
+  project — reported "Coverage was 13/13". `refreshSession` was never called:
+  it fires every thirty minutes and the run lasted under five. The label was the
+  adapter's implemented count, so a method was credited as tested because it was
+  there. That is the overclaim `isStub` already refuses for empty methods, one
+  step later.
+
+  Coverage is now exercised over total. The terminal report and the shareable
+  page gain a **Not exercised** section naming each implemented method the run
+  never reached and what stays untested because of it. The adapter's own figure
+  survives as `implementedLabel`, still used by "Not tested — adapter implements",
+  because a method you never wrote and a method this run never reached have
+  different fixes. `doctor` still counts implemented methods, which is right
+  before anything has run.
+
+  Studio outlines a never-called method instead of filling it, and its verdict
+  line names it. It derives coverage from the recorded calls when a saved report
+  predates the new fields, so a report from before this release stops claiming
+  13/13 when opened.
+
+  Two checks cover it. The first draft of the second one guarded itself with
+  "return if the adapter does not implement refreshSession" — and the in-memory
+  test adapter does not, so it passed having asserted nothing. It now builds the
+  exact case, and was confirmed to fail against the old rule before the fix was
+  restored.
+
 ## engine 1.3.2 · Studio 1.0.14 — 12 September 2026
 
 ### Fixed
