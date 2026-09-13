@@ -25,18 +25,19 @@ applying**. Then it hands you a report on what broke.
 
 ---
 
-## It has done this to a real, finished app
+## It has done this to a real app
 
 ![Populace report for Buzz, 21 August 2026 — no failures across 932,455 API calls from 200 simulated drivers across 20 cities in 11 countries](docs/buzz-run-2026-08-21.svg)
 
-That is the *second* run. The first one is the interesting one.
+That is a later run. The first one is the interesting one.
 
 ### What happened, in plain English
 
 On **9 August 2026** we pointed Populace at **Buzz** — a gig-worker platform
 on Android with a live Postgres backend, 17 tables and 48 row-level-security
-policies. It was finished. It was signed. It had been through a full manual test
-of every screen by the person who wrote it, and it had passed.
+policies. It has since been renamed [**Waggle**](https://shakhtar-sankur.github.io/gigzen/waggle.html).
+It had not launched yet, but it was signed, and it had been through a full manual
+test of every screen by the person who wrote it, and it had passed.
 
 We started six simulated drivers: three in **Manila**, three in **Mumbai**. Each
 one signed up for a real account, set a profile, started driving a plausible
@@ -136,6 +137,20 @@ went fine.
 Two files land in whatever directory you ran it from: `populace-report.json` for
 CI, and `populace-report.html`, which is one self-contained page you can email
 to someone who was not watching your terminal.
+
+### Or skip the terminal
+
+[**Populace Studio**](https://github.com/Shakhtar-Sankur/populace/releases/latest) is
+the same engine in a window, for Windows, with no Node or npm needed. Download the
+installer or the portable build and check it against `SHA256SUMS.txt` on the release.
+Neither is code-signed yet, so Windows SmartScreen will warn before the first launch.
+
+Studio shows every simulated person on a world map as they move, and a box per contract
+method with its live latency. A method your adapter implements but the run never called is
+drawn dashed and named in the verdict, so it is not counted as covered. When something breaks,
+Studio shows the failing method and the database's own error text while the run is still
+going. It does not reimplement the engine: every run is the same command a terminal would
+issue, and Studio prints that command.
 
 ---
 
