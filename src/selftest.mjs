@@ -27,6 +27,7 @@ import {
 } from "./instrument.mjs";
 import { guardProduction } from "./config.mjs";
 import { buildReport, renderReport } from "./report.mjs";
+import { renderHtmlReport } from "./html-report.mjs";
 import { canSignInOnly, CONTRACT_METHODS, coverageOf, isStub } from "./contract.mjs";
 import { diagnose } from "./diagnose.mjs";
 import { fill, match } from "./openapi.mjs";
@@ -346,6 +347,58 @@ check("skipped methods are listed with what they would have tested", () => {
   });
   const skipped = r.coverage.notTested.find((c) => c.method === "reportLocation");
   assert.ok(skipped?.wouldHaveTested.length > 10, "a gap should say what it costs you");
+});
+
+// Coverage is what RAN. A hosted run on 12 September printed "Coverage was
+// 13/13" having never called refreshSession, which fires every 30 minutes and
+// the run lasted under five. Implemented is not exercised.
+check("coverage counts methods that ran, not methods that exist", () => {
+  const ran = new Set(cleanReport.api.methods.filter((m) => m.calls > 0).map((m) => m.method));
+  const { coverage } = cleanReport;
+  for (const m of coverage.exercised) assert.ok(ran.has(m), `${m} counted as exercised with no calls`);
+  for (const c of coverage.notExercised) assert.ok(!ran.has(c.method), `${c.method} ran but is listed as not exercised`);
+  assert.equal(
+    coverage.exercised.length + coverage.notExercised.length,
+    coverage.implemented.length,
+    "every implemented method is either exercised or named as not",
+  );
+  assert.equal(coverage.label, `${coverage.exercised.length}/13`, "the headline label is the exercised count");
+});
+
+// A first draft of the next check guarded itself with "if the adapter does not
+// implement refreshSession, return" — and the in-memory adapter does not, so it
+// passed without asserting anything. It now builds the exact case it is about:
+// refreshSession implemented for real, and a run far too short to reach it.
+const idleAdapter = {
+  ...inMemoryAdapter(),
+  async refreshSession(user) {
+    await Promise.resolve();
+    return user;
+  },
+};
+const idleMetrics = createMetrics();
+const idleWorld = new World({
+  adapter: instrument(idleAdapter, idleMetrics),
+  personas: buildPersonas(3, ["manila"]),
+});
+await idleWorld.populate({ staggerMs: 0 });
+await idleWorld.run({ minutes: 1, tickSeconds: 5, realtime: false });
+const idleTeardown = await idleWorld.teardown();
+idleMetrics.endedAt = Date.now();
+const idleReport = buildReport({
+  config, adapter: idleAdapter, world: idleWorld,
+  metrics: idleMetrics, teardown: idleTeardown, startedAt: Date.now() - 5000,
+});
+
+check("an implemented method that never ran is named, and not counted", () => {
+  const { coverage } = idleReport;
+  assert.ok(coverage.implemented.includes("refreshSession"), "setup: refreshSession must be implemented");
+  assert.ok(!coverage.exercised.includes("refreshSession"), "a one-minute run cannot reach a 30-minute refresh");
+  const idle = coverage.notExercised.find((c) => c.method === "refreshSession");
+  assert.ok(idle?.wouldHaveTested.length > 10, "a never-called method should say what stays untested");
+  assert.notEqual(coverage.label, coverage.implementedLabel, "exercised must not quietly equal implemented");
+  assert.ok(/NOT EXERCISED/.test(renderReport(idleReport)), "the terminal report must say so");
+  assert.ok(/Not exercised/.test(renderHtmlReport(idleReport)), "and so must the page people share");
 });
 
 // --- 4b. cleanup that does not write to the customer's database -----------

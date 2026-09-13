@@ -1,6 +1,6 @@
 {
   "name": "@gigzen/populace",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "A simulated population that uses your app through its real API, so you can test what needs more than one person.",
   "type": "module",
   "bin": {

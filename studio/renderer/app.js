@@ -858,6 +858,16 @@ async function renderReport(file) {
   const cov = r.coverage || {};
   const implemented = cov.implemented || [];
   const notTested = cov.notTested || [];
+
+  // Coverage is what ran. Derived from the calls when the report predates the
+  // field, so an old report opened here stops claiming 13/13 for a method that
+  // was never called — the numbers to work it out were always in the file.
+  const called = new Set(methods.filter((m) => m.calls > 0).map((m) => m.method));
+  const exercised = cov.exercised || implemented.filter((m) => called.has(m));
+  const notExercised = cov.notExercised
+    || implemented.filter((m) => !called.has(m)).map((m) => ({ method: m, wouldHaveTested: null }));
+  const covLabel = `${exercised.length}/${CONTRACT.length}`;
+  const idleNames = notExercised.map((c) => c.method);
   const made = r.population?.signedIn ?? 0;
   const removed = r.cleanup?.removed ?? 0;
   const mins = Math.round((r.run?.durationMs ?? 0) / 60000);
@@ -893,13 +903,22 @@ async function renderReport(file) {
   // Thirteen slots, filled or not. The gap is the point: a run that never
   // called refreshSession has not tested token expiry, whatever else it proved.
   const slots = CONTRACT.map((name) => {
-    const on = implemented.includes(name);
+    const on = exercised.includes(name);
+    const idle = idleNames.includes(name);
     const gap = notTested.find((c) => c.method === name);
-    return `<span class="slot${on ? " on" : ""}${gap ? " gap" : ""}" title="${esc(gap ? gap.wouldHaveTested : name)}">${esc(name)}</span>`;
+    const title = gap ? gap.wouldHaveTested : idle ? `${name} \u2014 implemented, never called this run` : name;
+    return `<span class="slot${on ? " on" : ""}${idle ? " idle" : ""}${gap ? " gap" : ""}" title="${esc(title)}">${esc(name)}</span>`;
   }).join("");
+
+  const idleList = notExercised.map((c) =>
+    `<li><code>${esc(c.method)}</code> \u2014 ${esc(c.wouldHaveTested || "implemented, but this run never called it")}</li>`).join("");
 
   const gaps = notTested.map((c) =>
     `<li><code>${esc(c.method)}</code> \u2014 ${esc(c.wouldHaveTested)}</li>`).join("");
+
+  const idleSentence = idleNames.length
+    ? ` \u2014 ${idleNames.join(", ")} never ran`
+    : "";
 
   const act = r.activity || {};
 
@@ -914,7 +933,7 @@ async function renderReport(file) {
         </div>
       </div>
       <p class="verdict-line">${clean
-        ? "Every call this run made reached your API and was answered. Coverage was " + esc(cov.label ?? "?") + "."
+        ? "Every call this run made reached your API and was answered. Coverage was " + esc(covLabel) + esc(idleSentence) + "."
         : (r.verdict?.problems || []).map(esc).join(" ") || "See the failures below."}</p>
     </div>
 
@@ -945,8 +964,9 @@ async function renderReport(file) {
 
     <div class="grid2-about">
       <div class="panel">
-        <div class="panel-head"><h2>Coverage</h2><span class="muted">${esc(cov.label ?? "?")}</span></div>
+        <div class="panel-head"><h2>Coverage</h2><span class="muted">${esc(covLabel)} exercised \u00b7 ${implemented.length} implemented</span></div>
         <div class="slots">${slots}</div>
+        ${idleList ? `<p class="muted spaced"><b>Not exercised</b> \u2014 implemented, but this run never reached it:</p><ul class="gaps">${idleList}</ul>` : ""}
         ${gaps ? `<p class="muted spaced"><b>Not tested</b> \u2014 and what that leaves unknown:</p><ul class="gaps">${gaps}</ul>` : ""}
       </div>
       <div class="panel">

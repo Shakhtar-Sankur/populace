@@ -66,12 +66,36 @@ export function buildReport({ config, adapter, world, metrics, teardown, started
       groupJoins: totals.groups,
     },
     api,
-    coverage: {
-      label: coverage.label,
-      implemented: coverage.implemented.map((c) => c.method),
-      notTested: coverage.missing.map((c) => ({ method: c.method, wouldHaveTested: c.exercises })),
-    },
+    coverage: coverageFor(coverage, api),
     cleanup: teardown ?? { skipped: true, note: "Agents were left in place. Run `populace clean`." },
+  };
+}
+
+/**
+ * Coverage counts what RAN, not what exists.
+ *
+ * It used to be the adapter's implemented count, so a three-minute run printed
+ * "Coverage was 13/13" having never once called refreshSession, which fires
+ * every thirty minutes. That is the same overclaim `isStub` exists to stop — a
+ * method credited as tested because it is there — just one step later.
+ *
+ * `label` is exercised/total. `implementedLabel` keeps what the adapter
+ * provides, because "not tested because you never wrote it" and "not tested
+ * because this run never reached it" have different fixes.
+ */
+function coverageFor(coverage, api) {
+  const total = coverage.implemented.length + coverage.missing.length;
+  const called = new Set((api.methods || []).filter((m) => m.calls > 0).map((m) => m.method));
+  const exercised = coverage.implemented.filter((c) => called.has(c.method));
+  return {
+    label: `${exercised.length}/${total}`,
+    implementedLabel: coverage.label,
+    implemented: coverage.implemented.map((c) => c.method),
+    exercised: exercised.map((c) => c.method),
+    notExercised: coverage.implemented
+      .filter((c) => !called.has(c.method))
+      .map((c) => ({ method: c.method, wouldHaveTested: c.exercises })),
+    notTested: coverage.missing.map((c) => ({ method: c.method, wouldHaveTested: c.exercises })),
   };
 }
 
@@ -256,8 +280,16 @@ export function renderReport(report) {
     }
   }
 
+  if (report.coverage.notExercised?.length) {
+    L.push(`  NOT EXERCISED — implemented, but this run never called it (coverage ${report.coverage.label})`);
+    for (const c of report.coverage.notExercised) {
+      L.push(`    · ${c.method.padEnd(21)} still untested: ${c.wouldHaveTested}`);
+    }
+    L.push("");
+  }
+
   if (report.coverage.notTested.length) {
-    L.push(`  NOT TESTED — adapter implements ${report.coverage.label}`);
+    L.push(`  NOT TESTED — adapter implements ${report.coverage.implementedLabel ?? report.coverage.label}`);
     for (const c of report.coverage.notTested) {
       L.push(`    · ${c.method.padEnd(21)} would have tested ${c.wouldHaveTested}`);
     }
