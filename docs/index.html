@@ -84,6 +84,9 @@ header.solid{position:fixed;background:#000;box-shadow:0 1px 0 rgba(255,255,255,
 .nav{display:flex;align-items:center;gap:28px;padding:22px 0}
 .brand{display:inline-flex;align-items:center;gap:11px;color:#fff;text-decoration:none;font:400 23px/1 var(--display);letter-spacing:.06em}
 .brand svg{width:26px;height:26px;color:#fff}
+/* The six-dot mark at the height of the capitals beside it (Hammersmith One
+   caps are about 0.72em), so the mark and POPULACE read as one size. */
+.brand > svg{height:.74em;width:calc(.74em * 45.2 / 49.8)}
 .by{display:inline-flex;align-items:center;gap:6px;font:600 12.5px/1 var(--sans);letter-spacing:.03em;opacity:.85;padding-left:11px;border-left:1px solid rgba(255,255,255,.35)}
 .by svg{width:13px;height:13px}
 .links{margin-left:auto;display:flex;gap:24px}
@@ -91,8 +94,9 @@ header.solid{position:fixed;background:#000;box-shadow:0 1px 0 rgba(255,255,255,
 .links a:hover{text-decoration:underline;text-underline-offset:6px}
 .burger{display:none;margin-left:auto;width:44px;height:44px;background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;cursor:pointer;align-items:center;justify-content:center}
 .burger svg{width:22px;height:22px}
+@media(max-width:420px){.brand{font-size:20px;gap:9px}.by{padding-left:9px;font-size:11.5px}}
 @media(max-width:980px){
-  .burger{display:inline-flex}.by{display:none}
+  .burger{display:inline-flex}
   .links{display:none;position:absolute;left:0;right:0;top:100%;flex-direction:column;gap:0;background:#000;padding:6px 22px 18px}
   .links.open{display:flex}
   .links a{padding:14px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:17px}
@@ -103,6 +107,8 @@ header.solid{position:fixed;background:#000;box-shadow:0 1px 0 rgba(255,255,255,
   background:#111 url("img/crowd-crossing.jpg") center/cover no-repeat;padding:140px 0 70px}
 .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,.72),rgba(0,0,0,.5) 70%)}
 .hero .wrap{position:relative}
+.eyebrow-gz{display:inline-flex;align-items:center;gap:10px;margin-bottom:22px;font:700 13.5px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:#fff}
+.eyebrow-gz svg{width:18px;height:18px;color:#fff}
 .hero h1{color:#fff;max-width:17ch;margin-inline:auto}
 .hero p.lead{margin:22px auto 0;max-width:640px;color:#F2F2F2}
 .hero .row{margin-top:34px;justify-content:center}
@@ -209,7 +215,7 @@ footer{background:#000;color:var(--on-black);padding:64px 0 34px}
   </symbol>
   <!-- Six agents in a ring, the last one hollow: the run that made this
        product's name had one user whose profile was never created. -->
-  <symbol id="populace" viewBox="0 0 64 64">
+  <symbol id="populace" viewBox="9.4 7.1 45.2 49.8">
     <g fill="currentColor">
       <circle cx="32" cy="15" r="7.6"/><circle cx="17.28" cy="23.5" r="7.6"/><circle cx="17.28" cy="40.5" r="7.6"/>
       <circle cx="32" cy="49" r="7.6"/><circle cx="46.72" cy="40.5" r="7.6"/>
@@ -245,6 +251,7 @@ footer{background:#000;color:var(--on-black);padding:64px 0 34px}
   <!-- ── hero ───────────────────────────────────────────────────────── -->
   <section class="hero" role="img" aria-label="An overhead view of a crowd crossing a busy city intersection.">
     <div class="wrap">
+      <p class="eyebrow-gz rv"><svg aria-hidden="true"><use href="#gigzen"></use></svg>A Gigzen product</p>
       <h1 class="rv">Your app, used by people who don't exist.</h1>
       <p class="lead rv">Populace fills your app with simulated people who sign up, move, post and message
         through your <strong>real API</strong>, all at once. Then it tells you what broke, why, and what to
