@@ -2,7 +2,7 @@
  * An adapter for a plain REST API — the second one Populace has ever had, and
  * the reason the portability claim is more than a hope.
  *
- * Read this next to adapters/buzzbuzz.mjs. They share no library, no id type,
+ * Read this next to adapters/waggle.mjs. They share no library, no id type,
  * no error convention and no auth mechanism, and the engine cannot tell them
  * apart. That is the whole argument.
  *

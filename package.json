@@ -17,7 +17,7 @@
     "examples",
     "!**/populace-report.json",
     "!**/populace-report.html",
-    "!examples/buzzbuzz/run-test.ps1",
+    "!examples/waggle/run-test.ps1",
     "populace.config.example.mjs",
     "README.md",
     "LICENSE",
