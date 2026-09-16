@@ -33,6 +33,21 @@ and risk getting them wrong, the gap is left visible.
   reports honestly and is not read is not a check. The comment now explains the
   rule without writing the syntax.
 
+- **Once it loaded, it could not find its own report.** The CLI writes a relative
+  `--report` path beside the config file; the Action's summary step read it from
+  the working directory. Any config not at the repository root — the Action's own
+  CI runs the bundled demo from `examples/demo` — got a `no-report` verdict, empty
+  outputs and no job summary, while a correct report sat one folder down. The
+  summary step now resolves the path exactly as the CLI writes it, and a
+  self-test runs the real script against that layout; it fails against the old
+  code.
+
+- **A self-test failed about one run in a hundred.** "A broken endpoint is caught"
+  needs at least three `like` calls, and over one simulated minute five people
+  made fewer in 4 of 400 trials. It failed on CI on 16 September. The run is now
+  three simulated minutes, where the fewest in 2,000 trials was 18. Twenty-five
+  consecutive full runs pass.
+
 ## engine 1.3.4 · Studio 1.0.16 — 16 September 2026
 
 ### Changed
