@@ -11,6 +11,26 @@ and Studio shipped 1.0.1 through 1.0.9 between the 22nd and the 24th, none of
 which were written up here. Rather than reconstruct nine releases from memory
 and risk getting them wrong, the gap is left visible.
 
+## engine 1.3.4 · Studio 1.0.15 — 16 September 2026
+
+### Changed
+
+- **The reference adapter is `waggle`, not `buzzbuzz`.** The app it drives was
+  renamed months ago; the adapter, its two example configs and every reference
+  to them still carried the old name, so the one worked example in the package
+  pointed at a product that no longer exists under that name.
+  `adapters/waggle.mjs` now, with `examples/waggle` and `examples/waggle-local`
+  beside it, and the adapter reports its own name as `waggle` in reports and
+  errors rather than quietly disagreeing with its filename.
+
+  Nothing consumers can reach has moved: `exports` maps only `.` and `./engine`,
+  so the adapter path was never importable from the package. This is a rename
+  inside the examples, which is why it is a patch and not a minor.
+
+  Earlier entries in this file keep the old paths where they describe what
+  happened at the time, and the example reports are records of runs that really
+  did use the old adapter. Rewriting either would be falsifying a record.
+
 ## engine 1.3.3 · Studio 1.0.15 — 13 September 2026
 
 ### Fixed
