@@ -1,4 +1,8 @@
-// Adapter: Buzz — a gig-driver tracking app on Supabase.
+// Adapter: Waggle — a gig-driver tracking app on Supabase.
+//
+// (This file was adapters/buzzbuzz.mjs until the app was renamed Waggle. The
+// table names and the phone-to-email scheme below are the app's own and did
+// not change with the name.)
 //
 // Populace's first customer, and the reference implementation. Read this
 // alongside contract.md to see what a complete adapter looks like: it is ~140
@@ -20,13 +24,13 @@ export function createAdapter(target) {
 
   if (!url || !key) {
     throw new Error(
-      "buzzbuzz adapter needs target.url and target.key.\n" +
+      "waggle adapter needs target.url and target.key.\n" +
         "  Set BUZZBUZZ_TEST_URL and BUZZBUZZ_TEST_KEY in your environment.",
     );
   }
 
   return {
-    name: "buzzbuzz",
+    name: "waggle",
 
     // supabase-js RETURNS network errors rather than throwing, so without this
     // a wrong URL looks identical to "that account doesn't exist" — and a run

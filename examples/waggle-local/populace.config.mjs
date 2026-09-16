@@ -1,6 +1,6 @@
 // Buzz against the local Supabase stack, at a scale the hosted project refuses.
 //
-// Why this file exists rather than reusing examples/buzzbuzz:
+// Why this file exists rather than reusing examples/waggle:
 //
 // The hosted test project applies Supabase's default auth rate limit of 30 sign
 // ups per five minutes per IP address. Measured on 2026-08-24: a 250-driver run
@@ -20,11 +20,11 @@
 //   npx supabase start
 //
 // Then either pick this file in Populace Studio, or:
-//   node src/cli.mjs run --config examples/buzzbuzz-local/populace.config.mjs
+//   node src/cli.mjs run --config examples/waggle-local/populace.config.mjs
 
 export default {
   app: "Buzz",
-  adapter: "../../adapters/buzzbuzz.mjs",
+  adapter: "../../adapters/waggle.mjs",
   environment: "test",
 
   // The local stack's fixed development address and publishable key. These are
@@ -35,7 +35,7 @@ export default {
     key: "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH",
   },
 
-  // Kept identical to examples/buzzbuzz. A local run is no reason to relax the
+  // Kept identical to examples/waggle. A local run is no reason to relax the
   // guard: if one of these ever appears in `target.url` above, refuse to start.
   neverRunAgainst: [
     "https://rqzuuvlougzhynckvqzd.supabase.co",

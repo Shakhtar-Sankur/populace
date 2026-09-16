@@ -167,7 +167,7 @@ You write **one adapter** — thirteen small methods, each answering "how does
 this happen in my app?". Two are required (`createUser`, `deleteUser`);
 everything else is optional and anything you skip is reported as untested rather
 than quietly passing. Full spec in [adapters/contract.md](adapters/contract.md),
-and [adapters/buzzbuzz.mjs](adapters/buzzbuzz.mjs) is a complete real-world
+and [adapters/waggle.mjs](adapters/waggle.mjs) is a complete real-world
 example in ~150 lines.
 
 `populace doctor` on a fresh scaffold says `2/13` and refuses to run — a method

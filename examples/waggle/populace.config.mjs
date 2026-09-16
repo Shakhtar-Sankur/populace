@@ -3,11 +3,11 @@
 // Run it — PowerShell (Windows):
 //   $env:BUZZBUZZ_TEST_URL="https://<your-TEST-project>.supabase.co"
 //   $env:BUZZBUZZ_TEST_KEY="<test project publishable key>"
-//   node src/cli.mjs run --config examples/buzzbuzz/populace.config.mjs
+//   node src/cli.mjs run --config examples/waggle/populace.config.mjs
 //
 // Run it — bash/zsh (macOS, Linux):
 //   BUZZBUZZ_TEST_URL=... BUZZBUZZ_TEST_KEY=... \
-//     node src/cli.mjs run --config examples/buzzbuzz/populace.config.mjs
+//     node src/cli.mjs run --config examples/waggle/populace.config.mjs
 //
 // The test project needs the same schema as production. Run these against it:
 //   schema.sql · social_features.sql · groups.sql · direct_messages.sql
@@ -18,7 +18,7 @@
 
 export default {
   app: "Buzz",
-  adapter: "../../adapters/buzzbuzz.mjs",
+  adapter: "../../adapters/waggle.mjs",
   environment: "test",
 
   target: {
