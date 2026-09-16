@@ -1,6 +1,6 @@
 # Publishing Populace
 
-`@gigzen/populace` **is published**, through 1.3.3 on 13 September 2026. Each
+`@gigzen/populace` **is published**, through 1.3.4 on 16 September 2026. Each
 release needs your npm account, and publishing is close to irreversible: npm
 only allows unpublishing within 72 hours, and only under conditions.
 
