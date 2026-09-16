@@ -118,6 +118,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
+        POPULACE_CONFIG: ${{ inputs.config }}
         POPULACE_REPORT: ${{ inputs.report }}
         POPULACE_SUMMARY: ${{ inputs.summary }}
       run: node "$GITHUB_ACTION_PATH/src/github-summary.mjs"

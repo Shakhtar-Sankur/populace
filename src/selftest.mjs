@@ -87,8 +87,9 @@ function inMemoryAdapter({ flakyLike = 0 } = {}) {
     },
     async like() {
       likeCalls += 1;
-      // Deterministic flakiness — every Nth call fails, so the assertion below
-      // is not a coin flip.
+      // Every Nth call fails, so *which* likes fail is fixed. How many likes a
+      // run makes is not: people decide at random. That half is handled where
+      // the run's length is chosen, below.
       if (flakyLike && likeCalls % flakyLike === 0) {
         throw new Error(`row 4821 violates policy "post_likes_insert"`);
       }
@@ -274,7 +275,12 @@ const flakyWorld = new World({
   personas: buildPersonas(5, ["manila", "mumbai"]),
 });
 await flakyWorld.populate({ staggerMs: 0 });
-await flakyWorld.run({ minutes: 1, tickSeconds: 5, realtime: false });
+// Three simulated minutes, not one. With every third like failing, the checks
+// below need at least three likes. Over one minute, five people made fewer than
+// that in 4 of 400 trials — once none at all — so about one CI job in a hundred
+// failed two checks for no reason, and did on 16 September. Over three minutes
+// the fewest in 2,000 trials was 18. Simulated time; it costs nothing to run.
+await flakyWorld.run({ minutes: 3, tickSeconds: 5, realtime: false });
 flakyMetrics.endedAt = Date.now();
 const flakyReport = buildReport({
   config,
@@ -1806,6 +1812,45 @@ check("POPULACE_NO_UPDATE_CHECK switches it off", () => {
       `three people at 120ms apart should take at least 240ms, took ${elapsed}ms`);
   });
 }
+
+// --- the GitHub Action reads the report the CLI actually wrote ------------
+// The CLI writes a relative report path beside the config file. The Action's
+// summary step read it from the working directory instead, so any config not
+// at the root got "no-report" — the Action's own CI included, which runs the
+// demo from examples/demo. Run the real script against that exact layout.
+check("the Action finds a report written beside a config in a subfolder", async () => {
+  const os = await import("node:os");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "populace-action-"));
+  try {
+    fs.mkdirSync(path.join(root, "sub"));
+    fs.writeFileSync(path.join(root, "sub", "populace-report.json"), JSON.stringify(flakyReport));
+    const outputs = path.join(root, "outputs.txt");
+    const script = fileURLToPath(new URL("./github-summary.mjs", import.meta.url));
+    await new Promise((resolve, reject) => {
+      execFile(
+        process.execPath,
+        [script],
+        {
+          cwd: root,
+          timeout: 20_000,
+          env: {
+            ...process.env,
+            POPULACE_CONFIG: "sub/populace.config.mjs",
+            POPULACE_REPORT: "populace-report.json",
+            POPULACE_SUMMARY: "false",
+            GITHUB_OUTPUT: outputs,
+          },
+        },
+        (err) => (err ? reject(err) : resolve()),
+      );
+    });
+    const written = fs.readFileSync(outputs, "utf8");
+    assert.ok(!written.includes("no-report"), "the report beside the config was not found");
+    assert.match(written, /verdict<<__POPULACE__\nproblems-found\n/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
 
 await Promise.all(pending);
 

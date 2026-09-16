@@ -5,7 +5,8 @@
 // better, but reaching it means downloading an artifact and opening it, which
 // in practice means nobody looks. A table in the summary is read.
 //
-// Reads:  POPULACE_REPORT   path to the JSON report
+// Reads:  POPULACE_REPORT   path to the JSON report, as given to `run --report`
+//         POPULACE_CONFIG   path to the config, as given to `run --config`
 //         POPULACE_SUMMARY  "false" to skip writing the summary
 //         GITHUB_OUTPUT / GITHUB_STEP_SUMMARY  supplied by the runner
 //
@@ -17,7 +18,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { explainReport, verdictLine } from "./explain.mjs";
 
-const reportPath = process.env.POPULACE_REPORT || "populace-report.json";
+// Resolved exactly as writeReport resolves it: a relative report path is taken
+// from the config file's directory, not the working directory. Reading it from
+// the working directory instead is what made the Action report "no-report" for
+// any config not sitting at the root — including its own CI, which runs the
+// bundled demo from examples/demo — while the report sat one folder down.
+const configFile = path.resolve(process.cwd(), process.env.POPULACE_CONFIG || "populace.config.mjs");
+const reportPath = path.resolve(path.dirname(configFile), process.env.POPULACE_REPORT || "populace-report.json");
 const wantSummary = process.env.POPULACE_SUMMARY !== "false";
 
 const out = (k, v) => {
