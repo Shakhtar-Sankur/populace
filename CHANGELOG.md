@@ -11,7 +11,7 @@ and Studio shipped 1.0.1 through 1.0.9 between the 22nd and the 24th, none of
 which were written up here. Rather than reconstruct nine releases from memory
 and risk getting them wrong, the gap is left visible.
 
-## engine 1.3.4 · Studio 1.0.15 — 16 September 2026
+## engine 1.3.4 · Studio 1.0.16 — 16 September 2026
 
 ### Changed
 
@@ -30,6 +30,14 @@ and risk getting them wrong, the gap is left visible.
   Earlier entries in this file keep the old paths where they describe what
   happened at the time, and the example reports are records of runs that really
   did use the old adapter. Rewriting either would be falsifying a record.
+
+- **Studio 1.0.16 is a rebuild on this engine, and nothing else.** Studio bundles
+  a copy of the engine at build time, so the 1.0.15 installers carried 1.3.3 and
+  would have kept carrying it. No Studio code changed. Anyone on 1.0.15 can skip
+  it; the release notes say so rather than inventing a reason to upgrade.
+
+  The 1.0.15 notes keep saying engine 1.3.3, because that is what is inside
+  those installers and their published checksums prove it.
 
 ## engine 1.3.3 · Studio 1.0.15 — 13 September 2026
 
