@@ -1,18 +1,18 @@
 # Publishing Populace
 
-The package is prepared and verified. It is **not published** — that needs your
-npm account, and it is close to irreversible: npm only allows unpublishing
-within 72 hours, and only under conditions.
+`@gigzen/populace` **is published**, through 1.3.3 on 13 September 2026. Each
+release needs your npm account, and publishing is close to irreversible: npm
+only allows unpublishing within 72 hours, and only under conditions.
 
-`@gigzen/populace` was free when last checked. `populace` is taken by an
-unrelated package (Populace.cloud SDK), which is why the scope exists.
+`populace` unscoped is taken by an unrelated package (Populace.cloud SDK), which
+is why the scope exists.
 
 ## Before you publish
 
 Everything below has already been verified by packing the tarball and installing
 it into a clean project:
 
-- 26 files, 59 KB
+- 41 files, 142 KB packed (421 KB unpacked) as of 1.3.4
 - `added 1 package` — zero runtime dependencies, at install time
 - `npx populace demo` finds the planted defect and exits 1
 - `npx populace init` scaffolds `populace.config.mjs` and `adapters/my-app.mjs`
