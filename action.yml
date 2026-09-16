@@ -91,7 +91,13 @@ runs:
       run: |
         # Inputs arrive through the environment rather than being interpolated
         # into this script. A city list or a path is attacker-controllable in a
-        # fork PR, and ${{ }} pasted straight into bash is a shell injection.
+        # fork PR, and an input expression pasted straight into bash is a shell
+        # injection.
+        #
+        # Do not write the expression syntax itself in this comment, even as an
+        # example. GitHub evaluates it everywhere in a run block, comments
+        # included, and an empty one stops the whole action loading. That is
+        # exactly what the example that used to sit here did, from 1.0.0 on.
         args=(run --config "$POPULACE_CONFIG" --report "$POPULACE_REPORT")
         [ -n "$POPULACE_AGENTS" ]     && args+=(--agents "$POPULACE_AGENTS")
         [ -n "$POPULACE_MINUTES" ]    && args+=(--minutes "$POPULACE_MINUTES")

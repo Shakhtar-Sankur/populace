@@ -11,6 +11,28 @@ and Studio shipped 1.0.1 through 1.0.9 between the 22nd and the 24th, none of
 which were written up here. Rather than reconstruct nine releases from memory
 and risk getting them wrong, the gap is left visible.
 
+## GitHub Action — 16 September 2026
+
+### Fixed
+
+- **The GitHub Action has never loaded, for anyone, since 1.0.0.** A comment in
+  `action.yml` explaining why inputs go through the environment rather than into
+  the script quoted the expression syntax it warned against, as an empty
+  expression. GitHub evaluates that syntax everywhere in a `run` block, comments
+  included, and an empty one is a template error, so the Action failed to load
+  before running a single step. `uses: Shakhtar-Sankur/populace@v1`, the line the
+  README gives, has pointed at that commit the whole time.
+
+  CI caught it on 22 August, the day it was written, in the job that runs the
+  Action the way a stranger would, and stayed red for twenty-five days while
+  nobody looked. Every engine and Studio release since shipped on a red build.
+  The self-test jobs on Node 18 and 22 passed throughout, which is how it hid:
+  the engine was fine, and the thing wrapping it was not.
+
+  This is exactly the failure this project exists to argue against — a check that
+  reports honestly and is not read is not a check. The comment now explains the
+  rule without writing the syntax.
+
 ## engine 1.3.4 · Studio 1.0.16 — 16 September 2026
 
 ### Changed
