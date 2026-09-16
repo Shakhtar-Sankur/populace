@@ -48,6 +48,12 @@ and risk getting them wrong, the gap is left visible.
   three simulated minutes, where the fewest in 2,000 trials was 18. Twenty-five
   consecutive full runs pass.
 
+- **`@v1` now points at the fix.** The README's `uses: Shakhtar-Sankur/populace@v1`
+  resolved to the 1.0.0 release commit, which carried the broken comment, so it
+  would have kept handing out an Action that could not load. `v1` is a moving
+  tag and has been moved to `9c44aef`, the commit whose CI run the Action passed
+  end to end. `v1.0.0` stays where it was, as the record of what 1.0.0 was.
+
 ## engine 1.3.4 · Studio 1.0.16 — 16 September 2026
 
 ### Changed
