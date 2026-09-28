@@ -157,6 +157,6 @@
 
   <line x1="48" y1="912" x2="1152" y2="912" stroke="#233039"/>
   <text x="48" y="946" fill="#9FB0BC" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="17">2,271 km · 81,672 posts · 172,660 likes · 76,034 messages</text>
-  <text x="1152" y="946" fill="#6B7C89" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="13" text-anchor="end">Gigzen Private Limited · Bhubaneswar, India</text>
+  <text x="1152" y="946" fill="#6B7C89" font-family="ui-monospace,'SF Mono',SFMono-Regular,'Cascadia Mono',Menlo,Consolas,monospace" font-size="13" text-anchor="end">Gigzen · Bhubaneswar, India</text>
   <text x="48" y="978" fill="#6B7C89" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif" font-size="15">Two hundred concurrent drivers over a local backend. Loopback, so no network is included: the same calls cost about 175 ms against the hosted project.</text>
 </svg>

@@ -138,7 +138,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
 
   <line x1="${PAD}" y1="${H - 108}" x2="${W - PAD}" y2="${H - 108}" stroke="${C.rule}"/>
   <text x="${PAD}" y="${H - 74}" fill="${C.body}" font-family="${SANS}" font-size="17">${RUN.activity}</text>
-  <text x="${W - PAD}" y="${H - 74}" fill="${C.muted}" font-family="${MONO}" font-size="13" text-anchor="end">Gigzen Private Limited · Bhubaneswar, India</text>
+  <text x="${W - PAD}" y="${H - 74}" fill="${C.muted}" font-family="${MONO}" font-size="13" text-anchor="end">Gigzen · Bhubaneswar, India</text>
   <text x="${PAD}" y="${H - 42}" fill="${C.muted}" font-family="${SANS}" font-size="15">Two hundred concurrent drivers over a local backend. Loopback, so no network is included: the same calls cost about 175 ms against the hosted project.</text>
 </svg>
 `;
