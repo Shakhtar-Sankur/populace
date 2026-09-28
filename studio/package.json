@@ -3,7 +3,7 @@
   "productName": "Populace Studio",
   "version": "1.0.16",
   "description": "Gigzen Populace — bring a population of simulated users to life against your app, and watch what breaks.",
-  "author": "Gigzen Private Limited",
+  "author": "Gigzen",
   "license": "MIT",
   "private": true,
   "main": "main.js",
@@ -84,7 +84,7 @@
     "portable": {
       "artifactName": "PopulaceStudio-Portable-${arch}.${ext}"
     },
-    "copyright": "Copyright © 2026 Gigzen Private Limited",
+    "copyright": "Copyright © 2026 Gigzen",
     "appx": {
       "identityName": "REPLACE-WITH-PARTNER-CENTER-IDENTITY-NAME",
       "publisher": "CN=REPLACE-WITH-PARTNER-CENTER-PUBLISHER-ID",
